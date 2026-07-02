@@ -1,7 +1,6 @@
-# Tauri + React + Typescript
+<div align="center">
+  <p><a href="https://github.com/opencma/LightHost">LightHost</a>'s spiritual successor for real-time audio processing via a VST2/VST3 plug-in chain</p>
+</div>
 
-This template should help get you started developing with Tauri, React and Typescript in Vite.
-
-## Recommended IDE Setup
-
-- [VS Code](https://code.visualstudio.com/) + [Tauri](https://marketplace.visualstudio.com/items?itemName=tauri-apps.tauri-vscode) + [rust-analyzer](https://marketplace.visualstudio.com/items?itemName=rust-lang.rust-analyzer)
+> [!CAUTION]
+> Very early stage. Please do not touch this or your pc go boom or whatever
