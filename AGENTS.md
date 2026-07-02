@@ -2,7 +2,7 @@
 
 ## --- Project Overview --------------------------------------------------------
 
-**ShallowHost** - a graphical shell for scanning, loading and hosting VST2/VST3 plugins (e.g real-time microphone effects). 
+**ShallowHost** - a graphical shell for scanning, loading and hosting VST2/VST3 plugins (e.g real-time microphone effects).
 
 ## Tech Stack
 

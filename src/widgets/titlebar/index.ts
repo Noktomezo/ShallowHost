@@ -1,1 +1,1 @@
-export { Titlebar } from "./ui/Titlebar";
+export { Titlebar } from './ui/Titlebar'

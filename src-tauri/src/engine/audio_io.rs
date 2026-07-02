@@ -457,7 +457,11 @@ impl AudioEngine {
     }
 }
 
-fn audio_thread(rx: Receiver<AudioCmd>, chain_handle: Arc<ArcSwap<Chain>>, data_dir: Arc<Mutex<Option<PathBuf>>>) {
+fn audio_thread(
+    rx: Receiver<AudioCmd>,
+    chain_handle: Arc<ArcSwap<Chain>>,
+    data_dir: Arc<Mutex<Option<PathBuf>>>,
+) {
     #[cfg(windows)]
     {
         use windows::Win32::System::Com::{CoInitializeEx, COINIT_MULTITHREADED};
@@ -496,7 +500,10 @@ fn audio_thread(rx: Receiver<AudioCmd>, chain_handle: Arc<ArcSwap<Chain>>, data_
                         }
                         Err(e) => {
                             last_err = e.to_string();
-                            eprintln!("[shallow-host] start_streams attempt {} failed: {last_err}", attempt + 1);
+                            eprintln!(
+                                "[shallow-host] start_streams attempt {} failed: {last_err}",
+                                attempt + 1
+                            );
                             thread::sleep(Duration::from_millis(500));
                         }
                     }
@@ -562,7 +569,10 @@ fn audio_thread(rx: Receiver<AudioCmd>, chain_handle: Arc<ArcSwap<Chain>>, data_
                         return Ok(());
                     };
                     let chain = chain_handle.load();
-                    eprintln!("[persist] persist() on audio thread, {} plugins", chain.len());
+                    eprintln!(
+                        "[persist] persist() on audio thread, {} plugins",
+                        chain.len()
+                    );
                     crate::state::store::save_chain(&path, &chain)
                 })();
                 let _ = reply.send(result);

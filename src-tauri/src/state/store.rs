@@ -105,14 +105,23 @@ pub struct PersistedState {
 }
 
 pub fn save_chain(path: &Path, chain: &Chain) -> Result<(), String> {
-    eprintln!("[persist] save_chain to {} ({} plugins)", path.display(), chain.len());
+    eprintln!(
+        "[persist] save_chain to {} ({} plugins)",
+        path.display(),
+        chain.len()
+    );
     let mut plugins = Vec::with_capacity(chain.len());
     for entry in chain.iter() {
         let plugin = entry.plugin.lock();
         let state = plugin.save_state().map_err(|e| e.to_string())?;
         let state_b64 = general_purpose::STANDARD.encode(&state);
         let bypassed = entry.bypassed.load(std::sync::atomic::Ordering::Relaxed);
-        eprintln!("[persist] plugin {} state_bytes={} b64_len={}", entry.name, state.len(), state_b64.len());
+        eprintln!(
+            "[persist] plugin {} state_bytes={} b64_len={}",
+            entry.name,
+            state.len(),
+            state_b64.len()
+        );
         plugins.push(PersistedPlugin {
             id: entry.id.clone(),
             name: entry.name.clone(),
@@ -142,13 +151,20 @@ pub fn load_chain(path: &Path) -> Result<Vec<PersistedPlugin>, String> {
 }
 
 pub fn restore_chain(plugins: Vec<PersistedPlugin>) -> Chain {
-    eprintln!("[persist] restore_chain: {} plugins from disk", plugins.len());
+    eprintln!(
+        "[persist] restore_chain: {} plugins from disk",
+        plugins.len()
+    );
     let mut chain: Chain = Vec::new();
     for p in plugins {
         let state_bytes = general_purpose::STANDARD
             .decode(&p.state)
             .unwrap_or_default();
-        eprintln!("[persist] restoring {} state_bytes={}", p.name, state_bytes.len());
+        eprintln!(
+            "[persist] restoring {} state_bytes={}",
+            p.name,
+            state_bytes.len()
+        );
         let info = PluginInfo {
             name: p.name.clone(),
             vendor: p.vendor.clone(),

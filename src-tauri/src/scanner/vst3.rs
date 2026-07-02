@@ -159,7 +159,11 @@ fn extract_vendor(
     let mut info: PFactoryInfo = unsafe { std::mem::zeroed() };
     let result = unsafe { factory.getFactoryInfo(&mut info) };
     if result != 0 {
-        eprintln!("[vendor] getFactoryInfo failed for {}: result={}", binary.display(), result);
+        eprintln!(
+            "[vendor] getFactoryInfo failed for {}: result={}",
+            binary.display(),
+            result
+        );
         return String::new();
     }
 
