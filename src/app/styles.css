@@ -1,0 +1,132 @@
+@import "tailwindcss";
+@import "tw-animate-css";
+@import "shadcn/tailwind.css";
+@import "@fontsource-variable/ibm-plex-sans";
+
+@custom-variant dark (&:is(.dark *));
+
+@theme inline {
+    --font-heading: var(--font-sans);
+    --font-sans: 'IBM Plex Sans Variable', sans-serif;
+    --color-sidebar-ring: var(--sidebar-ring);
+    --color-sidebar-border: var(--sidebar-border);
+    --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
+    --color-sidebar-accent: var(--sidebar-accent);
+    --color-sidebar-primary-foreground: var(--sidebar-primary-foreground);
+    --color-sidebar-primary: var(--sidebar-primary);
+    --color-sidebar-foreground: var(--sidebar-foreground);
+    --color-sidebar: var(--sidebar);
+    --color-chart-5: var(--chart-5);
+    --color-chart-4: var(--chart-4);
+    --color-chart-3: var(--chart-3);
+    --color-chart-2: var(--chart-2);
+    --color-chart-1: var(--chart-1);
+    --color-ring: var(--ring);
+    --color-input: var(--input);
+    --color-border: var(--border);
+    --color-destructive: var(--destructive);
+    --color-accent-foreground: var(--accent-foreground);
+    --color-accent: var(--accent);
+    --color-muted-foreground: var(--muted-foreground);
+    --color-muted: var(--muted);
+    --color-secondary-foreground: var(--secondary-foreground);
+    --color-secondary: var(--secondary);
+    --color-primary-foreground: var(--primary-foreground);
+    --color-primary: var(--primary);
+    --color-popover-foreground: var(--popover-foreground);
+    --color-popover: var(--popover);
+    --color-card-foreground: var(--card-foreground);
+    --color-card: var(--card);
+    --color-foreground: var(--foreground);
+    --color-background: var(--background);
+    --radius-sm: calc(var(--radius) * 0.6);
+    --radius-md: calc(var(--radius) * 0.8);
+    --radius-lg: var(--radius);
+    --radius-xl: calc(var(--radius) * 1.4);
+    --radius-2xl: calc(var(--radius) * 1.8);
+    --radius-3xl: calc(var(--radius) * 2.2);
+    --radius-4xl: calc(var(--radius) * 2.6);
+}
+
+:root {
+    --background: #FFFCF0;
+    --foreground: #100F0F;
+    --card: #FFFCF0;
+    --card-foreground: #100F0F;
+    --popover: #FFFCF0;
+    --popover-foreground: #100F0F;
+    --primary: #BC5215;
+    --primary-foreground: #FFFCF0;
+    --secondary: #DAD8CE;
+    --secondary-foreground: #6F6E69;
+    --muted: #F2F0E5;
+    --muted-foreground: #B7B5AC;
+    --accent: #E6E4D9;
+    --accent-foreground: #6F6E69;
+    --destructive: #AF3029;
+    --destructive-foreground: #FFFCF0;
+    --border: #DAD8CE;
+    --input: #DAD8CE;
+    --ring: #CECDC3;
+    --chart-1: #BC5215;
+    --chart-2: #205EA6;
+    --chart-3: #66800B;
+    --chart-4: #AD8301;
+    --chart-5: #5E409D;
+    --radius: 0.45rem;
+    --sidebar: #F2F0E5;
+    --sidebar-foreground: #100F0F;
+    --sidebar-primary: #BC5215;
+    --sidebar-primary-foreground: #FFFCF0;
+    --sidebar-accent: #E6E4D9;
+    --sidebar-accent-foreground: #6F6E69;
+    --sidebar-border: #DAD8CE;
+    --sidebar-ring: #CECDC3;
+}
+
+.dark {
+    --background: #100F0F;
+    --foreground: #CECDC3;
+    --card: #1C1B1A;
+    --card-foreground: #CECDC3;
+    --popover: #1C1B1A;
+    --popover-foreground: #CECDC3;
+    --primary: #DA702C;
+    --primary-foreground: #100F0F;
+    --secondary: #343331;
+    --secondary-foreground: #878580;
+    --muted: #1C1B1A;
+    --muted-foreground: #575653;
+    --accent: #282726;
+    --accent-foreground: #CECDC3;
+    --destructive: #D14D41;
+    --destructive-foreground: #100F0F;
+    --border: #343331;
+    --input: #343331;
+    --ring: #403E3C;
+    --chart-1: #DA702C;
+    --chart-2: #4385BE;
+    --chart-3: #879A39;
+    --chart-4: #D0A215;
+    --chart-5: #8B7EC8;
+    --sidebar: #1C1B1A;
+    --sidebar-foreground: #CECDC3;
+    --sidebar-primary: #DA702C;
+    --sidebar-primary-foreground: #100F0F;
+    --sidebar-accent: #282726;
+    --sidebar-accent-foreground: #CECDC3;
+    --sidebar-border: #343331;
+    --sidebar-ring: #403E3C;
+}
+
+@layer base {
+  * {
+    @apply border-border outline-ring/50;
+    }
+  body {
+    @apply bg-background text-foreground;
+    }
+  html {
+    @apply font-sans;
+    }
+}

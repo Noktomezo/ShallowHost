@@ -1,0 +1,72 @@
+{
+  "translation": {
+    "titlebar": {
+      "toggleSidebar": "Свернуть панель",
+      "minimize": "Свернуть",
+      "maximize": "Развернуть",
+      "close": "Закрыть"
+    },
+    "sidebar": {
+      "home": "Главная",
+      "plugins": "Плагины",
+      "settings": "Настройки"
+    },
+    "home": {
+      "title": "Хост",
+      "description": "Страница эффектов микрофона.",
+      "audio": "Аудио",
+      "audioDescription": "Устройства и параметры звука.",
+      "driver": "Драйвер",
+      "driverDescription": "Аудио API для ввода/вывода.",
+      "outputDevice": "Устройство вывода",
+      "outputDeviceDescription": "Куда направить звук.",
+      "inputDevice": "Устройство ввода",
+      "inputDeviceDescription": "Откуда брать звук.",
+      "defaultDevice": "По умолчанию",
+      "sampleRate": "Частота дискретизации",
+      "sampleRateDescription": "Частота обработки звука.",
+      "bufferSize": "Размер буфера",
+      "bufferSizeDescription": "Меньше = ниже задержка, выше нагрузка.",
+      "mono": "Моно",
+      "monoDescription": "Дублировать левый канал в оба уха.",
+      "chain": "Цепочка плагинов",
+      "chainEmpty": "В цепочке нет плагинов.",
+      "bypass": "Обход",
+      "bypassed": "Обойдён",
+      "moveUp": "Вверх",
+      "moveDown": "Вниз",
+      "removeFromChain": "Убрать из цепочки",
+      "addHint": "Добавьте плагины со страницы «Плагины».",
+      "parameters": "Параметры плагина",
+      "noParameters": "У этого плагина нет параметров.",
+      "openGui": "Открыть интерфейс",
+      "dragHandle": "Перетащите для перемещения"
+    },
+    "plugins": {
+      "title": "Плагины",
+      "description": "Сканирование и управление VST3 плагинами.",
+      "scan": "Сканировать",
+      "scanning": "Сканирование...",
+      "empty": "Плагины ещё не отсканированы.",
+      "actions": "Действия",
+      "reveal": "Показать в папке",
+      "remove": "Удалить",
+      "addToChain": "Добавить в цепочку",
+      "alreadyInChain": "Уже в цепочке"
+    },
+    "settings": {
+      "title": "Настройки",
+      "description": "Внешний вид и язык приложения.",
+      "appearance": "Внешний вид",
+      "theme": "Тема",
+      "themeDescription": "Системная, светлая или тёмная.",
+      "themeSystem": "Системная",
+      "themeLight": "Светлая",
+      "themeDark": "Тёмная",
+      "language": "Язык",
+      "languageDescription": "Язык интерфейса приложения.",
+      "langRu": "Русский",
+      "langEn": "English"
+    }
+  }
+}

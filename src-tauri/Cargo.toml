@@ -1,0 +1,38 @@
+[package]
+name = "shallow-host"
+version = "0.1.0"
+description = "A Tauri App"
+authors = ["you"]
+edition = "2021"
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[lib]
+# The `_lib` suffix may seem redundant but it is necessary
+# to make the lib name unique and wouldn't conflict with the bin name.
+# This seems to be only an issue on Windows, see https://github.com/rust-lang/cargo/issues/8519
+name = "shallow_host_lib"
+crate-type = ["staticlib", "cdylib", "rlib"]
+
+[build-dependencies]
+tauri-build = { version = "2", features = [] }
+
+[dependencies]
+tauri = { version = "2", features = ["unstable"] }
+tauri-plugin-opener = "2"
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
+cpal = "0.18.1"
+ringbuf = "0.5.0"
+parking_lot = "0.12.5"
+windows-core = "=0.61.2"
+truce-rack = { version = "1.1.5", default-features = false, features = ["vst3"] }
+arc-swap = "1.9.2"
+windows = { version = "0.61", features = ["Win32_Foundation", "Win32_System_Com", "Win32_System_LibraryLoader"] }
+base64 = "0.22.1"
+tauri-plugin-store = "2"
+vst3 = "0.3"
+libloading = "0.8"
+
+[patch.crates-io]
+truce-rack-vst3 = { path = "vendor/truce-rack-vst3" }

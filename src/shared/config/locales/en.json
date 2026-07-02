@@ -1,0 +1,72 @@
+{
+  "translation": {
+    "titlebar": {
+      "toggleSidebar": "Toggle sidebar",
+      "minimize": "Minimize",
+      "maximize": "Maximize",
+      "close": "Close"
+    },
+    "sidebar": {
+      "home": "Home",
+      "plugins": "Plugins",
+      "settings": "Settings"
+    },
+    "home": {
+      "title": "Host",
+      "description": "Microphone effects page.",
+      "audio": "Audio",
+      "audioDescription": "Audio devices and parameters.",
+      "driver": "Driver",
+      "driverDescription": "Audio API for input/output.",
+      "outputDevice": "Output device",
+      "outputDeviceDescription": "Where to send audio.",
+      "inputDevice": "Input device",
+      "inputDeviceDescription": "Where to capture audio from.",
+      "defaultDevice": "Default",
+      "sampleRate": "Sample rate",
+      "sampleRateDescription": "Audio processing rate.",
+      "bufferSize": "Buffer size",
+      "bufferSizeDescription": "Lower = less latency, more load.",
+      "mono": "Mono",
+      "monoDescription": "Duplicate left channel to both ears.",
+      "chain": "Plugin Chain",
+      "chainEmpty": "No plugins in the chain.",
+      "bypass": "Bypass",
+      "bypassed": "Bypassed",
+      "moveUp": "Move up",
+      "moveDown": "Move down",
+      "removeFromChain": "Remove from chain",
+      "addHint": "Add plugins from the Plugins page.",
+      "parameters": "Plugin parameters",
+      "noParameters": "This plugin has no parameters.",
+      "openGui": "Open interface",
+      "dragHandle": "Drag to reorder"
+    },
+    "plugins": {
+      "title": "Plugins",
+      "description": "Scan and manage VST3 plugins.",
+      "scan": "Scan",
+      "scanning": "Scanning...",
+      "empty": "No plugins scanned yet.",
+      "actions": "Actions",
+      "reveal": "Reveal in folder",
+      "remove": "Remove",
+      "addToChain": "Add to chain",
+      "alreadyInChain": "Already in chain"
+    },
+    "settings": {
+      "title": "Settings",
+      "description": "Appearance and language of the app.",
+      "appearance": "Appearance",
+      "theme": "Theme",
+      "themeDescription": "System, light or dark.",
+      "themeSystem": "System",
+      "themeLight": "Light",
+      "themeDark": "Dark",
+      "language": "Language",
+      "languageDescription": "Interface language of the app.",
+      "langRu": "Русский",
+      "langEn": "English"
+    }
+  }
+}
