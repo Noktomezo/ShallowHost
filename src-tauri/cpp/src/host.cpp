@@ -183,30 +183,32 @@ int ShallowHost::audioStartOnMessageThread(const char* driver, const char* input
         juce::String typeName = juce::String(driver).equalsIgnoreCase("asio") ? "ASIO" : "Windows Audio";
         if (deviceManager.getCurrentAudioDeviceType() != typeName)
         {
-            deviceManager.setCurrentAudioDeviceType(typeName, true);
+            deviceManager.setCurrentAudioDeviceType(typeName, false);
         }
     }
     else
     {
         if (deviceManager.getCurrentDeviceTypeObject() == nullptr)
         {
-            deviceManager.setCurrentAudioDeviceType("Windows Audio", true);
+            deviceManager.setCurrentAudioDeviceType("Windows Audio", false);
         }
     }
 
     juce::String inputName = (inputDevice != nullptr && juce::String(inputDevice) != "__default" && juce::String(inputDevice) != "__none") ? juce::String(inputDevice) : juce::String();
     juce::String outputName = (outputDevice != nullptr && juce::String(outputDevice) != "__default" && juce::String(outputDevice) != "__none") ? juce::String(outputDevice) : juce::String();
 
-    juce::AudioDeviceManager::AudioDeviceSetup setup;
-    setup.inputDeviceName = (inputMask == 0 || juce::String(inputDevice) == "__none") ? juce::String() : inputName;
-    setup.outputDeviceName = (outputMask == 0 || juce::String(outputDevice) == "__none") ? juce::String() : outputName;
+    bool isNoneInput = (inputMask == 0 || juce::String(inputDevice) == "__none");
+    bool isNoneOutput = (outputMask == 0 || juce::String(outputDevice) == "__none");
 
-    if (setup.inputDeviceName.isEmpty() && setup.outputDeviceName.isEmpty())
+    if (isNoneInput && isNoneOutput)
     {
         deviceManager.closeAudioDevice();
         return 1;
     }
 
+    juce::AudioDeviceManager::AudioDeviceSetup setup;
+    setup.inputDeviceName = isNoneInput ? juce::String() : inputName;
+    setup.outputDeviceName = isNoneOutput ? juce::String() : outputName;
     setup.sampleRate = sampleRate > 0 ? sampleRate : 48000.0;
     setup.bufferSize = bufferSize > 0 ? bufferSize : 512;
 
@@ -250,7 +252,7 @@ int ShallowHost::audioStartOnMessageThread(const char* driver, const char* input
 
     monoMode = (mono != 0);
 
-    auto err = deviceManager.setAudioDeviceSetup(setup, true);
+    auto err = deviceManager.setAudioDeviceSetup(setup, false);
 
     if (err.isNotEmpty())
     {
