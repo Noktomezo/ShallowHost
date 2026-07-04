@@ -40,9 +40,38 @@ export function HomePage() {
   const [devices, setDevices] = useState<AudioDevices>({ inputs: [], outputs: [] })
 
   useEffect(() => {
-    refreshChain()
-    loadFromBackend()
-    invoke<AudioDevices>('get_audio_devices').then(setDevices).catch(() => {})
+    async function init() {
+      refreshChain()
+      await loadFromBackend()
+      const devs = await invoke<AudioDevices>('get_audio_devices')
+      setDevices(devs)
+
+      // Get the freshly updated config from store
+      const currentConfig = useAudioConfigStore.getState().config
+
+      // Auto-select system defaults if config is empty and driver is wasapi
+      if (currentConfig.driver === 'wasapi') {
+        const patch: Partial<AudioConfig> = {}
+        let needsUpdate = false
+        if (!currentConfig.input_device || currentConfig.input_device === '__default') {
+          patch.input_device = devs.inputs.find(d => d.default)?.name ?? '__none'
+          needsUpdate = true
+        }
+        if (!currentConfig.output_device || currentConfig.output_device === '__default') {
+          patch.output_device = devs.outputs.find(d => d.default)?.name ?? '__none'
+          needsUpdate = true
+        }
+        if (needsUpdate) {
+          updateConfigStore(patch)
+          const updated = { ...currentConfig, ...patch }
+          await invoke('set_audio_config', { config: updated })
+          await invoke('restart_audio')
+          const freshDevs = await invoke<AudioDevices>('get_audio_devices')
+          setDevices(freshDevs)
+        }
+      }
+    }
+    init().catch(() => {})
   }, [refreshChain, loadFromBackend])
 
   async function updateConfig(patch: Partial<AudioConfig>) {
@@ -55,8 +84,11 @@ export function HomePage() {
         nextPatch.active_outputs = null
       }
       else {
-        nextPatch.input_device = '__default'
-        nextPatch.output_device = '__default'
+        // Auto-select defaults from the loaded devices list
+        const defaultIn = devices.inputs.find(d => d.default)?.name ?? '__none'
+        const defaultOut = devices.outputs.find(d => d.default)?.name ?? '__none'
+        nextPatch.input_device = defaultIn
+        nextPatch.output_device = defaultOut
         nextPatch.active_inputs = null
         nextPatch.active_outputs = null
       }

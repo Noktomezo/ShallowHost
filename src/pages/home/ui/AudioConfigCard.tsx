@@ -147,28 +147,14 @@ export function AudioConfigCard({
     updateConfig({ active_outputs: next })
   }
 
-  const outputItems = Object.fromEntries(
-    config.driver === 'asio'
-      ? [
-          ['__none', t('home.noneDevice')],
-          ...devices.outputs.map(d => [d.name, d.name]),
-        ]
-      : [
-          ['__default', t('home.defaultDevice')],
-          ...devices.outputs.map(d => [d.name, d.name]),
-        ],
-  )
-  const inputItems = Object.fromEntries(
-    config.driver === 'asio'
-      ? [
-          ['__none', t('home.noneDevice')],
-          ...devices.inputs.map(d => [d.name, d.name]),
-        ]
-      : [
-          ['__default', t('home.defaultDevice')],
-          ...devices.inputs.map(d => [d.name, d.name]),
-        ],
-  )
+  const outputItems = Object.fromEntries([
+    ['__none', t('home.noneDevice')],
+    ...devices.outputs.map(d => [d.name, d.name]),
+  ])
+  const inputItems = Object.fromEntries([
+    ['__none', t('home.noneDevice')],
+    ...devices.inputs.map(d => [d.name, d.name]),
+  ])
   const rateItems = Object.fromEntries(
     SAMPLE_RATES.map(r => [
       String(r),
@@ -234,10 +220,9 @@ export function AudioConfigCard({
                     items={outputItems}
                     devices={devices.outputs}
                     onChange={(v) => {
-                      const val = (v === '__none' || v === '__default') ? null : v
                       updateConfig({
-                        input_device: val,
-                        output_device: val,
+                        input_device: v,
+                        output_device: v,
                         active_inputs: null,
                         active_outputs: null,
                       })
@@ -313,12 +298,13 @@ export function AudioConfigCard({
                   <DeviceSelect
                     label={t('home.outputDevice')}
                     description={t('home.outputDeviceDescription')}
-                    value={config.output_device ?? '__default'}
+                    value={config.output_device ?? '__none'}
                     items={outputItems}
                     devices={devices.outputs}
                     onChange={v =>
-                      updateConfig({ output_device: v === '__default' ? null : v })}
-                    defaultLabel={t('home.defaultDevice')}
+                      updateConfig({ output_device: v })}
+                    defaultLabel={t('home.noneDevice')}
+                    hideDefault={true}
                   />
 
                   <Separator />
@@ -326,12 +312,13 @@ export function AudioConfigCard({
                   <DeviceSelect
                     label={t('home.inputDevice')}
                     description={t('home.inputDeviceDescription')}
-                    value={config.input_device ?? '__default'}
+                    value={config.input_device ?? '__none'}
                     items={inputItems}
                     devices={devices.inputs}
                     onChange={v =>
-                      updateConfig({ input_device: v === '__default' ? null : v })}
-                    defaultLabel={t('home.defaultDevice')}
+                      updateConfig({ input_device: v })}
+                    defaultLabel={t('home.noneDevice')}
+                    hideDefault={true}
                   />
                 </>
               )}

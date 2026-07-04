@@ -178,24 +178,61 @@ int ShallowHost::audioStart(const char* driver, const char* inputDevice, const c
 int ShallowHost::audioStartOnMessageThread(const char* driver, const char* inputDevice, const char* outputDevice,
                                          int sampleRate, int bufferSize, int mono, int inputMask, int outputMask)
 {
+    std::cout << "[sh] audioStartOnMessageThread: driver=" << (driver ? driver : "null")
+              << ", inputDevice=" << (inputDevice ? inputDevice : "null")
+              << ", outputDevice=" << (outputDevice ? outputDevice : "null")
+              << ", inputMask=" << inputMask << ", outputMask=" << outputMask << std::endl;
+
+    juce::String typeName = "Windows Audio";
     if (driver != nullptr && strlen(driver) > 0)
     {
-        juce::String typeName = juce::String(driver).equalsIgnoreCase("asio") ? "ASIO" : "Windows Audio";
+        typeName = juce::String(driver).equalsIgnoreCase("asio") ? "ASIO" : "Windows Audio";
         if (deviceManager.getCurrentAudioDeviceType() != typeName)
         {
-            deviceManager.setCurrentAudioDeviceType(typeName, false);
+            deviceManager.setCurrentAudioDeviceType(typeName, true);
         }
     }
     else
     {
         if (deviceManager.getCurrentDeviceTypeObject() == nullptr)
         {
-            deviceManager.setCurrentAudioDeviceType("Windows Audio", false);
+            deviceManager.setCurrentAudioDeviceType("Windows Audio", true);
         }
     }
 
     juce::String inputName = (inputDevice != nullptr && juce::String(inputDevice) != "__default" && juce::String(inputDevice) != "__none") ? juce::String(inputDevice) : juce::String();
     juce::String outputName = (outputDevice != nullptr && juce::String(outputDevice) != "__default" && juce::String(outputDevice) != "__none") ? juce::String(outputDevice) : juce::String();
+
+    juce::AudioIODeviceType* typeObject = nullptr;
+    for (auto* type : deviceManager.getAvailableDeviceTypes())
+    {
+        if (type->getTypeName() == typeName)
+        {
+            typeObject = type;
+            break;
+        }
+    }
+
+    if (typeObject != nullptr)
+    {
+        typeObject->scanForDevices();
+
+        if (inputDevice == nullptr || juce::String(inputDevice) == "__default" || juce::String(inputDevice).isEmpty())
+        {
+            int defaultIdx = typeObject->getDefaultDeviceIndex(true);
+            auto names = typeObject->getDeviceNames(true);
+            if (defaultIdx >= 0 && defaultIdx < names.size())
+                inputName = names[defaultIdx];
+        }
+
+        if (outputDevice == nullptr || juce::String(outputDevice) == "__default" || juce::String(outputDevice).isEmpty())
+        {
+            int defaultIdx = typeObject->getDefaultDeviceIndex(false);
+            auto names = typeObject->getDeviceNames(false);
+            if (defaultIdx >= 0 && defaultIdx < names.size())
+                outputName = names[defaultIdx];
+        }
+    }
 
     bool isNoneInput = (inputMask == 0 || juce::String(inputDevice) == "__none");
     bool isNoneOutput = (outputMask == 0 || juce::String(outputDevice) == "__none");
@@ -203,6 +240,7 @@ int ShallowHost::audioStartOnMessageThread(const char* driver, const char* input
     if (isNoneInput && isNoneOutput)
     {
         deviceManager.closeAudioDevice();
+        std::cout << "[sh] both input and output are none/disabled, closed device." << std::endl;
         return 1;
     }
 
@@ -213,46 +251,59 @@ int ShallowHost::audioStartOnMessageThread(const char* driver, const char* input
     setup.bufferSize = bufferSize > 0 ? bufferSize : 512;
 
     setup.inputChannels.clear();
-    if (inputMask >= 0)
+    if (!isNoneInput)
     {
-        for (int i = 0; i < 32; ++i)
+        if (inputMask >= 0)
         {
-            if ((inputMask & (1 << i)) != 0)
-                setup.inputChannels.setBit(i);
-        }
-    }
-    else
-    {
-        if (mono)
-        {
-            setup.inputChannels.setBit(0);
+            for (int i = 0; i < 32; ++i)
+            {
+                if ((inputMask & (1 << i)) != 0)
+                    setup.inputChannels.setBit(i);
+            }
         }
         else
         {
-            setup.inputChannels.setRange(0, 2, true);
+            if (mono)
+            {
+                setup.inputChannels.setBit(0);
+            }
+            else
+            {
+                setup.inputChannels.setRange(0, 2, true);
+            }
         }
     }
 
     setup.outputChannels.clear();
-    if (outputMask >= 0)
+    if (!isNoneOutput)
     {
-        for (int i = 0; i < 32; ++i)
+        if (outputMask >= 0)
         {
-            if ((outputMask & (1 << i)) != 0)
-                setup.outputChannels.setBit(i);
+            for (int i = 0; i < 32; ++i)
+            {
+                if ((outputMask & (1 << i)) != 0)
+                    setup.outputChannels.setBit(i);
+            }
+        }
+        else
+        {
+            setup.outputChannels.setRange(0, 2, true);
         }
     }
-    else
-    {
-        setup.outputChannels.setRange(0, 2, true);
-    }
 
-    setup.useDefaultInputChannels = (inputMask < 0) && setup.inputDeviceName.isEmpty();
-    setup.useDefaultOutputChannels = (outputMask < 0) && setup.outputDeviceName.isEmpty();
+    setup.useDefaultInputChannels = (inputMask < 0) && setup.inputDeviceName.isEmpty() && !isNoneInput;
+    setup.useDefaultOutputChannels = (outputMask < 0) && setup.outputDeviceName.isEmpty() && !isNoneOutput;
+
+    std::cout << "[sh] setup: inputDeviceName=\"" << setup.inputDeviceName.toStdString()
+              << "\", useDefaultInputChannels=" << (setup.useDefaultInputChannels ? "true" : "false")
+              << ", inputChannelsCount=" << setup.inputChannels.countNumberOfSetBits()
+              << ", outputDeviceName=\"" << setup.outputDeviceName.toStdString()
+              << "\", useDefaultOutputChannels=" << (setup.useDefaultOutputChannels ? "true" : "false")
+              << ", outputChannelsCount=" << setup.outputChannels.countNumberOfSetBits() << std::endl;
 
     monoMode = (mono != 0);
 
-    auto err = deviceManager.setAudioDeviceSetup(setup, false);
+    auto err = deviceManager.setAudioDeviceSetup(setup, true);
 
     if (err.isNotEmpty())
     {

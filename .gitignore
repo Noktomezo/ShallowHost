@@ -22,3 +22,12 @@ dist-ssr
 *.njsproj
 *.sln
 *.sw?
+
+# Project-specific ignored folders
+.omo/
+src-tauri/vendor/
+src-tauri/cpp/build/
+src-tauri/*.obj
+src-tauri/icons/64x64.png
+src-tauri/icons/android/
+src-tauri/icons/ios/
