@@ -33,7 +33,7 @@
       "bufferSize": "Buffer size",
       "bufferSizeDescription": "Lower = less latency, more load.",
       "mono": "Mono",
-      "monoDescription": "Duplicate left channel to both ears.",
+      "monoDescription": "Convert stereo signal to mono.",
       "chain": "Plugin Chain",
       "chainEmpty": "No plugins in the chain.",
       "bypass": "Bypass",
