@@ -5,70 +5,89 @@ import {
   createRouter,
   Outlet,
   RouterProvider,
-} from "@tanstack/react-router";
-import { Titlebar } from "@/widgets/titlebar";
-import { Sidebar } from "@/widgets/sidebar";
-import { ScrollArea } from "@/shared/ui/scroll-area";
-import { TooltipProvider } from "@/shared/ui/tooltip";
-import { useUIStore } from "@/shared/model/ui-store";
-import { HomePage } from "@/pages/home";
-import { PluginsPage } from "@/pages/plugins";
-import { SettingsPage } from "@/pages/settings";
-import "./styles.css";
+} from '@tanstack/react-router'
+import { HomePage } from '@/pages/home'
+import { PluginsPage } from '@/pages/plugins'
+import { SettingsPage } from '@/pages/settings'
+import { useChainStore } from '@/shared/model/chain-store'
+import { useUIStore } from '@/shared/model/ui-store'
+import { ScrollArea } from '@/shared/ui/scroll-area'
+import { TooltipProvider } from '@/shared/ui/tooltip'
+import { Sidebar } from '@/widgets/sidebar'
+import { Titlebar } from '@/widgets/titlebar'
+
+import './styles.css'
 
 function RootLayout() {
-  const collapsed = useUIStore((s) => s.sidebarCollapsed);
-  const toggle = useUIStore((s) => s.toggleSidebar);
+  const collapsed = useUIStore(s => s.sidebarCollapsed)
+  const toggle = useUIStore(s => s.toggleSidebar)
+  const loading = useChainStore(s => s.loading)
+  const loadingMessage = useChainStore(s => s.loadingMessage)
 
   return (
     <TooltipProvider>
       <div className="flex h-screen w-screen flex-col overflow-hidden bg-background text-foreground">
         <Titlebar collapsed={collapsed} onToggleCollapse={toggle} />
-        <div className="flex min-h-0 flex-1">
+        <div className="flex min-h-0 flex-1 bg-sidebar">
           <Sidebar collapsed={collapsed} />
-          <main className="min-w-0 flex-1 overflow-hidden rounded-tl-lg bg-background">
+          <main className="relative min-w-0 flex-1 overflow-hidden rounded-tl-[8px] bg-background">
             <ScrollArea className="h-full">
               <div className="flex min-h-full flex-col p-4">
                 <Outlet />
               </div>
             </ScrollArea>
+            {loading && (
+              <div className="absolute inset-0 z-50 flex flex-col items-center justify-center bg-background/60 backdrop-blur-md transition-all duration-300">
+                <div className="flex flex-col items-center gap-4 rounded-xl border border-border bg-card p-6 shadow-2xl animate-in fade-in zoom-in-95 duration-200">
+                  <div className="relative flex h-12 w-12 items-center justify-center">
+                    <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-primary/20 opacity-75"></span>
+                    <div className="h-8 w-8 animate-spin rounded-full border-4 border-primary border-t-transparent"></div>
+                  </div>
+                  {loadingMessage && (
+                    <p className="text-sm font-medium text-foreground tracking-wide animate-pulse">
+                      {loadingMessage}
+                    </p>
+                  )}
+                </div>
+              </div>
+            )}
           </main>
         </div>
       </div>
     </TooltipProvider>
-  );
+  )
 }
 
-const rootRoute = createRootRoute({ component: RootLayout });
+const rootRoute = createRootRoute({ component: RootLayout })
 const homeRoute = createRoute({
   getParentRoute: () => rootRoute,
-  path: "/",
+  path: '/',
   component: HomePage,
-});
+})
 const pluginsRoute = createRoute({
   getParentRoute: () => rootRoute,
-  path: "/plugins",
+  path: '/plugins',
   component: PluginsPage,
-});
+})
 const settingsRoute = createRoute({
   getParentRoute: () => rootRoute,
-  path: "/settings",
+  path: '/settings',
   component: SettingsPage,
-});
+})
 
-const routeTree = rootRoute.addChildren([homeRoute, pluginsRoute, settingsRoute]);
+const routeTree = rootRoute.addChildren([homeRoute, pluginsRoute, settingsRoute])
 
-export const router = createRouter({
+const router = createRouter({
   routeTree,
   history: createHashHistory(),
-});
+})
 
-declare module "@tanstack/react-router" {
+declare module '@tanstack/react-router' {
   interface Register {
-    router: typeof router;
+    router: typeof router
   }
 }
 
 export function App() {
-  return <RouterProvider router={router} />;
+  return <RouterProvider router={router} />
 }

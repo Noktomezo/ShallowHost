@@ -18,6 +18,11 @@
       "audioDescription": "Устройства и параметры звука.",
       "driver": "Драйвер",
       "driverDescription": "Аудио API для ввода/вывода.",
+      "device": "Устройство",
+      "deviceDescription": "Аудиоустройство ASIO.",
+      "activeInputChannels": "Активные входные каналы",
+      "activeOutputChannels": "Активные выходные каналы",
+      "noneDevice": "Отсутствует",
       "outputDevice": "Устройство вывода",
       "outputDeviceDescription": "Куда направить звук.",
       "inputDevice": "Устройство ввода",
@@ -52,7 +57,8 @@
       "reveal": "Показать в папке",
       "remove": "Удалить",
       "addToChain": "Добавить в цепочку",
-      "alreadyInChain": "Уже в цепочке"
+      "alreadyInChain": "Уже в цепочке",
+      "loading": "Загрузка плагина..."
     },
     "settings": {
       "title": "Настройки",

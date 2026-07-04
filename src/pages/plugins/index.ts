@@ -1,1 +1,1 @@
-export { PluginsPage } from "./ui/PluginsPage";
+export { PluginsPage } from './ui/PluginsPage'

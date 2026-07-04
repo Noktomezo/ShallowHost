@@ -1,17 +1,24 @@
 use crate::engine::audio_io::AudioEngine;
-use crate::scanner::vst3::{scan_vst3_raw, ScannedPlugin};
 use std::process::Command;
+
+#[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
+pub struct ScannedPlugin {
+    pub name: String,
+    pub vendor: String,
+    pub version: String,
+    pub category: String,
+    pub path: String,
+    pub unique_id: String,
+    pub format: String,
+    pub has_editor: bool,
+    pub accepts_midi: bool,
+}
 
 #[tauri::command]
 pub async fn scan_plugins(
     engine: tauri::State<'_, AudioEngine>,
 ) -> Result<Vec<ScannedPlugin>, String> {
-    let infos = tauri::async_runtime::spawn_blocking(scan_vst3_raw)
-        .await
-        .map_err(|e| e.to_string())??;
-    let plugins: Vec<ScannedPlugin> = infos.iter().map(ScannedPlugin::from_info).collect();
-    engine.cache_scan_results(infos);
-    Ok(plugins)
+    engine.scan_plugins()
 }
 
 #[tauri::command]

@@ -2,11 +2,11 @@ use crate::engine::audio_io::AudioEngine;
 use crate::engine::chain::ChainItem;
 
 #[tauri::command]
-pub fn add_to_chain(
+pub async fn add_to_chain(
     engine: tauri::State<'_, AudioEngine>,
     plugin_id: String,
 ) -> Result<(), String> {
-    engine.add_to_chain(plugin_id)
+    engine.add_to_chain(&plugin_id)
 }
 
 #[tauri::command]

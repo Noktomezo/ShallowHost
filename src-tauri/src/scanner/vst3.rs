@@ -95,8 +95,11 @@ fn walk_for_vst3_parents(
 }
 
 pub fn load_vst3(info: &PluginInfo) -> Result<Vst3Plugin, String> {
-    let scanner = Vst3Scanner::new();
-    scanner.load(info).map_err(|e| e.to_string())
+    let info = info.clone();
+    crate::run_on_main_thread(move || {
+        let scanner = Vst3Scanner::new();
+        scanner.load(&info).map_err(|e| e.to_string())
+    })?
 }
 
 impl ScannedPlugin {

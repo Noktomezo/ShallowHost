@@ -18,6 +18,11 @@
       "audioDescription": "Audio devices and parameters.",
       "driver": "Driver",
       "driverDescription": "Audio API for input/output.",
+      "device": "Device",
+      "deviceDescription": "ASIO audio device.",
+      "activeInputChannels": "Active input channels",
+      "activeOutputChannels": "Active output channels",
+      "noneDevice": "None",
       "outputDevice": "Output device",
       "outputDeviceDescription": "Where to send audio.",
       "inputDevice": "Input device",
@@ -52,7 +57,8 @@
       "reveal": "Reveal in folder",
       "remove": "Remove",
       "addToChain": "Add to chain",
-      "alreadyInChain": "Already in chain"
+      "alreadyInChain": "Already in chain",
+      "loading": "Loading plugin..."
     },
     "settings": {
       "title": "Settings",

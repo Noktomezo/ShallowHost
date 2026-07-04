@@ -1,21 +1,21 @@
-import { create } from "zustand";
-import { persist, createJSONStorage } from "zustand/middleware";
-import { tauriStorage } from "@/shared/lib/tauri-storage";
+import { create } from 'zustand'
+import { createJSONStorage, persist } from 'zustand/middleware'
+import { tauriStorage } from '@/shared/lib/tauri-storage'
 
 interface UIState {
-  sidebarCollapsed: boolean;
-  toggleSidebar: () => void;
+  sidebarCollapsed: boolean
+  toggleSidebar: () => void
 }
 
 export const useUIStore = create<UIState>()(
   persist(
-    (set) => ({
+    set => ({
       sidebarCollapsed: false,
-      toggleSidebar: () => set((s) => ({ sidebarCollapsed: !s.sidebarCollapsed })),
+      toggleSidebar: () => set(s => ({ sidebarCollapsed: !s.sidebarCollapsed })),
     }),
     {
-      name: "ui",
+      name: 'ui',
       storage: createJSONStorage(() => tauriStorage),
     },
   ),
-);
+)

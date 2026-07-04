@@ -10,9 +10,6 @@ use truce_rack::core::PluginInfo;
 use crate::engine::chain::{Chain, ChainEntry};
 use crate::scanner::vst3::load_vst3;
 
-const DEFAULT_SAMPLE_RATE: f64 = 48000.0;
-const MAX_BLOCK_SIZE: usize = 4096;
-
 #[derive(Serialize, Deserialize, Clone)]
 pub struct PersistedScanEntry {
     pub name: String,
@@ -150,7 +147,7 @@ pub fn load_chain(path: &Path) -> Result<Vec<PersistedPlugin>, String> {
     Ok(state.chain)
 }
 
-pub fn restore_chain(plugins: Vec<PersistedPlugin>) -> Chain {
+pub fn restore_chain(plugins: Vec<PersistedPlugin>, sample_rate: f64, block_size: usize) -> Chain {
     eprintln!(
         "[persist] restore_chain: {} plugins from disk",
         plugins.len()
@@ -186,13 +183,13 @@ pub fn restore_chain(plugins: Vec<PersistedPlugin>) -> Chain {
         // Activate first, THEN load state. Some plugins (e.g. Auburn Sounds
         // Renegate) reset parameter values in setupProcessing/setActive,
         // so loading state before activate loses it.
-        let _ = plugin.activate(BusLayout::stereo(), DEFAULT_SAMPLE_RATE, MAX_BLOCK_SIZE);
+        let _ = plugin.activate(BusLayout::stereo(), sample_rate, block_size);
         if !state_bytes.is_empty() {
             if let Err(e) = plugin.load_state(&state_bytes) {
                 eprintln!("[shallow-host] failed to restore state for {}: {e}", p.name);
             }
         }
-        let entry = ChainEntry::new(&info, Box::new(plugin));
+        let entry = ChainEntry::new(&info, plugin);
         entry
             .bypassed
             .store(p.bypassed, std::sync::atomic::Ordering::Relaxed);

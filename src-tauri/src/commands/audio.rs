@@ -1,12 +1,12 @@
 use crate::engine::audio_io::{AudioConfig, AudioDevices, AudioEngine};
 
 #[tauri::command]
-pub fn start_audio(engine: tauri::State<'_, AudioEngine>) -> Result<(), String> {
+pub async fn start_audio(engine: tauri::State<'_, AudioEngine>) -> Result<(), String> {
     engine.start()
 }
 
 #[tauri::command]
-pub fn stop_audio(engine: tauri::State<'_, AudioEngine>) -> Result<(), String> {
+pub async fn stop_audio(engine: tauri::State<'_, AudioEngine>) -> Result<(), String> {
     engine.stop()
 }
 
@@ -32,4 +32,10 @@ pub fn set_audio_config(
 ) -> Result<(), String> {
     engine.set_config(config);
     Ok(())
+}
+
+#[tauri::command]
+pub async fn restart_audio(engine: tauri::State<'_, AudioEngine>) -> Result<(), String> {
+    let _ = engine.stop();
+    engine.start()
 }
