@@ -6,11 +6,25 @@ set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_EXTENSIONS OFF)
 
-if(NOT EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/../vendor/juce/CMakeLists.txt")
-    message(FATAL_ERROR "JUCE 8 must be available at ../vendor/juce")
-endif()
+include(FetchContent)
 
-add_subdirectory(../vendor/juce juce)
+set(JUCE_LOCAL_DIR "${CMAKE_CURRENT_SOURCE_DIR}/../vendor/juce")
+
+if(EXISTS "${JUCE_LOCAL_DIR}/CMakeLists.txt")
+    add_subdirectory(${JUCE_LOCAL_DIR} juce)
+    set(JUCE_MODULES_DIR "${JUCE_LOCAL_DIR}/modules")
+else()
+    message(STATUS "JUCE not found at ${JUCE_LOCAL_DIR}, downloading via FetchContent...")
+    FetchContent_Declare(
+        juce
+        GIT_REPOSITORY https://github.com/juce-framework/JUCE.git
+        GIT_TAG        8.0.4
+    )
+    FetchContent_MakeAvailable(juce)
+
+    FetchContent_GetProperties(juce)
+    set(JUCE_MODULES_DIR "${juce_SOURCE_DIR}/modules")
+endif()
 
 add_library(shallow_host_cpp SHARED
     src/host.cpp
@@ -28,7 +42,7 @@ target_compile_definitions(shallow_host_cpp PRIVATE
 
 target_include_directories(shallow_host_cpp PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}/src
-    ${CMAKE_CURRENT_SOURCE_DIR}/../vendor/juce/modules
+    ${JUCE_MODULES_DIR}
 )
 
 target_link_libraries(shallow_host_cpp PRIVATE
