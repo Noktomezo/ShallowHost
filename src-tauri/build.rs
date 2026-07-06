@@ -90,6 +90,12 @@ fn main() {
                 println!("cargo:warning=Failed to copy DLL to deps: {e}");
             }
         }
+
+        // Copy to src-tauri root so the Tauri bundler can find it as a resource
+        let dest_dll_root = std::env::current_dir().unwrap().join(dll_name);
+        if let Err(e) = std::fs::copy(&src_dll, &dest_dll_root) {
+            println!("cargo:warning=Failed to copy DLL to src-tauri root: {e}");
+        }
     }
 
     tauri_build::build();
