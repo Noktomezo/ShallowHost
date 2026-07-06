@@ -184,7 +184,7 @@ export function AudioConfigCard({
         </div>
 
         {/* Custom sliding toggle between Stereo and Mono */}
-        <div className="relative inline-flex items-center rounded-md bg-muted/60 p-0 border border-border/40 select-none text-xs font-semibold h-9 w-40 overflow-hidden shrink-0">
+        <div className="relative inline-flex items-center rounded-md bg-muted/60 p-0 border border-border/40 select-none text-xs font-semibold h-8 w-40 overflow-hidden shrink-0">
           {/* Moving background thumb */}
           <div
             className={`absolute top-0 bottom-0 left-0 rounded-[calc(var(--radius)-1px)] transition-all duration-300 ease-in-out w-[79px] ${
