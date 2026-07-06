@@ -4,6 +4,7 @@ import { AnimatePresence, domAnimation, LazyMotion, m } from 'framer-motion'
 import { Mic, Plug, Settings } from 'lucide-react'
 import { useTranslation } from 'react-i18next'
 import { cn } from '@/shared/lib/utils'
+import { Tooltip, TooltipContent, TooltipTrigger } from '@/shared/ui/tooltip'
 
 interface SidebarProps {
   collapsed: boolean
@@ -26,7 +27,7 @@ function SideNavItem({
   const location = useLocation()
   const isActive = location.pathname === to
 
-  return (
+  const link = (
     <Link
       to={to}
       aria-label={label}
@@ -54,6 +55,17 @@ function SideNavItem({
       </AnimatePresence>
     </Link>
   )
+
+  if (collapsed) {
+    return (
+      <Tooltip>
+        <TooltipTrigger render={link} />
+        <TooltipContent side="right">{label}</TooltipContent>
+      </Tooltip>
+    )
+  }
+
+  return link
 }
 
 export function Sidebar({ collapsed }: SidebarProps) {
