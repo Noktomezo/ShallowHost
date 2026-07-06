@@ -76,6 +76,7 @@
       "themeDark": "Тёмная",
       "language": "Язык",
       "languageDescription": "Язык интерфейса приложения.",
+      "langSystem": "Системный",
       "langRu": "Русский",
       "langEn": "English"
     }

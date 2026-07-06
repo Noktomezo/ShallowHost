@@ -1,4 +1,4 @@
-import { Monitor, Moon, Sun } from 'lucide-react'
+import { Globe, Monitor, Moon, Sun } from 'lucide-react'
 import { useTranslation } from 'react-i18next'
 import { useLanguageStore } from '@/shared/model/language-store'
 import { useThemeStore } from '@/shared/model/theme-store'
@@ -16,6 +16,31 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/shared/ui/select'
+
+function FlagRU() {
+  return (
+    <svg className="size-4 shrink-0 rounded-xs border border-border/20" viewBox="0 0 9 6" data-icon="inline-start">
+      <rect fill="#fff" width="9" height="2" y="0" />
+      <rect fill="#0039a6" width="9" height="2" y="2" />
+      <rect fill="#d52b1e" width="9" height="2" y="4" />
+    </svg>
+  )
+}
+
+function FlagEN() {
+  return (
+    <svg className="size-4 shrink-0 rounded-xs border border-border/20" viewBox="0 0 60 30" data-icon="inline-start">
+      <clipPath id="s">
+        <path d="M0,0 v30 h60 v-30 z" />
+      </clipPath>
+      <path d="M0,0 L60,30 M60,0 L0,30" stroke="#00247d" strokeWidth="6" clipPath="url(#s)" />
+      <path d="M0,0 L60,30 M60,0 L0,30" stroke="#fff" strokeWidth="10" clipPath="url(#s)" />
+      <path d="M0,0 L60,30 M60,0 L0,30" stroke="#cf142b" strokeWidth="6" clipPath="url(#s)" />
+      <path d="M30,0 v30 M0,15 h60" stroke="#fff" strokeWidth="10" />
+      <path d="M30,0 v30 M0,15 h60" stroke="#cf142b" strokeWidth="6" />
+    </svg>
+  )
+}
 
 export function SettingsPage() {
   const { t } = useTranslation()
@@ -50,15 +75,15 @@ export function SettingsPage() {
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="system">
-                  <Monitor data-icon="inline-start" />
+                  <Monitor className="size-4" data-icon="inline-start" />
                   {t('settings.themeSystem')}
                 </SelectItem>
                 <SelectItem value="light">
-                  <Sun data-icon="inline-start" />
+                  <Sun className="size-4" data-icon="inline-start" />
                   {t('settings.themeLight')}
                 </SelectItem>
                 <SelectItem value="dark">
-                  <Moon data-icon="inline-start" />
+                  <Moon className="size-4" data-icon="inline-start" />
                   {t('settings.themeDark')}
                 </SelectItem>
               </SelectContent>
@@ -74,8 +99,9 @@ export function SettingsPage() {
           <CardAction className="self-center">
             <Select
               value={language}
-              onValueChange={v => setLanguage(v as 'ru' | 'en')}
+              onValueChange={v => setLanguage(v as 'system' | 'ru' | 'en')}
               items={{
+                system: t('settings.langSystem'),
                 ru: t('settings.langRu'),
                 en: t('settings.langEn'),
               }}
@@ -84,10 +110,16 @@ export function SettingsPage() {
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
+                <SelectItem value="system">
+                  <Globe className="size-4" data-icon="inline-start" />
+                  {t('settings.langSystem')}
+                </SelectItem>
                 <SelectItem value="ru">
+                  <FlagRU />
                   {t('settings.langRu')}
                 </SelectItem>
                 <SelectItem value="en">
+                  <FlagEN />
                   {t('settings.langEn')}
                 </SelectItem>
               </SelectContent>
