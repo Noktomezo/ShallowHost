@@ -46,7 +46,9 @@
       "parameters": "Plugin parameters",
       "noParameters": "This plugin has no parameters.",
       "openGui": "Open interface",
-      "dragHandle": "Drag to reorder"
+      "dragHandle": "Drag to reorder",
+      "clearChain": "Clear all",
+      "goToPlugins": "Add plugins"
     },
     "plugins": {
       "title": "Plugins",

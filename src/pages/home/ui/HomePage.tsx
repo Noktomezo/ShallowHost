@@ -13,14 +13,17 @@ import {
   SortableContext,
   verticalListSortingStrategy,
 } from '@dnd-kit/sortable'
+import { Link } from '@tanstack/react-router'
 import { invoke } from '@tauri-apps/api/core'
-import { Plus } from 'lucide-react'
+import { Plus, Trash2 } from 'lucide-react'
 import { useEffect, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { useAudioConfigStore } from '@/shared/model/audio-config-store'
 import { useChainStore } from '@/shared/model/chain-store'
+import { Button } from '@/shared/ui/button'
 import {
   Card,
+  CardAction,
   CardContent,
   CardDescription,
   CardHeader,
@@ -38,6 +41,18 @@ export function HomePage() {
   const updateConfigStore = useAudioConfigStore(s => s.updateConfig)
   const loadFromBackend = useAudioConfigStore(s => s.loadFromBackend)
   const [devices, setDevices] = useState<AudioDevices>({ inputs: [], outputs: [] })
+
+  const clearChain = async () => {
+    try {
+      for (const p of chain) {
+        await invoke('remove_from_chain', { pluginId: p.id })
+      }
+      await refreshChain()
+    }
+    catch (e) {
+      console.error(e)
+    }
+  }
 
   useEffect(() => {
     async function init() {
@@ -151,6 +166,28 @@ export function HomePage() {
         <CardHeader className="gap-0.5">
           <CardTitle>{t('home.chain')}</CardTitle>
           <CardDescription>{t('home.addHint')}</CardDescription>
+          <CardAction className="flex items-center gap-1.5 self-center">
+            <Link to="/plugins">
+              <Button
+                variant="ghost"
+                size="sm"
+                className="cursor-pointer hover:!bg-primary/10 hover:!text-primary hover:!border-primary/20"
+              >
+                <Plus className="size-4 mr-1.5" />
+                {t('home.goToPlugins')}
+              </Button>
+            </Link>
+            <Button
+              variant="ghost"
+              size="sm"
+              disabled={chain.length === 0}
+              onClick={clearChain}
+              className="cursor-pointer hover:!bg-red/10 hover:!text-red hover:!border-red/20 disabled:pointer-events-none disabled:opacity-50"
+            >
+              <Trash2 className="size-4 mr-1.5" />
+              {t('home.clearChain')}
+            </Button>
+          </CardAction>
         </CardHeader>
         <CardContent>
           {chain.length > 0
