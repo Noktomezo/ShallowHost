@@ -44,7 +44,8 @@ export const usePluginStore = create<PluginStore>()(
       plugins: [],
       vst2Paths: DEFAULT_VST2_PATHS,
       vst3Paths: DEFAULT_VST3_PATHS,
-      setPlugins: plugins => set({ plugins }),
+      setPlugins: plugins =>
+        set({ plugins: [...plugins].sort((a, b) => a.name.localeCompare(b.name)) }),
       removePlugin: id =>
         set(s => ({ plugins: s.plugins.filter(p => p.unique_id !== id) })),
       addVst2Path: path =>
