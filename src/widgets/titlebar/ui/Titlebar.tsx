@@ -64,9 +64,10 @@ function TitlebarButton({
       variant="ghost"
       size="icon"
       className={cn(
-        variant === 'minimize' && 'text-yellow hover:bg-yellow/15 hover:border-yellow/30',
-        variant === 'maximize' && 'text-green hover:bg-green/15 hover:border-green/30',
-        variant === 'close' && 'text-red hover:bg-red/15 hover:border-red/30',
+        'text-muted-foreground transition-all duration-200',
+        variant === 'minimize' && 'hover:bg-yellow hover:text-primary-foreground hover:border-yellow/20',
+        variant === 'maximize' && 'hover:bg-green hover:text-primary-foreground hover:border-green/20',
+        variant === 'close' && 'hover:bg-red hover:text-destructive-foreground hover:border-red/20',
       )}
       {...props}
     >
