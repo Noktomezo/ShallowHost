@@ -324,7 +324,7 @@ export function PluginsPage() {
               size="sm"
               onClick={() => setSettingsOpen(false)}
             >
-              Close
+              {t('titlebar.close')}
             </Button>
           </div>
         </DialogContent>
