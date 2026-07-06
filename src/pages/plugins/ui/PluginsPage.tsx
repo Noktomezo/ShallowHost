@@ -81,7 +81,7 @@ export function PluginsPage() {
 
   return (
     <div className="flex flex-1 flex-col gap-0.5">
-      <div className="flex items-start justify-between gap-2">
+      <div className="flex items-center justify-between gap-2">
         <div className="flex flex-col gap-0.5">
           <h1 className="text-xl font-semibold">{t('plugins.title')}</h1>
           <p className="text-sm text-muted-foreground">
