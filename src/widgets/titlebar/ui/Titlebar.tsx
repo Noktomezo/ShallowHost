@@ -1,3 +1,4 @@
+import { Button as ButtonPrimitive } from '@base-ui/react/button'
 import { getCurrentWindow } from '@tauri-apps/api/window'
 import { Minus, PanelLeftClose, PanelLeftOpen, Square, X } from 'lucide-react'
 import { useTranslation } from 'react-i18next'
@@ -58,13 +59,11 @@ function TitlebarButton({
 }: {
   children: React.ReactNode
   variant: 'minimize' | 'maximize' | 'close'
-} & Omit<React.ComponentProps<typeof Button>, 'variant' | 'size'>) {
+} & React.ComponentProps<typeof ButtonPrimitive>) {
   return (
-    <Button
-      variant="ghost"
-      size="icon"
+    <ButtonPrimitive
       className={cn(
-        'text-muted-foreground transition-all duration-200',
+        'inline-flex shrink-0 items-center justify-center rounded-lg border border-transparent bg-clip-padding transition-all duration-200 outline-none select-none size-8 cursor-pointer text-muted-foreground bg-transparent',
         variant === 'minimize' && 'hover:bg-yellow hover:text-primary-foreground hover:border-yellow/20',
         variant === 'maximize' && 'hover:bg-green hover:text-primary-foreground hover:border-green/20',
         variant === 'close' && 'hover:bg-red hover:text-destructive-foreground hover:border-red/20',
@@ -72,6 +71,6 @@ function TitlebarButton({
       {...props}
     >
       {children}
-    </Button>
+    </ButtonPrimitive>
   )
 }
