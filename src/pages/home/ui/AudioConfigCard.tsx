@@ -189,7 +189,7 @@ export function AudioConfigCard({
           <div
             className={`absolute top-0 bottom-0 left-0 rounded-[calc(var(--radius)-1px)] transition-all duration-300 ease-in-out w-[79px] ${
               config.mono
-                ? 'translate-x-[79px] bg-[#5E409D] dark:bg-[#8B7EC8] shadow-sm shadow-[#5E409D]/20 dark:shadow-[#8B7EC8]/20'
+                ? 'translate-x-[79px] bg-purple shadow-sm shadow-purple/20'
                 : 'translate-x-0 bg-primary shadow-sm shadow-primary/20'
             }`}
           />
