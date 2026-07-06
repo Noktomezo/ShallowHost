@@ -29,6 +29,7 @@ import {
   CardHeader,
   CardTitle,
 } from '@/shared/ui/card'
+import { Tooltip, TooltipContent, TooltipTrigger } from '@/shared/ui/tooltip'
 import { AudioConfigCard } from './AudioConfigCard'
 import { SortableChainCard } from './SortableChainCard'
 
@@ -168,25 +169,37 @@ export function HomePage() {
           <CardDescription>{t('home.addHint')}</CardDescription>
           <CardAction className="flex items-center gap-1.5 self-center">
             <Link to="/plugins">
-              <Button
-                variant="ghost"
-                size="sm"
-                className="cursor-pointer hover:!bg-primary/10 hover:!text-primary hover:!border-primary/20"
-              >
-                <Plus className="size-4 mr-1.5" />
-                {t('home.goToPlugins')}
-              </Button>
+              <Tooltip>
+                <TooltipTrigger render={(
+                  <Button
+                    variant="outline"
+                    size="icon-sm"
+                    className="cursor-pointer hover:!bg-primary/10 hover:!text-primary hover:!border-primary/20"
+                    aria-label={t('home.goToPlugins')}
+                  >
+                    <Plus className="size-4" />
+                  </Button>
+                )}
+                />
+                <TooltipContent>{t('home.goToPlugins')}</TooltipContent>
+              </Tooltip>
             </Link>
-            <Button
-              variant="ghost"
-              size="sm"
-              disabled={chain.length === 0}
-              onClick={clearChain}
-              className="cursor-pointer hover:!bg-red/10 hover:!text-red hover:!border-red/20 disabled:pointer-events-none disabled:opacity-50"
-            >
-              <Trash2 className="size-4 mr-1.5" />
-              {t('home.clearChain')}
-            </Button>
+            <Tooltip>
+              <TooltipTrigger render={(
+                <Button
+                  variant="outline"
+                  size="icon-sm"
+                  disabled={chain.length === 0}
+                  onClick={clearChain}
+                  className="cursor-pointer hover:!bg-red/10 hover:!text-red hover:!border-red/20 disabled:pointer-events-none disabled:opacity-50"
+                  aria-label={t('home.clearChain')}
+                >
+                  <Trash2 className="size-4" />
+                </Button>
+              )}
+              />
+              <TooltipContent>{t('home.clearChain')}</TooltipContent>
+            </Tooltip>
           </CardAction>
         </CardHeader>
         <CardContent>
