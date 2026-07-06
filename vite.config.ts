@@ -8,10 +8,31 @@ const host = process.env.TAURI_DEV_HOST
 
 // https://vite.dev/config/
 export default defineConfig(async () => ({
-  plugins: [tailwindcss(), react()],
+  plugins: [
+    tailwindcss(),
+    react(),
+  ],
   resolve: {
     alias: {
       '@': path.resolve(__dirname, './src'),
+    },
+  },
+  build: {
+    chunkSizeWarningLimit: 800,
+    rollupOptions: {
+      output: {
+        manualChunks(id) {
+          if (id.includes('node_modules')) {
+            if (id.includes('lucide-react')) {
+              return 'icons'
+            }
+            if (id.includes('@dnd-kit')) {
+              return 'dnd'
+            }
+            return 'vendor'
+          }
+        },
+      },
     },
   },
   // Vite options tailored for Tauri development and only applied in `tauri dev` or `tauri build`
