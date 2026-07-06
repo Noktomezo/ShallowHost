@@ -22,6 +22,7 @@ tauri = { version = "2", features = ["unstable"] }
 serde = { version = "1", features = ["derive"] }
 serde_json = "1"
 tauri-plugin-store = "2"
+rfd = "0.17.2"
 
 [profile.release]
 opt-level = 3              # Maximum optimizations (default, but explicit is good)

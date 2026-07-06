@@ -169,8 +169,10 @@ impl AudioEngine {
         *self.running.lock().unwrap()
     }
 
-    pub fn scan_plugins(&self) -> Result<Vec<ScannedPlugin>, String> {
-        let json = ffi::scan_plugins();
+    pub fn scan_plugins(&self, vst2_paths: Vec<String>, vst3_paths: Vec<String>) -> Result<Vec<ScannedPlugin>, String> {
+        let vst2_json = serde_json::to_string(&vst2_paths).unwrap_or_else(|_| "[]".to_string());
+        let vst3_json = serde_json::to_string(&vst3_paths).unwrap_or_else(|_| "[]".to_string());
+        let json = ffi::scan_plugins(&vst2_json, &vst3_json);
         serde_json::from_str::<Vec<ScannedPlugin>>(&json).map_err(|e| e.to_string())
     }
 

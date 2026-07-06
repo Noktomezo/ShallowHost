@@ -64,6 +64,7 @@ pub fn run() {
             commands::audio::restart_audio,
             commands::scanner::scan_plugins,
             commands::scanner::reveal_plugin,
+            commands::scanner::select_directory,
             commands::chain::add_to_chain,
             commands::chain::remove_from_chain,
             commands::chain::move_plugin,

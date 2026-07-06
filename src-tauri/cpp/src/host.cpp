@@ -448,15 +448,56 @@ std::string ShallowHost::getAudioDevicesJson(const char* driver, const char* dev
     return juce::JSON::toString(juce::var(obj.get())).toStdString();
 }
 
-std::string ShallowHost::scanPluginsJson()
+std::string ShallowHost::scanPluginsJson(const std::string& vst2PathsJson, const std::string& vst3PathsJson)
 {
     knownPluginList.clear();
-    juce::VST3PluginFormat vst3Format;
-    auto paths = vst3Format.getDefaultLocationsToSearch();
 
-    juce::PluginDirectoryScanner scanner(knownPluginList, vst3Format, paths, true, juce::File(), true);
-    juce::String pluginName;
-    while (scanner.scanNextFile(true, pluginName)) {}
+    juce::FileSearchPath vst2SearchPaths;
+    auto v2Var = juce::JSON::parse(vst2PathsJson);
+    if (auto* v2Arr = v2Var.getArray())
+    {
+        for (auto& path : *v2Arr)
+            vst2SearchPaths.add(juce::File(path.toString()));
+    }
+
+    juce::FileSearchPath vst3SearchPaths;
+    auto v3Var = juce::JSON::parse(vst3PathsJson);
+    if (auto* v3Arr = v3Var.getArray())
+    {
+        for (auto& path : *v3Arr)
+            vst3SearchPaths.add(juce::File(path.toString()));
+    }
+
+    for (int i = 0; i < formatManager.getNumFormats(); ++i)
+    {
+        auto* format = formatManager.getFormat(i);
+        if (format == nullptr) continue;
+
+        juce::FileSearchPath formatPaths;
+        if (format->getName() == "VST3")
+        {
+            formatPaths = vst3SearchPaths;
+            if (formatPaths.getNumPaths() == 0)
+                formatPaths = format->getDefaultLocationsToSearch();
+        }
+        else if (format->getName() == "VST" || format->getName() == "VST2")
+        {
+            formatPaths = vst2SearchPaths;
+            if (formatPaths.getNumPaths() == 0)
+                formatPaths = format->getDefaultLocationsToSearch();
+        }
+        else
+        {
+            formatPaths = format->getDefaultLocationsToSearch();
+        }
+
+        if (formatPaths.getNumPaths() > 0)
+        {
+            juce::PluginDirectoryScanner scanner(knownPluginList, *format, formatPaths, true, juce::File(), true);
+            juce::String pluginName;
+            while (scanner.scanNextFile(true, pluginName)) {}
+        }
+    }
 
     juce::Array<juce::var> arr;
     for (auto& desc : knownPluginList.getTypes())

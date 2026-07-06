@@ -50,7 +50,7 @@
     },
     "plugins": {
       "title": "Plugins",
-      "description": "Scan and manage VST3 plugins.",
+      "description": "Scan and manage VST2/VST3 plugins.",
       "scan": "Scan",
       "scanning": "Scanning...",
       "empty": "No plugins scanned yet.",
@@ -59,7 +59,11 @@
       "remove": "Remove",
       "addToChain": "Add to chain",
       "alreadyInChain": "Already in chain",
-      "loading": "Loading plugin..."
+      "loading": "Loading plugin...",
+      "scanPathsTitle": "Scan Paths",
+      "scanPathsDescription": "Configure VST2 and VST3 search directories.",
+      "addFolder": "Add",
+      "resetDefaults": "Reset Defaults"
     },
     "settings": {
       "title": "Settings",

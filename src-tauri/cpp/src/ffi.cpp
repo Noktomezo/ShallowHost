@@ -50,9 +50,12 @@ SH_EXPORT char* sh_get_audio_devices(const char* driver, const char* device_name
     return copyToC(ShallowHost::getInstance().getAudioDevicesJson(driver, device_name));
 }
 
-SH_EXPORT char* sh_scan_plugins()
+SH_EXPORT char* sh_scan_plugins(const char* vst2_paths_json, const char* vst3_paths_json)
 {
-    return copyToC(ShallowHost::getInstance().scanPluginsJson());
+    return copyToC(ShallowHost::getInstance().scanPluginsJson(
+        vst2_paths_json ? std::string(vst2_paths_json) : "[]",
+        vst3_paths_json ? std::string(vst3_paths_json) : "[]"
+    ));
 }
 
 SH_EXPORT char* sh_add_to_chain(const char* unique_id)

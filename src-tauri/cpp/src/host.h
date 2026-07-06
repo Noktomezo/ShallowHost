@@ -44,7 +44,7 @@ public:
     int audioStopOnMessageThread();
 
     std::string getAudioDevicesJson(const char* driver = nullptr, const char* deviceName = nullptr);
-    std::string scanPluginsJson();
+    std::string scanPluginsJson(const std::string& vst2PathsJson = "[]", const std::string& vst3PathsJson = "[]");
 
     std::string addToChain(const std::string& uniqueId);
     bool removeFromChain(const std::string& nodeId);
@@ -132,7 +132,7 @@ SH_EXPORT bool sh_audio_start(const char* driver, const char* input, const char*
 SH_EXPORT bool sh_audio_stop();
 
 SH_EXPORT char* sh_get_audio_devices(const char* driver, const char* device_name);
-SH_EXPORT char* sh_scan_plugins();
+SH_EXPORT char* sh_scan_plugins(const char* vst2_paths_json, const char* vst3_paths_json);
 
 SH_EXPORT char* sh_add_to_chain(const char* unique_id);
 SH_EXPORT bool sh_remove_from_chain(const char* node_id);

@@ -18,7 +18,10 @@ extern "C" {
     fn sh_audio_stop() -> bool;
 
     fn sh_get_audio_devices(driver: *const c_char, device_name: *const c_char) -> *mut c_char;
-    fn sh_scan_plugins() -> *mut c_char;
+    fn sh_scan_plugins(
+        vst2_paths: *const c_char,
+        vst3_paths: *const c_char,
+    ) -> *mut c_char;
 
     fn sh_add_to_chain(unique_id: *const c_char) -> *mut c_char;
     fn sh_remove_from_chain(node_id: *const c_char) -> bool;
@@ -123,9 +126,11 @@ pub fn get_audio_devices(driver: &str, device: &str) -> String {
     unsafe { to_rust_string(sh_get_audio_devices(driver_c.as_ptr(), device_c.as_ptr())) }
 }
 
-pub fn scan_plugins() -> String {
+pub fn scan_plugins(vst2_paths_json: &str, vst3_paths_json: &str) -> String {
     let _lock = get_lock();
-    unsafe { to_rust_string(sh_scan_plugins()) }
+    let v2_c = to_c_string(vst2_paths_json);
+    let v3_c = to_c_string(vst3_paths_json);
+    unsafe { to_rust_string(sh_scan_plugins(v2_c.as_ptr(), v3_c.as_ptr())) }
 }
 
 pub fn add_to_chain(unique_id: &str) -> String {

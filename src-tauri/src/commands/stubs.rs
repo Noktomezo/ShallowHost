@@ -38,7 +38,12 @@ pub struct ParamInfo {
 }
 
 #[tauri::command]
-pub async fn scan_plugins() -> Result<Vec<ScannedPlugin>, String> {
+pub async fn scan_plugins(
+    vst2_paths: Vec<String>,
+    vst3_paths: Vec<String>,
+) -> Result<Vec<ScannedPlugin>, String> {
+    let _ = vst2_paths;
+    let _ = vst3_paths;
     Ok(Vec::new())
 }
 
