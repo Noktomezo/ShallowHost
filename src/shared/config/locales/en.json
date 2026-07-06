@@ -33,6 +33,7 @@
       "bufferSize": "Buffer size",
       "bufferSizeDescription": "Lower = less latency, more load.",
       "mono": "Mono",
+      "stereo": "Stereo",
       "monoDescription": "Convert stereo signal to mono.",
       "chain": "Plugin Chain",
       "chainEmpty": "No plugins in the chain.",

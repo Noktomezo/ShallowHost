@@ -7,6 +7,7 @@ interface ChainItem {
   vendor: string
   format: string
   bypassed: boolean
+  unique_id?: string
 }
 
 interface ChainStore {

@@ -5,6 +5,7 @@ pub struct ChainItem {
     pub vendor: String,
     pub format: String,
     pub bypassed: bool,
+    pub unique_id: Option<String>,
 }
 
 #[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]

@@ -668,11 +668,13 @@ std::string ShallowHost::getChainJson()
             {
                 obj->setProperty("format", instance->getPluginDescription().pluginFormatName);
                 obj->setProperty("vendor", instance->getPluginDescription().manufacturerName);
+                obj->setProperty("unique_id", instance->getPluginDescription().createIdentifierString());
             }
             else
             {
                 obj->setProperty("format", "");
                 obj->setProperty("vendor", "");
+                obj->setProperty("unique_id", "");
             }
         }
         obj->setProperty("bypassed", node->isBypassed());

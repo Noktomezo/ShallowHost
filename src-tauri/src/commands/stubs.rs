@@ -22,6 +22,7 @@ pub struct ChainItem {
     pub format: String,
     pub vendor: String,
     pub bypassed: bool,
+    pub unique_id: Option<String>,
 }
 
 #[derive(Debug, Clone, Serialize)]

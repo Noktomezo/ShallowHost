@@ -16,7 +16,6 @@ import {
   SelectValue,
 } from '@/shared/ui/select'
 import { Separator } from '@/shared/ui/separator'
-import { Switch } from '@/shared/ui/switch'
 
 interface DeviceInfo {
   name: string
@@ -178,9 +177,49 @@ export function AudioConfigCard({
 
   return (
     <Card className="w-full">
-      <CardHeader className="gap-0.5">
-        <CardTitle>{t('home.audio')}</CardTitle>
-        <CardDescription>{t('home.audioDescription')}</CardDescription>
+      <CardHeader className="flex flex-row items-center justify-between gap-4 space-y-0 pb-5">
+        <div className="flex flex-col gap-0.5">
+          <CardTitle>{t('home.audio')}</CardTitle>
+          <CardDescription>{t('home.audioDescription')}</CardDescription>
+        </div>
+
+        {/* Custom sliding capsule toggle between Stereo and Mono */}
+        <div className="relative inline-flex items-center rounded-full bg-muted/60 p-1 border border-border/40 select-none text-xs font-semibold h-8 w-[130px] overflow-hidden shrink-0">
+          {/* Moving background thumb */}
+          <div
+            className={`absolute top-1 bottom-1 left-1 rounded-full transition-all duration-300 ease-in-out w-[58px] ${
+              config.mono
+                ? 'translate-x-[60px] bg-violet-600 shadow-md shadow-violet-600/20'
+                : 'translate-x-0 bg-neutral-300 dark:bg-zinc-700 shadow-sm'
+            }`}
+          />
+          {/* Stereo Label */}
+          <button
+            type="button"
+            onClick={(e) => {
+              e.stopPropagation()
+              updateConfig({ mono: false })
+            }}
+            className={`relative z-10 flex-1 text-center h-full flex items-center justify-center cursor-pointer transition-colors duration-300 ${
+              !config.mono ? 'text-zinc-950 dark:text-zinc-50' : 'text-muted-foreground hover:text-foreground/80'
+            }`}
+          >
+            {t('home.stereo')}
+          </button>
+          {/* Mono Label */}
+          <button
+            type="button"
+            onClick={(e) => {
+              e.stopPropagation()
+              updateConfig({ mono: true })
+            }}
+            className={`relative z-10 flex-1 text-center h-full flex items-center justify-center cursor-pointer transition-colors duration-300 ${
+              config.mono ? 'text-white' : 'text-muted-foreground hover:text-foreground/80'
+            }`}
+          >
+            {t('home.mono')}
+          </button>
+        </div>
       </CardHeader>
       <CardContent>
         <div className="flex flex-col gap-2">
@@ -381,21 +420,6 @@ export function AudioConfigCard({
                 ))}
               </SelectContent>
             </Select>
-          </div>
-
-          <Separator />
-
-          <div className="flex items-center justify-between gap-2">
-            <div className="flex flex-col gap-0">
-              <span className="text-sm font-medium">{t('home.mono')}</span>
-              <span className="text-xs text-muted-foreground">
-                {t('home.monoDescription')}
-              </span>
-            </div>
-            <Switch
-              checked={config.mono}
-              onCheckedChange={v => updateConfig({ mono: v })}
-            />
           </div>
         </div>
       </CardContent>

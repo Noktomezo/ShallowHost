@@ -97,7 +97,7 @@ export function PluginsPage() {
         {plugins.length > 0
           ? (
               plugins.map((p) => {
-                const inChain = chain.some(c => c.id === p.unique_id)
+                const inChain = chain.some(c => c.unique_id === p.unique_id || c.name === p.name)
                 return (
                   <Card key={p.unique_id} size="sm">
                     <CardHeader className="gap-0.5">
