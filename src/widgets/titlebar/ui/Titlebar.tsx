@@ -37,10 +37,10 @@ export function Titlebar({ collapsed, onToggleCollapse }: TitlebarProps) {
       </div>
 
       <div className="flex h-full items-center gap-1 pr-1">
-        <TitlebarButton onClick={() => appWindow.minimize()} aria-label={t('titlebar.minimize')}>
+        <TitlebarButton onClick={() => appWindow.minimize()} aria-label={t('titlebar.minimize')} variant="minimize">
           <Minus className="size-4" />
         </TitlebarButton>
-        <TitlebarButton onClick={() => appWindow.toggleMaximize()} aria-label={t('titlebar.maximize')}>
+        <TitlebarButton onClick={() => appWindow.toggleMaximize()} aria-label={t('titlebar.maximize')} variant="maximize">
           <Square className="size-3.5" />
         </TitlebarButton>
         <TitlebarButton onClick={() => appWindow.close()} aria-label={t('titlebar.close')} variant="close">
@@ -53,19 +53,20 @@ export function Titlebar({ collapsed, onToggleCollapse }: TitlebarProps) {
 
 function TitlebarButton({
   children,
-  variant = 'plain',
+  variant,
   ...props
 }: {
   children: React.ReactNode
-  variant?: 'plain' | 'close'
+  variant: 'minimize' | 'maximize' | 'close'
 } & Omit<React.ComponentProps<typeof Button>, 'variant' | 'size'>) {
   return (
     <Button
       variant="ghost"
       size="icon"
       className={cn(
-        'hover:border-border',
-        variant === 'close' && 'hover:border-destructive/30',
+        variant === 'minimize' && 'text-yellow hover:bg-yellow/15 hover:border-yellow/30',
+        variant === 'maximize' && 'text-green hover:bg-green/15 hover:border-green/30',
+        variant === 'close' && 'text-red hover:bg-red/15 hover:border-red/30',
       )}
       {...props}
     >

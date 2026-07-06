@@ -33,7 +33,11 @@
     --color-secondary: var(--secondary);
     --color-primary-foreground: var(--primary-foreground);
     --color-primary: var(--primary);
+    --color-primary-hover: var(--primary-hover);
     --color-purple: var(--chart-5);
+    --color-red: var(--destructive);
+    --color-green: var(--chart-3);
+    --color-yellow: var(--chart-4);
     --color-popover-foreground: var(--popover-foreground);
     --color-popover: var(--popover);
     --color-card-foreground: var(--card-foreground);
@@ -57,6 +61,7 @@
     --popover: #FFFCF0;
     --popover-foreground: #100F0F;
     --primary: #BC5215;
+    --primary-hover: #9E3E0D;
     --primary-foreground: #FFFCF0;
     --secondary: #DAD8CE;
     --secondary-foreground: #6F6E69;
@@ -93,6 +98,7 @@
     --popover: #1C1B1A;
     --popover-foreground: #CECDC3;
     --primary: #DA702C;
+    --primary-hover: #B4551A;
     --primary-foreground: #100F0F;
     --secondary: #343331;
     --secondary-foreground: #878580;
