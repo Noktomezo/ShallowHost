@@ -450,7 +450,7 @@ std::string ShallowHost::getAudioDevicesJson(const char* driver, const char* dev
 
 std::string ShallowHost::scanPluginsJson(const std::string& vst2PathsJson, const std::string& vst3PathsJson)
 {
-    knownPluginList.clear();
+    loadKnownPlugins();
 
     juce::FileSearchPath vst2SearchPaths;
     auto v2Var = juce::JSON::parse(vst2PathsJson);
@@ -496,6 +496,16 @@ std::string ShallowHost::scanPluginsJson(const std::string& vst2PathsJson, const
             juce::PluginDirectoryScanner scanner(knownPluginList, *format, formatPaths, true, juce::File(), true);
             juce::String pluginName;
             while (scanner.scanNextFile(true, pluginName)) {}
+        }
+    }
+
+    // Clean up any plugins that were deleted from disk
+    for (int i = knownPluginList.getNumTypes() - 1; i >= 0; --i)
+    {
+        auto* desc = knownPluginList.getType(i);
+        if (desc != nullptr && !juce::File(desc->fileOrIdentifier).exists())
+        {
+            knownPluginList.removeType(*desc);
         }
     }
 
