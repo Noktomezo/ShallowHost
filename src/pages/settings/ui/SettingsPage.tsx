@@ -14,7 +14,6 @@ import {
   SelectContent,
   SelectItem,
   SelectTrigger,
-  SelectValue,
 } from '@/shared/ui/select'
 
 function FlagRU() {
@@ -71,7 +70,14 @@ export function SettingsPage() {
               }}
             >
               <SelectTrigger className="w-40">
-                <SelectValue />
+                <span className="flex items-center gap-1.5 text-left flex-1">
+                  {theme === 'system' && <Monitor className="size-4" />}
+                  {theme === 'light' && <Sun className="size-4" />}
+                  {theme === 'dark' && <Moon className="size-4" />}
+                  {theme === 'system' && t('settings.themeSystem')}
+                  {theme === 'light' && t('settings.themeLight')}
+                  {theme === 'dark' && t('settings.themeDark')}
+                </span>
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="system">
@@ -107,7 +113,14 @@ export function SettingsPage() {
               }}
             >
               <SelectTrigger className="w-40">
-                <SelectValue />
+                <span className="flex items-center gap-1.5 text-left flex-1">
+                  {language === 'system' && <Globe className="size-4" />}
+                  {language === 'ru' && <FlagRU />}
+                  {language === 'en' && <FlagEN />}
+                  {language === 'system' && t('settings.langSystem')}
+                  {language === 'ru' && t('settings.langRu')}
+                  {language === 'en' && t('settings.langEn')}
+                </span>
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="system">
