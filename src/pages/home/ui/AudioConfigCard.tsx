@@ -184,13 +184,13 @@ export function AudioConfigCard({
         </div>
 
         {/* Custom sliding toggle between Stereo and Mono */}
-        <div className="relative inline-flex items-center rounded-md bg-muted/60 p-1 border border-border/40 select-none text-xs font-semibold h-9 w-40 overflow-hidden shrink-0">
+        <div className="relative inline-flex items-center rounded-md bg-muted/60 p-0 border border-border/40 select-none text-xs font-semibold h-9 w-40 overflow-hidden shrink-0">
           {/* Moving background thumb */}
           <div
-            className={`absolute top-1 bottom-1 left-1 rounded-sm transition-all duration-300 ease-in-out w-[72px] ${
+            className={`absolute top-0 bottom-0 left-0 rounded-[calc(var(--radius)-1px)] transition-all duration-300 ease-in-out w-[79px] ${
               config.mono
-                ? 'translate-x-[76px] bg-violet-600 shadow-sm shadow-violet-600/20'
-                : 'translate-x-0 bg-background border border-border/40 shadow-sm'
+                ? 'translate-x-[79px] bg-violet-600 shadow-sm shadow-violet-600/20'
+                : 'translate-x-0 bg-primary shadow-sm shadow-primary/20'
             }`}
           />
           {/* Stereo Label */}
@@ -201,7 +201,7 @@ export function AudioConfigCard({
               updateConfig({ mono: false })
             }}
             className={`relative z-10 flex-1 text-center h-full flex items-center justify-center cursor-pointer transition-colors duration-300 ${
-              !config.mono ? 'text-foreground font-semibold' : 'text-muted-foreground hover:text-foreground/80'
+              !config.mono ? 'text-primary-foreground font-semibold' : 'text-muted-foreground hover:text-foreground/80'
             }`}
           >
             {t('home.stereo')}
