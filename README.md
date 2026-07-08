@@ -17,7 +17,7 @@
 ---
 
 > [!WARNING]
-> Early development stage. Expect breaking changes and bugs. Not recommended for production use.
+> Early development stage. Expect UI and audio bugs and unhandled crashes
 
 A graphical shell for scanning, loading, and hosting VST2/VST3 plugins with real-time microphone/audio effect chains. Built on a JUCE `AudioProcessorGraph` backend with a Tauri + React frontend.
 
@@ -30,11 +30,9 @@ A graphical shell for scanning, loading, and hosting VST2/VST3 plugins with real
 - 🔌 **Audio hotplug** — auto-recovery on device disconnect, dropdown refresh on connect
 - 🔄 **Auto-updater** — checks for updates, downloads + installs with progress toast
 - 📌 **System tray** — close-to-tray, show/quit menu, autostart on OS login
-- 🎯 **Single-instance** — focuses the existing window on second launch
 - 🌍 **i18n** — Russian + English with system language detection
-- 🛡️ **Hardened release** — context menu, devtools, shortcuts disabled in production builds
 
-## 🚀 Getting Started
+## 🚀 Development
 
 ### Prerequisites
 
@@ -42,7 +40,6 @@ A graphical shell for scanning, loading, and hosting VST2/VST3 plugins with real
 - [Rust](https://rustup.rs/) stable toolchain
 - [Just](https://just.system.ms/) command runner
 - CMake + C++ compiler (MSVC on Windows)
-- [Node.js](https://nodejs.org/) (for ctx7/codegraph tooling, optional)
 
 ### Setup
 
