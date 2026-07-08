@@ -21,8 +21,8 @@
 
 ---
 
-> [!CAUTION]
-> Very early stage. Please do not touch this or your pc go boom or whatever
+> [!WARNING]
+> Early development stage. Expect breaking changes and bugs. Not recommended for production use.
 
 A graphical shell for scanning, loading, and hosting VST2/VST3 plugins with real-time microphone/audio effect chains. Built on a JUCE `AudioProcessorGraph` backend with a Tauri + React frontend.
 
