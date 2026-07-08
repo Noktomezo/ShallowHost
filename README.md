@@ -33,18 +33,6 @@ A graphical shell for scanning, loading, and hosting VST2/VST3 plugins with real
 - 🌍 **i18n** — Russian + English with system language detection
 - 🛡️ **Hardened release** — context menu, devtools, shortcuts disabled in production builds
 
-## 🧱 Tech Stack
-
-| Layer | Technology |
-| --- | --- |
-| Desktop shell | Tauri v2 |
-| Frontend | React 19, TypeScript, Vite, TailwindCSS v4, shadcn/ui |
-| Routing | TanStack Router |
-| State | Zustand |
-| i18n | i18next + react-i18next |
-| Backend | Rust (Tauri commands) |
-| Audio engine | C++ / JUCE 8 `AudioProcessorGraph` |
-
 ## 🚀 Getting Started
 
 ### Prerequisites
@@ -115,6 +103,9 @@ ShallowHost/
 - [shadcn/ui](https://ui.shadcn.com/) — beautifully designed component library
 - [Flexoki](https://stephango.com/flexoki) — color palette inspiration
 
-## 📄 License
+&nbsp;
 
-[MIT](./LICENSE) © Noktomezo
+<div align="center">
+  <img src="./assets/footer.svg" alt="heartbeat" width="600px">
+  <p>Made with 💜. Published under <a href="LICENSE">MIT license</a>.</p>
+</div>
