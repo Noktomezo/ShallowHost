@@ -2,6 +2,27 @@
 
 All notable changes to ShallowHost are documented here.
 
+## v0.1.1
+
+Quick fixes + README redesign + NSIS/updater config.
+
+### 🐛 Bug Fixes
+
+- Fixed `latest.json` not generated on release (enabled `createUpdaterArtifacts` in tauri.conf.json)
+
+### 🔧 Build & CI
+
+- NSIS-only bundle (dropped MSI)
+- Updater endpoint configured (`releases/latest/download/latest.json`)
+- `mainBinaryName: "ShallowHost"` (Tauri-native, replaces `[[bin]]` hack)
+- Bundle metadata: publisher, descriptions, copyright
+- Window: center + shadow + dark backgroundColor (no white flash on startup)
+- Updater: passive install mode (progress bar, no dialogs)
+
+### 📝 Docs
+
+- Fancy README: centered SVG logo, shieldcn badges, features, getting started, project structure, scripts, acknowledgments, footer.svg
+
 ## v0.1.0
 
 First public release. Graphical shell for scanning, loading, and hosting VST2/VST3 plugins with real-time audio processing.
