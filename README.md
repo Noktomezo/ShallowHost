@@ -61,27 +61,6 @@ just dev      # bun run tauri dev (HMR frontend, Rust recompile on change)
 just build    # generate icons + bun tauri build --no-sign + UPX compress
 ```
 
-> Release builds with updater artifacts are produced by CI on tag push (`v*`).
-
-## 📂 Project Structure
-
-```
-ShallowHost/
-├── src/                    # Frontend (Feature-Sliced Design)
-│   ├── app/                # App shell, router, global styles
-│   ├── pages/             # Route pages (home, plugins, settings)
-│   ├── shared/            # Shared UI, lib, config, model, api
-│   └── entities/          # Domain entities
-├── src-tauri/             # Backend
-│   ├── src/               # Rust (commands, engine, audio)
-│   ├── cpp/               # C++ audio engine (JUCE)
-│   ├── capabilities/      # Tauri permissions
-│   └── icons/             # App icons (generated)
-├── assets/                # Source logo + design assets
-├── .github/workflows/     # CI (release, bump, react-doctor)
-└── justfile               # Task runner
-```
-
 ## 🔧 Scripts
 
 | Command | Description |
