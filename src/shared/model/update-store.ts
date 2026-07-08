@@ -3,7 +3,7 @@ import { create } from 'zustand'
 import { createJSONStorage, persist } from 'zustand/middleware'
 import { tauriStorage } from '@/shared/lib/tauri-storage'
 
-export type CheckResult
+type CheckResult
   = | { kind: 'idle' }
     | { kind: 'checking' }
     | { kind: 'up-to-date' }

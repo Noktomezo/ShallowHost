@@ -43,9 +43,9 @@ function SideNavItem({
       <AnimatePresence>
         {!collapsed && (
           <m.span
-            initial={{ opacity: 0, x: -10, width: 0 }}
-            animate={{ opacity: 1, x: 0, width: 'auto' }}
-            exit={{ opacity: 0, x: -10, width: 0 }}
+            initial={{ opacity: 0, x: -10 }}
+            animate={{ opacity: 1, x: 0 }}
+            exit={{ opacity: 0, x: -10 }}
             transition={{ duration: 0.2, ease: 'easeInOut' }}
             className="ml-2 truncate text-sm"
           >

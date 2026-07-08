@@ -56,9 +56,7 @@ export function HomePage() {
 
   const clearChain = async () => {
     try {
-      for (const p of chain) {
-        await invoke('remove_from_chain', { pluginId: p.id })
-      }
+      await Promise.all(chain.map(p => invoke('remove_from_chain', { pluginId: p.id })))
       await refreshChain()
     }
     catch (e) {
@@ -112,7 +110,7 @@ export function HomePage() {
       }
     }
     init().catch(() => {})
-  }, [refreshChain, loadFromBackend])
+  }, [refreshChain, loadFromBackend, updateConfigStore])
 
   // ponytail: backend polls devices every 500ms for hotplug; react to events
   // instead of polling from frontend (avoids IPC spam + UI hangs).
@@ -131,6 +129,18 @@ export function HomePage() {
 
   async function updateConfig(patch: Partial<AudioConfig>) {
     const nextPatch = { ...patch }
+    // ponytail: both driver-switch branches clear devices, push to backend, fetch fresh list.
+    const clearDevicesAndFetch = async () => {
+      nextPatch.input_device = null
+      nextPatch.output_device = null
+      nextPatch.active_inputs = null
+      nextPatch.active_outputs = null
+      updateConfigStore(nextPatch)
+      await invoke('set_audio_config', { config: { ...config, ...nextPatch } })
+      const freshDevs = await invoke<AudioDevices>('get_audio_devices')
+      setDevices(freshDevs)
+      return freshDevs
+    }
     if (patch.driver && patch.driver !== config.driver) {
       if (patch.driver === 'asio') {
         // ponytail: stash current WASAPI devices for restore on switch-back.
@@ -141,15 +151,7 @@ export function HomePage() {
           })
         }
         // ponytail: restore last-used ASIO device if still present, else __none.
-        // Fetch fresh ASIO list first — `devices` holds the WASAPI list here.
-        nextPatch.input_device = null
-        nextPatch.output_device = null
-        nextPatch.active_inputs = null
-        nextPatch.active_outputs = null
-        updateConfigStore(nextPatch)
-        await invoke('set_audio_config', { config: { ...config, ...nextPatch } })
-        const freshDevs = await invoke<AudioDevices>('get_audio_devices')
-        setDevices(freshDevs)
+        const freshDevs = await clearDevicesAndFetch()
         const last = useAudioConfigStore.getState().lastAsioDevice
         const restore = last && freshDevs.outputs.some(d => d.name === last) ? last : '__none'
         nextPatch.input_device = restore
@@ -173,14 +175,7 @@ export function HomePage() {
             lastAsioOutputs: config.active_outputs ?? null,
           })
         }
-        nextPatch.input_device = null
-        nextPatch.output_device = null
-        nextPatch.active_inputs = null
-        nextPatch.active_outputs = null
-        updateConfigStore(nextPatch)
-        await invoke('set_audio_config', { config: { ...config, ...nextPatch } })
-        const freshDevs = await invoke<AudioDevices>('get_audio_devices')
-        setDevices(freshDevs)
+        const freshDevs = await clearDevicesAndFetch()
         const wasapiState = useAudioConfigStore.getState()
         const restoreIn = wasapiState.lastWasapiInput && (wasapiState.lastWasapiInput === '__none' || freshDevs.inputs.some(d => d.name === wasapiState.lastWasapiInput))
           ? wasapiState.lastWasapiInput
