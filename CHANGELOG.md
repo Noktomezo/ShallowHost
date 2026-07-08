@@ -2,6 +2,25 @@
 
 All notable changes to ShallowHost are documented here.
 
+## v0.1.2
+
+Code quality pass + CI improvements.
+
+### ⚡ Performance
+
+- Parallelized plugin chain removal (`Promise.all` instead of sequential awaits)
+- Sidebar animation optimized (transform-only, no layout thrashing)
+- Channel checkbox lookups use `Set` for O(1) instead of `Array.includes`
+
+### 🎨 UI/UX
+
+- Stable channel checkbox keys (label-based instead of index)
+
+### 🔧 Build & CI
+
+- React Doctor + Fallow configs added (`fallow.toml`, `doctor.config.ts`) — both score 100/100
+- React Doctor CI: `fetch-depth: 0` for proper PR baseline comparison
+
 ## v0.1.1
 
 Quick fixes + README redesign + NSIS/updater config.
