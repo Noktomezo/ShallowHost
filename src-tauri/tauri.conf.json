@@ -47,7 +47,7 @@
   "plugins": {
     "updater": {
       "endpoints": [],
-      "pubkey": "dW50cnVzdGVkIGNvbW1lbnQ6IG1pbmlzaWduIHB1YmxpYyBrZXk6IERGMzFGOENFRDUyRjAxQjQKUldTMEFTL1Z6dmd4MzFuRWlKaVJSeXBhRnAvTU9uMFVNby9NdTk1UVJyNVh0Qk5WZkpmWDNvYy8K"
+      "pubkey": "dW50cnVzdGVkIGNvbW1lbnQ6IG1pbmlzaWduIHB1YmxpYyBrZXk6IENCRUVFRjRGNEI2OTg2REEKUldUYWhtbExUKy91eXkvWkIvTlZja1pldmdSR3RVV1ZzeG1mVDhXc1hDR3J1VXU0ZitneitSelgK"
     }
   }
 }
