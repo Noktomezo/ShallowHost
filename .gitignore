@@ -25,6 +25,8 @@ dist-ssr
 
 # Project-specific ignored folders
 .omo/
+.secrets/
+nul
 src-tauri/vendor/
 src-tauri/cpp/build/
 src-tauri/*.obj

@@ -2,7 +2,7 @@ use std::path::PathBuf;
 use std::sync::Arc;
 use std::sync::Mutex;
 
-use super::types::{AudioConfig, AudioDevices};
+use super::types::{AudioConfig, AudioDevices, DeviceInfo};
 use crate::commands::scanner::ScannedPlugin;
 use crate::engine::chain::ChainItem;
 use crate::engine::chain::ParamInfo;
@@ -102,6 +102,10 @@ impl AudioEngine {
     }
 
     pub fn start(&self) -> Result<(), String> {
+        // ponytail: validate devices before starting — if configured device is gone,
+        // fallback to __none (defense-in-depth; frontend also checks). Avoids JUCE
+        // crash on missing device.
+        let _ = self.validate_devices();
         let config = self.config.lock().unwrap().clone();
 
         let is_none_device = |dev: &Option<String>| {
@@ -169,7 +173,60 @@ impl AudioEngine {
         *self.running.lock().unwrap()
     }
 
-    pub fn scan_plugins(&self, vst2_paths: Vec<String>, vst3_paths: Vec<String>) -> Result<Vec<ScannedPlugin>, String> {
+    /// Check if configured input/output devices still exist. If not, set them to
+    /// `__none` and persist. Returns (devices, changed).
+    pub fn validate_devices(&self) -> Result<(AudioDevices, bool), String> {
+        let (driver, output_device, input_device) = {
+            let config = self.config.lock().unwrap();
+            (
+                config.driver.clone(),
+                config.output_device.clone(),
+                config.input_device.clone(),
+            )
+        };
+        let device_name = output_device.clone().unwrap_or_default();
+        let json = ffi::get_audio_devices(&driver, &device_name);
+        let devices: AudioDevices = serde_json::from_str(&json).map_err(|e| e.to_string())?;
+
+        let is_present = |dev: &Option<String>, list: &[DeviceInfo]| match dev {
+            Some(s) if s != "__none" && !s.is_empty() => list.iter().any(|d| d.name == *s),
+            _ => true,
+        };
+
+        let out_present = is_present(&output_device, &devices.outputs);
+        let in_present = is_present(&input_device, &devices.inputs);
+
+        if !out_present || !in_present {
+            {
+                let mut config = self.config.lock().unwrap();
+                if !out_present {
+                    config.output_device = Some("__none".to_string());
+                }
+                if !in_present {
+                    config.input_device = Some("__none".to_string());
+                }
+            }
+            self.save_audio_config();
+            return Ok((devices, true));
+        }
+        Ok((devices, false))
+    }
+
+    /// Poll devices, fallback to `__none` on disconnect, restart audio if config changed.
+    pub fn poll_and_recover(&self) -> Result<(AudioDevices, bool), String> {
+        let (devices, changed) = self.validate_devices()?;
+        if changed {
+            let _ = self.stop();
+            let _ = self.start();
+        }
+        Ok((devices, changed))
+    }
+
+    pub fn scan_plugins(
+        &self,
+        vst2_paths: Vec<String>,
+        vst3_paths: Vec<String>,
+    ) -> Result<Vec<ScannedPlugin>, String> {
         let vst2_json = serde_json::to_string(&vst2_paths).unwrap_or_else(|_| "[]".to_string());
         let vst3_json = serde_json::to_string(&vst3_paths).unwrap_or_else(|_| "[]".to_string());
         let json = ffi::scan_plugins(&vst2_json, &vst3_json);

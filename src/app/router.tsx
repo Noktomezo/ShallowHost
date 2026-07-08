@@ -6,12 +6,16 @@ import {
   Outlet,
   RouterProvider,
 } from '@tanstack/react-router'
+import { useEffect } from 'react'
 import { HomePage } from '@/pages/home'
 import { PluginsPage } from '@/pages/plugins'
 import { SettingsPage } from '@/pages/settings'
+import { updateService } from '@/shared/lib/updater'
 import { useChainStore } from '@/shared/model/chain-store'
 import { useUIStore } from '@/shared/model/ui-store'
+import { useUpdateStore } from '@/shared/model/update-store'
 import { ScrollArea } from '@/shared/ui/scroll-area'
+import { isUpdateToastVisible, showUpdateToast } from '@/shared/ui/sonner'
 import { TooltipProvider } from '@/shared/ui/tooltip'
 import { Sidebar } from '@/widgets/sidebar'
 import { Titlebar } from '@/widgets/titlebar'
@@ -89,5 +93,38 @@ declare module '@tanstack/react-router' {
 }
 
 export function App() {
+  // ponytail: poll for updates every 30s; re-show after user dismisses (mock always finds one).
+  // State shared with SettingsPage via useUpdateStore — manual button disabled while auto-check runs.
+  useEffect(() => {
+    let cancelled = false
+    const run = async () => {
+      const { autoCheckEnabled, checkResult, setCheckResult } = useUpdateStore.getState()
+      if (!autoCheckEnabled)
+        return
+      if (checkResult.kind === 'checking')
+        return
+      if (isUpdateToastVisible())
+        return
+      setCheckResult({ kind: 'checking' })
+      const info = await updateService.check()
+      if (cancelled)
+        return
+      if (info) {
+        setCheckResult({ kind: 'available', info })
+        if (!isUpdateToastVisible())
+          showUpdateToast(info)
+      }
+      else {
+        setCheckResult({ kind: 'up-to-date' })
+      }
+    }
+    const initial = setTimeout(run, 5000)
+    const interval = setInterval(run, 30000)
+    return () => {
+      cancelled = true
+      clearTimeout(initial)
+      clearInterval(interval)
+    }
+  }, [])
   return <RouterProvider router={router} />
 }

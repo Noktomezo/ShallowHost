@@ -45,14 +45,20 @@ export function SortableChainCard({ plugin: p }: { plugin: ChainItem }) {
               <CardTitle className={p.bypassed ? 'text-muted-foreground' : ''}>
                 {p.name}
               </CardTitle>
-              <Badge variant="secondary" className="shrink-0">
+              <Badge variant="purple" className="shrink-0">
                 {p.format.toUpperCase()}
               </Badge>
-              {p.bypassed && (
-                <Badge variant="destructive" className="shrink-0">
-                  {t('home.bypassed')}
-                </Badge>
-              )}
+              {p.bypassed
+                ? (
+                    <Badge variant="destructive" className="shrink-0">
+                      {t('home.bypassed')}
+                    </Badge>
+                  )
+                : (
+                    <Badge variant="green" className="shrink-0">
+                      {t('home.active')}
+                    </Badge>
+                  )}
             </div>
             <CardDescription>{p.vendor || ''}</CardDescription>
           </div>

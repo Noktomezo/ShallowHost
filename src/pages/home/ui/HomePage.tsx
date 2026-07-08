@@ -1,5 +1,5 @@
 import type { DragEndEvent } from '@dnd-kit/core'
-import type { AudioDevices } from './AudioConfigCard'
+import type { AudioDevices, DeviceInfo } from './AudioConfigCard'
 import type { AudioConfig } from '@/shared/model/audio-config-store'
 import {
   DndContext,
@@ -15,7 +15,8 @@ import {
 } from '@dnd-kit/sortable'
 import { Link } from '@tanstack/react-router'
 import { invoke } from '@tauri-apps/api/core'
-import { Plus, Trash2 } from 'lucide-react'
+import { listen } from '@tauri-apps/api/event'
+import { ArrowRight, Paintbrush, Plus } from 'lucide-react'
 import { useEffect, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { useAudioConfigStore } from '@/shared/model/audio-config-store'
@@ -69,12 +70,25 @@ export function HomePage() {
       if (currentConfig.driver === 'wasapi') {
         const patch: Partial<AudioConfig> = {}
         let needsUpdate = false
-        if (!currentConfig.input_device || currentConfig.input_device === '__default') {
-          patch.input_device = devs.inputs.find(d => d.default)?.name ?? '__none'
+        // ponytail: also heal stale configs (e.g. ASIO device name saved under
+        // WASAPI driver from a prior bug) — if the device isn't in the fresh
+        // list, reset to default. __none is a valid user choice, keep it.
+        const isStaleOrEmpty = (dev: string | null, list: DeviceInfo[]) =>
+          !dev
+          || dev === '__default'
+          || (dev !== '__none' && !list.some(d => d.name === dev))
+        // ponytail: restore last WASAPI device with __none fallback — no auto-default.
+        const resolveWasapi = (saved: string | null, list: DeviceInfo[]) =>
+          saved && saved !== '__default' && (saved === '__none' || list.some(d => d.name === saved))
+            ? saved
+            : '__none'
+        const store = useAudioConfigStore.getState()
+        if (isStaleOrEmpty(currentConfig.input_device, devs.inputs)) {
+          patch.input_device = resolveWasapi(store.lastWasapiInput, devs.inputs)
           needsUpdate = true
         }
-        if (!currentConfig.output_device || currentConfig.output_device === '__default') {
-          patch.output_device = devs.outputs.find(d => d.default)?.name ?? '__none'
+        if (isStaleOrEmpty(currentConfig.output_device, devs.outputs)) {
+          patch.output_device = resolveWasapi(store.lastWasapiOutput, devs.outputs)
           needsUpdate = true
         }
         if (needsUpdate) {
@@ -90,23 +104,82 @@ export function HomePage() {
     init().catch(() => {})
   }, [refreshChain, loadFromBackend])
 
+  // ponytail: backend polls devices every 500ms for hotplug; react to events
+  // instead of polling from frontend (avoids IPC spam + UI hangs).
+  useEffect(() => {
+    const unlistenDevices = listen<AudioDevices>('audio-devices-changed', (e) => {
+      setDevices(e.payload)
+    })
+    const unlistenConfig = listen('audio-config-changed', () => {
+      loadFromBackend()
+    })
+    return () => {
+      unlistenDevices.then(fn => fn())
+      unlistenConfig.then(fn => fn())
+    }
+  }, [loadFromBackend])
+
   async function updateConfig(patch: Partial<AudioConfig>) {
     const nextPatch = { ...patch }
     if (patch.driver && patch.driver !== config.driver) {
       if (patch.driver === 'asio') {
-        nextPatch.input_device = '__none'
-        nextPatch.output_device = '__none'
+        // ponytail: stash current WASAPI devices for restore on switch-back.
+        if (config.driver === 'wasapi') {
+          useAudioConfigStore.setState({
+            lastWasapiInput: config.input_device,
+            lastWasapiOutput: config.output_device,
+          })
+        }
+        // ponytail: restore last-used ASIO device if still present, else __none.
+        // Fetch fresh ASIO list first — `devices` holds the WASAPI list here.
+        nextPatch.input_device = null
+        nextPatch.output_device = null
         nextPatch.active_inputs = null
         nextPatch.active_outputs = null
+        updateConfigStore(nextPatch)
+        await invoke('set_audio_config', { config: { ...config, ...nextPatch } })
+        const freshDevs = await invoke<AudioDevices>('get_audio_devices')
+        setDevices(freshDevs)
+        const last = useAudioConfigStore.getState().lastAsioDevice
+        const restore = last && freshDevs.outputs.some(d => d.name === last) ? last : '__none'
+        nextPatch.input_device = restore
+        nextPatch.output_device = restore
+        // ponytail: restore stashed channels too — indices are bit-flags, device
+        // ignores invalid bits; same-device restore is exact.
+        const asioState = useAudioConfigStore.getState()
+        nextPatch.active_inputs = restore !== '__none' ? asioState.lastAsioInputs : null
+        nextPatch.active_outputs = restore !== '__none' ? asioState.lastAsioOutputs : null
       }
       else {
-        // Auto-select defaults from the loaded devices list
-        const defaultIn = devices.inputs.find(d => d.default)?.name ?? '__none'
-        const defaultOut = devices.outputs.find(d => d.default)?.name ?? '__none'
-        nextPatch.input_device = defaultIn
-        nextPatch.output_device = defaultOut
+        // ponytail: `devices` still holds the ASIO list here, so picking defaults
+        // from it copies the ASIO device name across → "No such device" on start.
+        // Push driver change to backend first, enumerate fresh WASAPI devices,
+        // then restore last WASAPI device with __none fallback (no auto-default).
+        // Stash current ASIO device for restore on switch-back.
+        if (config.driver === 'asio' && config.output_device && config.output_device !== '__none') {
+          useAudioConfigStore.setState({
+            lastAsioDevice: config.output_device,
+            lastAsioInputs: config.active_inputs ?? null,
+            lastAsioOutputs: config.active_outputs ?? null,
+          })
+        }
+        nextPatch.input_device = null
+        nextPatch.output_device = null
         nextPatch.active_inputs = null
         nextPatch.active_outputs = null
+        updateConfigStore(nextPatch)
+        await invoke('set_audio_config', { config: { ...config, ...nextPatch } })
+        const freshDevs = await invoke<AudioDevices>('get_audio_devices')
+        setDevices(freshDevs)
+        const wasapiState = useAudioConfigStore.getState()
+        const restoreIn = wasapiState.lastWasapiInput && (wasapiState.lastWasapiInput === '__none' || freshDevs.inputs.some(d => d.name === wasapiState.lastWasapiInput))
+          ? wasapiState.lastWasapiInput
+          : '__none'
+        const restoreOut = wasapiState.lastWasapiOutput && (wasapiState.lastWasapiOutput === '__none' || freshDevs.outputs.some(d => d.name === wasapiState.lastWasapiOutput))
+          ? wasapiState.lastWasapiOutput
+          : '__none'
+        nextPatch.input_device = restoreIn
+        nextPatch.output_device = restoreOut
       }
     }
     updateConfigStore(nextPatch)
@@ -172,12 +245,12 @@ export function HomePage() {
               <Tooltip>
                 <TooltipTrigger render={(
                   <Button
-                    variant="outline"
+                    variant="default"
                     size="icon-sm"
-                    className="cursor-pointer hover:!bg-primary/10 hover:!text-primary hover:!border-primary/20"
+                    className="cursor-pointer"
                     aria-label={t('home.goToPlugins')}
                   >
-                    <Plus className="size-4" />
+                    <ArrowRight className="size-4" />
                   </Button>
                 )}
                 />
@@ -194,7 +267,7 @@ export function HomePage() {
                   className="cursor-pointer hover:!bg-red/10 hover:!text-red hover:!border-red/20 disabled:pointer-events-none disabled:opacity-50"
                   aria-label={t('home.clearChain')}
                 >
-                  <Trash2 className="size-4" />
+                  <Paintbrush className="size-4" />
                 </Button>
               )}
               />

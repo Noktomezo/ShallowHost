@@ -1,6 +1,7 @@
 import type { ScannedPlugin } from '@/shared/model/plugin-store'
+import { Link } from '@tanstack/react-router'
 import { invoke } from '@tauri-apps/api/core'
-import { FolderOpen, Plus, RefreshCw, RotateCcw, Settings, Trash2 } from 'lucide-react'
+import { ArrowRight, FolderOpen, Plus, RefreshCw, RotateCcw, Settings, Trash2 } from 'lucide-react'
 import { useEffect, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { useChainStore } from '@/shared/model/chain-store'
@@ -137,30 +138,53 @@ export function PluginsPage() {
                     <CardHeader className="gap-0.5">
                       <div className="flex items-center gap-2">
                         <CardTitle>{p.name}</CardTitle>
-                        <Badge variant="secondary" className="shrink-0">
+                        <Badge variant="purple" className="shrink-0">
                           {p.format.toUpperCase()}
                         </Badge>
+                        {inChain && (
+                          <Badge variant="green" className="shrink-0">
+                            {t('plugins.inChain')}
+                          </Badge>
+                        )}
                       </div>
                       {p.vendor && <CardDescription>{p.vendor}</CardDescription>}
                       <CardAction className="self-center">
                         <div className="flex gap-1">
-                          <Tooltip>
-                            <TooltipTrigger
-                              render={(
-                                <Button
-                                  variant="outline"
-                                  size="icon"
-                                  disabled={inChain}
-                                  onClick={() => addToChain(p.unique_id)}
-                                >
-                                  <Plus className="size-4" />
-                                </Button>
+                          {inChain
+                            ? (
+                                <Tooltip>
+                                  <TooltipTrigger
+                                    render={(
+                                      <Link to="/">
+                                        <Button
+                                          variant="default"
+                                          size="icon"
+                                          aria-label={t('plugins.goToChain')}
+                                        >
+                                          <ArrowRight className="size-4" />
+                                        </Button>
+                                      </Link>
+                                    )}
+                                  />
+                                  <TooltipContent>{t('plugins.goToChain')}</TooltipContent>
+                                </Tooltip>
+                              )
+                            : (
+                                <Tooltip>
+                                  <TooltipTrigger
+                                    render={(
+                                      <Button
+                                        variant="outline"
+                                        size="icon"
+                                        onClick={() => addToChain(p.unique_id)}
+                                      >
+                                        <Plus className="size-4" />
+                                      </Button>
+                                    )}
+                                  />
+                                  <TooltipContent>{t('plugins.addToChain')}</TooltipContent>
+                                </Tooltip>
                               )}
-                            />
-                            <TooltipContent>
-                              {inChain ? t('plugins.alreadyInChain') : t('plugins.addToChain')}
-                            </TooltipContent>
-                          </Tooltip>
                           <Tooltip>
                             <TooltipTrigger
                               render={(

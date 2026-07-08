@@ -32,11 +32,11 @@ function SideNavItem({
       to={to}
       aria-label={label}
       className={cn(
-        'group/button inline-flex shrink-0 items-center justify-center rounded-lg border border-transparent bg-clip-padding text-sm font-medium whitespace-nowrap transition-all outline-none select-none focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50 active:not-aria-[haspopup]:translate-y-px disabled:pointer-events-none disabled:opacity-50 [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*=\'size-\'])]:size-4',
-        'h-8 w-full justify-start gap-0 pl-2 pr-0',
+        'group/button inline-flex shrink-0 items-center justify-start rounded-lg text-sm font-medium whitespace-nowrap transition-all outline-none select-none focus-visible:ring-3 focus-visible:ring-ring/50 active:not-aria-[haspopup]:translate-y-px disabled:pointer-events-none disabled:opacity-50 [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*=\'size-\'])]:size-4',
+        'h-8 w-full gap-0 pl-2 pr-0',
         isActive
-          ? 'bg-primary text-primary-foreground hover:bg-primary-hover border-primary/20'
-          : 'text-muted-foreground hover:bg-primary/10 hover:text-primary hover:border-primary/20',
+          ? 'bg-primary text-primary-foreground hover:bg-primary-hover'
+          : 'text-muted-foreground hover:bg-primary/10 hover:text-primary',
       )}
     >
       {icon}

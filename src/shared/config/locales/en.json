@@ -39,6 +39,7 @@
       "chainEmpty": "No plugins in the chain.",
       "bypass": "Bypass",
       "bypassed": "Bypassed",
+      "active": "Active",
       "moveUp": "Move up",
       "moveDown": "Move down",
       "removeFromChain": "Remove from chain",
@@ -60,7 +61,8 @@
       "reveal": "Reveal in folder",
       "remove": "Remove",
       "addToChain": "Add to chain",
-      "alreadyInChain": "Already in chain",
+      "goToChain": "Go to chain",
+      "inChain": "In chain",
       "loading": "Loading plugin...",
       "scanPathsTitle": "Scan Paths",
       "scanPathsDescription": "Configure VST2 and VST3 search directories.",
@@ -80,7 +82,30 @@
       "languageDescription": "Interface language of the app.",
       "langSystem": "System",
       "langRu": "Русский",
-      "langEn": "English"
+      "langEn": "English",
+      "updates": "Updates",
+      "updatesDescription": "Check and install app updates.",
+      "autoCheck": "Automatic checks",
+      "autoCheckDescription": "Check for updates in the background."
+    },
+    "update": {
+      "check": "Check for updates",
+      "checkAgain": "Check again",
+      "checking": "Checking...",
+      "upToDate": "Up to date",
+      "available": "Update available",
+      "viewRelease": "Release notes",
+      "update": "Update",
+      "notNow": "Not now",
+      "downloading": "Downloading update...",
+      "installing": "Installing...",
+      "installed": "Update installed",
+      "restart": "Restart",
+      "later": "Later",
+      "close": "Close",
+      "failed": "Update failed",
+      "latest": "Latest",
+      "newerAvailable": "Newer available"
     }
   }
 }

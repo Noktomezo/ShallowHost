@@ -146,3 +146,15 @@
     scroll-behavior: auto !important;
   }
 }
+
+@keyframes select-marquee {
+  from { transform: translateX(0); }
+  to { transform: translateX(var(--shift, 0px)); }
+}
+
+/* ponytail: sonner locks toast height to --initial-height on hover (data-expanded).
+   Update toast content grows across states (available→done); stale lock clips bottom.
+   App only uses single custom toasts, so global auto-height is safe. */
+[data-sonner-toast][data-mounted='true'][data-expanded='true'] {
+  height: auto !important;
+}

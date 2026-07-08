@@ -77,6 +77,7 @@ private:
 
     juce::AudioProcessorGraph::Node::Ptr inputNode;
     juce::AudioProcessorGraph::Node::Ptr outputNode;
+    juce::AudioProcessorGraph::Node::Ptr monoNode;
 
     std::vector<juce::AudioProcessorGraph::Node::Ptr> chainNodes;
     juce::KnownPluginList knownPluginList;

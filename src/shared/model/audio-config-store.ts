@@ -16,6 +16,11 @@ export interface AudioConfig {
 
 interface AudioConfigState {
   config: AudioConfig
+  lastAsioDevice: string | null
+  lastAsioInputs: number[] | null
+  lastAsioOutputs: number[] | null
+  lastWasapiInput: string | null
+  lastWasapiOutput: string | null
   setConfig: (config: AudioConfig) => void
   updateConfig: (patch: Partial<AudioConfig>) => void
   loadFromBackend: () => Promise<void>
@@ -36,6 +41,11 @@ export const useAudioConfigStore = create<AudioConfigState>()(
   persist(
     (set, get) => ({
       config: DEFAULT_CONFIG,
+      lastAsioDevice: null,
+      lastAsioInputs: null,
+      lastAsioOutputs: null,
+      lastWasapiInput: null,
+      lastWasapiOutput: null,
       setConfig: config => set({ config }),
       updateConfig: (patch) => {
         const next = { ...get().config, ...patch }

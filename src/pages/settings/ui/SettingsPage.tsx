@@ -1,10 +1,18 @@
-import { Globe, Monitor, Moon, Sun } from 'lucide-react'
+import { getVersion } from '@tauri-apps/api/app'
+import { Globe, Monitor, Moon, RefreshCw, Sun } from 'lucide-react'
+import { useEffect, useState } from 'react'
 import { useTranslation } from 'react-i18next'
+import { updateService } from '@/shared/lib/updater'
+import { cn } from '@/shared/lib/utils'
 import { useLanguageStore } from '@/shared/model/language-store'
 import { useThemeStore } from '@/shared/model/theme-store'
+import { useUpdateStore } from '@/shared/model/update-store'
+import { Badge } from '@/shared/ui/badge'
+import { Button } from '@/shared/ui/button'
 import {
   Card,
   CardAction,
+  CardContent,
   CardDescription,
   CardHeader,
   CardTitle,
@@ -15,6 +23,8 @@ import {
   SelectItem,
   SelectTrigger,
 } from '@/shared/ui/select'
+import { showUpdateToast } from '@/shared/ui/sonner'
+import { Switch } from '@/shared/ui/switch'
 
 function FlagRU() {
   return (
@@ -47,6 +57,33 @@ export function SettingsPage() {
   const setTheme = useThemeStore(s => s.setTheme)
   const language = useLanguageStore(s => s.language)
   const setLanguage = useLanguageStore(s => s.setLanguage)
+  const check = useUpdateStore(s => s.checkResult)
+  const setCheckResult = useUpdateStore(s => s.setCheckResult)
+  const autoCheckEnabled = useUpdateStore(s => s.autoCheckEnabled)
+  const setAutoCheckEnabled = useUpdateStore(s => s.setAutoCheckEnabled)
+  const [version, setVersion] = useState('')
+
+  useEffect(() => {
+    getVersion().then(setVersion)
+  }, [])
+
+  async function handleCheck() {
+    setCheckResult({ kind: 'checking' })
+    try {
+      const info = await updateService.check()
+      if (info) {
+        setCheckResult({ kind: 'available', info })
+        showUpdateToast(info)
+      }
+      else {
+        setCheckResult({ kind: 'up-to-date' })
+      }
+    }
+    catch (e) {
+      setCheckResult({ kind: 'up-to-date' })
+      console.error('[update] check failed:', e)
+    }
+  }
 
   return (
     <div className="flex flex-col gap-0.5">
@@ -139,6 +176,55 @@ export function SettingsPage() {
             </Select>
           </CardAction>
         </CardHeader>
+      </Card>
+
+      <Card className="mt-3 w-full">
+        <CardHeader className="gap-0.5">
+          <div className="flex items-center gap-2">
+            <CardTitle>{t('settings.updates')}</CardTitle>
+            {version && (
+              <Badge variant="secondary">
+                v
+                {version}
+              </Badge>
+            )}
+            {check.kind === 'up-to-date' && <Badge variant="green">{t('update.latest')}</Badge>}
+            {check.kind === 'available' && <Badge variant="default">{t('update.newerAvailable')}</Badge>}
+          </div>
+          <CardDescription>{t('settings.updatesDescription')}</CardDescription>
+          <CardAction className="self-center">
+            <Button
+              variant="outline"
+              size="sm"
+              disabled={check.kind === 'checking'}
+              onClick={handleCheck}
+            >
+              <RefreshCw
+                className={cn(
+                  'size-3.5',
+                  check.kind === 'checking' && 'animate-spin',
+                )}
+              />
+              {check.kind === 'checking'
+                ? t('update.checking')
+                : check.kind === 'available'
+                  ? t('update.checkAgain')
+                  : t('update.check')}
+            </Button>
+          </CardAction>
+        </CardHeader>
+        <CardContent>
+          <div className="flex items-center justify-between gap-2">
+            <div className="flex flex-col gap-0">
+              <span className="text-sm font-medium">{t('settings.autoCheck')}</span>
+              <span className="text-xs text-muted-foreground">{t('settings.autoCheckDescription')}</span>
+            </div>
+            <Switch
+              checked={autoCheckEnabled}
+              onCheckedChange={v => setAutoCheckEnabled(!!v)}
+            />
+          </div>
+        </CardContent>
       </Card>
     </div>
   )

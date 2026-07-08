@@ -19,16 +19,18 @@ Flexoki is an inky color scheme for prose and code, designed for reading and wri
 | black    | `#100F0F` | Dark Background    |
 
 ## Accent Tones (Light / Dark)
-| Accent   | Light Hex (400) | Dark Hex (600)  | Role in Lethe       |
+| Accent   | Light Hex (400) | Dark Hex (600)  | Role in Lethe      |
 | -------- | --------------- | --------------- | ------------------ |
-| Red      | `#D14D41`       | `#AF3029`       | Disconnected State  |
+| Red      | `#D14D41`       | `#AF3029`       | Disconnected State |
 | Orange   | `#DA702C`       | `#BC5215`       | Transition / Brand |
 | Yellow   | `#D0A215`       | `#AD8301`       | Warning / Alert    |
-| Green    | `#879A39`       | `#66800B`       | Connected State     |
+| Green    | `#879A39`       | `#66800B`       | Connected State    |
 | Cyan     | `#3AA99F`       | `#24837B`       | Special            |
 | Blue     | `#4385BE`       | `#205EA6`       | Secondary Info     |
 | Purple   | `#8B7EC8`       | `#5E409D`       | Special            |
 | Magenta  | `#CE5D97`       | `#A02F6F`       | Special            |
+
+Light colors for dark theme, dark for light
 
 ## Lethe UI Custom Semantic Bindings
 * **Primary (Brand)**: Flexoki Orange (`#BC5215` / `#DA702C`)

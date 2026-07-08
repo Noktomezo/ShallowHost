@@ -39,6 +39,7 @@
       "chainEmpty": "В цепочке нет плагинов.",
       "bypass": "Обход",
       "bypassed": "Обойдён",
+      "active": "Активен",
       "moveUp": "Вверх",
       "moveDown": "Вниз",
       "removeFromChain": "Убрать из цепочки",
@@ -60,7 +61,8 @@
       "reveal": "Показать в папке",
       "remove": "Удалить",
       "addToChain": "Добавить в цепочку",
-      "alreadyInChain": "Уже в цепочке",
+      "goToChain": "Перейти к цепочке",
+      "inChain": "В цепочке",
       "loading": "Загрузка плагина...",
       "scanPathsTitle": "Пути сканирования",
       "scanPathsDescription": "Настройте папки для поиска VST2 и VST3 плагинов.",
@@ -80,7 +82,30 @@
       "languageDescription": "Язык интерфейса приложения.",
       "langSystem": "Системный",
       "langRu": "Русский",
-      "langEn": "English"
+      "langEn": "English",
+      "updates": "Обновления",
+      "updatesDescription": "Проверка и установка обновлений приложения.",
+      "autoCheck": "Автоматическая проверка",
+      "autoCheckDescription": "Проверять обновления в фоне."
+    },
+    "update": {
+      "check": "Проверить обновления",
+      "checkAgain": "Проверить снова",
+      "checking": "Проверка...",
+      "upToDate": "Обновлений нет",
+      "available": "Доступно обновление",
+      "viewRelease": "Описание релиза",
+      "update": "Обновить",
+      "notNow": "Не сейчас",
+      "downloading": "Загрузка обновления...",
+      "installing": "Установка...",
+      "installed": "Обновление установлено",
+      "restart": "Перезапустить",
+      "later": "Позже",
+      "close": "Закрыть",
+      "failed": "Ошибка обновления",
+      "latest": "Последняя",
+      "newerAvailable": "Есть новее"
     }
   }
 }

@@ -37,5 +37,11 @@
     "resources": [
       "shallow_host_cpp.dll"
     ]
+  },
+  "plugins": {
+    "updater": {
+      "endpoints": [],
+      "pubkey": "dW50cnVzdGVkIGNvbW1lbnQ6IG1pbmlzaWduIHB1YmxpYyBrZXk6IERGMzFGOENFRDUyRjAxQjQKUldTMEFTL1Z6dmd4MzFuRWlKaVJSeXBhRnAvTU9uMFVNby9NdTk1UVJyNVh0Qk5WZkpmWDNvYy8K"
+    }
   }
 }

@@ -39,8 +39,7 @@ pub async fn reveal_plugin(path: String) -> Result<(), String> {
 #[tauri::command]
 pub async fn select_directory() -> Result<Option<String>, String> {
     tauri::async_runtime::spawn_blocking(move || {
-        let dir = rfd::FileDialog::new()
-            .pick_folder();
+        let dir = rfd::FileDialog::new().pick_folder();
         Ok(dir.map(|p| p.to_string_lossy().into_owned()))
     })
     .await

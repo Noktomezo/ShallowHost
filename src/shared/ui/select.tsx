@@ -6,12 +6,43 @@ import { cn } from '@/shared/lib/utils'
 
 const Select = SelectPrimitive.Root
 
+const SelectMarquee = React.forwardRef<HTMLSpanElement, React.ComponentProps<'span'>>(
+  ({ children, className, ...rest }, ref) => {
+    const [shift, setShift] = React.useState<number | null>(null)
+    return (
+      <span
+        ref={ref}
+        className={cn('block min-w-0 overflow-hidden', className)}
+        onMouseEnter={(e) => {
+          const el = e.currentTarget
+          const inner = el.firstElementChild as HTMLElement | null
+          if (inner && inner.scrollWidth > el.clientWidth) {
+            setShift(el.clientWidth - inner.scrollWidth - 8)
+          }
+        }}
+        onMouseLeave={() => setShift(null)}
+        {...rest}
+      >
+        <span
+          className="!inline-flex items-center gap-2 whitespace-nowrap"
+          style={shift != null
+            ? { 'animation': 'select-marquee 1.8s ease-in-out infinite alternate', '--shift': `${shift}px` } as React.CSSProperties
+            : undefined}
+        >
+          {children}
+        </span>
+      </span>
+    )
+  },
+)
+
 function SelectValue({ className, ...props }: SelectPrimitive.Value.Props) {
   return (
     <SelectPrimitive.Value
       data-slot="select-value"
       className={cn('flex flex-1 text-left', className)}
       {...props}
+      render={<SelectMarquee />}
     />
   )
 }
@@ -97,8 +128,8 @@ function SelectItem({
       )}
       {...props}
     >
-      <SelectPrimitive.ItemText className="flex flex-1 shrink-0 items-center gap-2 whitespace-nowrap">
-        {children}
+      <SelectPrimitive.ItemText className="flex min-w-0 flex-1 items-center gap-2">
+        <SelectMarquee>{children}</SelectMarquee>
       </SelectPrimitive.ItemText>
       <SelectPrimitive.ItemIndicator
         render={

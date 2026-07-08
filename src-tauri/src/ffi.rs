@@ -18,10 +18,7 @@ extern "C" {
     fn sh_audio_stop() -> bool;
 
     fn sh_get_audio_devices(driver: *const c_char, device_name: *const c_char) -> *mut c_char;
-    fn sh_scan_plugins(
-        vst2_paths: *const c_char,
-        vst3_paths: *const c_char,
-    ) -> *mut c_char;
+    fn sh_scan_plugins(vst2_paths: *const c_char, vst3_paths: *const c_char) -> *mut c_char;
 
     fn sh_add_to_chain(unique_id: *const c_char) -> *mut c_char;
     fn sh_remove_from_chain(node_id: *const c_char) -> bool;
