@@ -34,6 +34,10 @@ import { Tooltip, TooltipContent, TooltipTrigger } from '@/shared/ui/tooltip'
 import { AudioConfigCard } from './AudioConfigCard'
 import { SortableChainCard } from './SortableChainCard'
 
+// ponytail: module-level cache survives route unmount/remount — avoids
+// channel section flash while get_audio_devices fetch is in-flight.
+let devicesCache: AudioDevices = { inputs: [], outputs: [] }
+
 export function HomePage() {
   const { t } = useTranslation()
   const [error, setError] = useState<string | null>(null)
@@ -42,7 +46,13 @@ export function HomePage() {
   const config = useAudioConfigStore(s => s.config)
   const updateConfigStore = useAudioConfigStore(s => s.updateConfig)
   const loadFromBackend = useAudioConfigStore(s => s.loadFromBackend)
-  const [devices, setDevices] = useState<AudioDevices>({ inputs: [], outputs: [] })
+  // ponytail: module-level cache survives route unmount/remount — avoids
+  // "No channels available" flash while get_audio_devices fetch is in-flight.
+  const [devices, setDevicesState] = useState<AudioDevices>(devicesCache)
+  const setDevices = (d: AudioDevices) => {
+    devicesCache = d
+    setDevicesState(d)
+  }
 
   const clearChain = async () => {
     try {

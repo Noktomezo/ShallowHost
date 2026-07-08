@@ -5,6 +5,7 @@ import {
   createRouter,
   Outlet,
   RouterProvider,
+  useLocation,
 } from '@tanstack/react-router'
 import { useEffect } from 'react'
 import { HomePage } from '@/pages/home'
@@ -27,6 +28,7 @@ function RootLayout() {
   const toggle = useUIStore(s => s.toggleSidebar)
   const loading = useChainStore(s => s.loading)
   const loadingMessage = useChainStore(s => s.loadingMessage)
+  const location = useLocation()
 
   return (
     <TooltipProvider>
@@ -37,7 +39,9 @@ function RootLayout() {
           <main className="relative min-w-0 flex-1 overflow-hidden rounded-tl-[8px] bg-background">
             <ScrollArea className="h-full">
               <div className="flex min-h-full flex-col p-4">
-                <Outlet />
+                <div key={location.pathname} className="animate-in fade-in slide-in-from-bottom-2 duration-200 ease-out">
+                  <Outlet />
+                </div>
               </div>
             </ScrollArea>
             {loading && (
@@ -84,6 +88,7 @@ const routeTree = rootRoute.addChildren([homeRoute, pluginsRoute, settingsRoute]
 const router = createRouter({
   routeTree,
   history: createHashHistory(),
+  defaultPreload: 'intent',
 })
 
 declare module '@tanstack/react-router' {

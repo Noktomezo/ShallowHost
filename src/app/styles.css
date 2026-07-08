@@ -129,12 +129,16 @@
 @layer base {
   * {
     @apply border-border outline-ring/50;
+    user-select: none;
     }
   body {
     @apply bg-background text-foreground;
     }
   html {
     @apply font-sans;
+    }
+  input, textarea, [contenteditable="true"] {
+    user-select: text;
     }
 }
 

@@ -28,6 +28,20 @@ where
     rx.recv().map_err(|e| e.to_string())
 }
 
+// ponytail: debug keeps devtools + reload for dev; release kills everything.
+#[cfg(debug_assertions)]
+fn prevent_default() -> tauri::plugin::TauriPlugin<tauri::Wry> {
+    use tauri_plugin_prevent_default::Flags;
+    tauri_plugin_prevent_default::Builder::new()
+        .with_flags(Flags::all().difference(Flags::DEV_TOOLS | Flags::RELOAD))
+        .build()
+}
+
+#[cfg(not(debug_assertions))]
+fn prevent_default() -> tauri::plugin::TauriPlugin<tauri::Wry> {
+    tauri_plugin_prevent_default::init()
+}
+
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
     tauri::Builder::default()
@@ -46,6 +60,7 @@ pub fn run() {
             tauri_plugin_autostart::MacosLauncher::LaunchAgent,
             Some(vec!["--autostart"]),
         ))
+        .plugin(prevent_default())
         .manage(AudioEngine::new())
         .manage(CloseToTray(Mutex::new(true)))
         .setup(|app| {
