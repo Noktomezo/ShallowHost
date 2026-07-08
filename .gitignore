@@ -24,6 +24,7 @@ dist-ssr
 *.sw?
 
 # Project-specific ignored folders
+.fallow/
 .omo/
 .secrets/
 nul

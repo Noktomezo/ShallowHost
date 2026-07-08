@@ -8,9 +8,8 @@ import { applyUpdateAndRelaunch } from '@/shared/lib/updater'
 import { cn } from '@/shared/lib/utils'
 import { buttonVariants } from '@/shared/ui/button-variants'
 
-export { toast }
-
 const TOAST_ID = 'shallow-update'
+const dismissUpdateToast = () => toast.dismiss(TOAST_ID)
 
 // ponytail: track toast visibility so the poller (router.tsx) can skip re-showing
 // while it's on screen, but re-show after the user dismisses it.
@@ -70,8 +69,6 @@ function UpdateToastView({ info }: { info: UpdateInfo }) {
   const { t } = useTranslation()
   const [state, setState] = useState<UpdateState>({ kind: 'available' })
 
-  const dismiss = () => toast.dismiss(TOAST_ID)
-
   async function handleUpdate() {
     setState({
       kind: 'progress',
@@ -83,7 +80,7 @@ function UpdateToastView({ info }: { info: UpdateInfo }) {
       })
       // ponytail: real path relaunches inside downloadAndInstall (app exits, line unreached).
       // Mock resolves without relaunch — dismiss the toast silently.
-      dismiss()
+      dismissUpdateToast()
     }
     catch (e) {
       setState({ kind: 'error', message: String(e) })
@@ -118,7 +115,7 @@ function UpdateToastView({ info }: { info: UpdateInfo }) {
         </div>
         {isError && (
           <div className="flex justify-start gap-2 pt-7">
-            <UpdateButton variant="outline" onClick={dismiss}>
+            <UpdateButton variant="outline" onClick={dismissUpdateToast}>
               {t('update.close')}
             </UpdateButton>
           </div>
@@ -150,7 +147,7 @@ function UpdateToastView({ info }: { info: UpdateInfo }) {
           <Download className="size-3.5" />
           {t('update.update')}
         </UpdateButton>
-        <UpdateButton variant="outline" onClick={dismiss}>
+        <UpdateButton variant="outline" onClick={dismissUpdateToast}>
           <X className="size-3.5" />
           {t('update.notNow')}
         </UpdateButton>

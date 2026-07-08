@@ -101,6 +101,17 @@ function DeviceSelect({
   )
 }
 
+function toggleChannelIndices(active: number[], indices: number[], checked: boolean) {
+  const next = new Set(active)
+  if (checked) {
+    indices.forEach(idx => next.add(idx))
+  }
+  else {
+    indices.forEach(idx => next.delete(idx))
+  }
+  return [...next]
+}
+
 export function AudioConfigCard({
   config,
   devices,
@@ -117,33 +128,15 @@ export function AudioConfigCard({
 
   const activeInputs = config.active_inputs ?? [0, 1]
   const activeOutputs = config.active_outputs ?? [0, 1]
+  const activeInputsSet = new Set(activeInputs)
+  const activeOutputsSet = new Set(activeOutputs)
 
   const handleInputToggle = (indices: number[], checked: boolean) => {
-    let next = [...activeInputs]
-    if (checked) {
-      indices.forEach((idx) => {
-        if (!next.includes(idx))
-          next.push(idx)
-      })
-    }
-    else {
-      next = next.filter(idx => !indices.includes(idx))
-    }
-    updateConfig({ active_inputs: next })
+    updateConfig({ active_inputs: toggleChannelIndices(activeInputs, indices, checked) })
   }
 
   const handleOutputToggle = (indices: number[], checked: boolean) => {
-    let next = [...activeOutputs]
-    if (checked) {
-      indices.forEach((idx) => {
-        if (!next.includes(idx))
-          next.push(idx)
-      })
-    }
-    else {
-      next = next.filter(idx => !indices.includes(idx))
-    }
-    updateConfig({ active_outputs: next })
+    updateConfig({ active_outputs: toggleChannelIndices(activeOutputs, indices, checked) })
   }
 
   const outputItems = Object.fromEntries([
@@ -285,10 +278,10 @@ export function AudioConfigCard({
                                   <span className="text-xs text-muted-foreground">No channels available</span>
                                 )
                               : (
-                                  outputPairs.map((p, idx) => {
-                                    const isChecked = p.indices.every(i => activeOutputs.includes(i))
+                                  outputPairs.map((p) => {
+                                    const isChecked = p.indices.every(i => activeOutputsSet.has(i))
                                     return (
-                                      <label key={idx} className="flex items-center gap-2 text-sm select-none cursor-pointer">
+                                      <label key={p.label} className="flex items-center gap-2 text-sm select-none cursor-pointer">
                                         <Checkbox
                                           checked={isChecked}
                                           onCheckedChange={checked => handleOutputToggle(p.indices, !!checked)}
@@ -312,10 +305,10 @@ export function AudioConfigCard({
                                   <span className="text-xs text-muted-foreground">No channels available</span>
                                 )
                               : (
-                                  inputPairs.map((p, idx) => {
-                                    const isChecked = p.indices.every(i => activeInputs.includes(i))
+                                  inputPairs.map((p) => {
+                                    const isChecked = p.indices.every(i => activeInputsSet.has(i))
                                     return (
-                                      <label key={idx} className="flex items-center gap-2 text-sm select-none cursor-pointer">
+                                      <label key={p.label} className="flex items-center gap-2 text-sm select-none cursor-pointer">
                                         <Checkbox
                                           checked={isChecked}
                                           onCheckedChange={checked => handleInputToggle(p.indices, !!checked)}

@@ -1,0 +1,43 @@
+entry = [
+  "src/main.tsx",
+  "src/app/**/*.tsx",
+  "src/pages/**/*.tsx",
+  "src/widgets/**/*.tsx",
+  "src/shared/**/*.ts",
+  "src/shared/**/*.tsx",
+  "src/entities/**/*.ts",
+  "src/entities/**/*.tsx",
+  "vite.config.ts",
+  "eslint.config.js",
+  "doctor.config.ts",
+]
+ignorePatterns = [
+  "**/*.d.ts",
+  "dist/**",
+  "src-tauri/target/**",
+]
+ignoreDependencies = [
+  "tailwindcss",
+  "shadcn",
+  "react-doctor",
+]
+ignoreExportsUsedInFile = true
+
+[rules]
+unused-files = "error"
+unused-exports = "warn"
+unused-types = "warn"
+
+[duplicates]
+mode = "mild"
+minTokens = 50
+minLines = 5
+threshold = 10
+
+[health]
+maxCyclomatic = 30
+maxCognitive = 40
+maxCrap = 500.0
+
+[audit]
+gate = "new-only"
