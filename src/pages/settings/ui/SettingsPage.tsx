@@ -1,4 +1,7 @@
 import { getVersion } from '@tauri-apps/api/app'
+import { invoke } from '@tauri-apps/api/core'
+import { getCurrentWindow } from '@tauri-apps/api/window'
+import { disable as disableAutostart, enable as enableAutostart } from '@tauri-apps/plugin-autostart'
 import { Globe, Monitor, Moon, RefreshCw, Sun } from 'lucide-react'
 import { useEffect, useState } from 'react'
 import { useTranslation } from 'react-i18next'
@@ -6,6 +9,7 @@ import { updateService } from '@/shared/lib/updater'
 import { cn } from '@/shared/lib/utils'
 import { useLanguageStore } from '@/shared/model/language-store'
 import { useThemeStore } from '@/shared/model/theme-store'
+import { useTrayStore } from '@/shared/model/tray-store'
 import { useUpdateStore } from '@/shared/model/update-store'
 import { Badge } from '@/shared/ui/badge'
 import { Button } from '@/shared/ui/button'
@@ -61,11 +65,41 @@ export function SettingsPage() {
   const setCheckResult = useUpdateStore(s => s.setCheckResult)
   const autoCheckEnabled = useUpdateStore(s => s.autoCheckEnabled)
   const setAutoCheckEnabled = useUpdateStore(s => s.setAutoCheckEnabled)
+  const autostart = useTrayStore(s => s.autostart)
+  const autostartToTray = useTrayStore(s => s.autostartToTray)
+  const minimizeToTray = useTrayStore(s => s.minimizeToTray)
+  const setAutostart = useTrayStore(s => s.setAutostart)
+  const setAutostartToTray = useTrayStore(s => s.setAutostartToTray)
+  const setMinimizeToTray = useTrayStore(s => s.setMinimizeToTray)
   const [version, setVersion] = useState('')
 
   useEffect(() => {
     getVersion().then(setVersion)
+    const trayState = useTrayStore.getState()
+    // ponytail: sync persisted settings with OS/Rust state on mount.
+    invoke('set_close_to_tray', { enabled: trayState.minimizeToTray })
+    if (trayState.autostart)
+      enableAutostart().catch(() => {})
+    // ponytail: if launched via autostart but autostartToTray is off, show window
+    // (Rust hid it in setup because it can't read zustand state).
+    invoke<boolean>('is_autostart_launch').then((launched) => {
+      if (launched && !trayState.autostartToTray)
+        getCurrentWindow().show()
+    })
   }, [])
+
+  async function handleAutostart(v: boolean) {
+    setAutostart(v)
+    if (v)
+      await enableAutostart()
+    else
+      await disableAutostart()
+  }
+
+  function handleMinimizeToTray(v: boolean) {
+    setMinimizeToTray(v)
+    invoke('set_close_to_tray', { enabled: v })
+  }
 
   async function handleCheck() {
     setCheckResult({ kind: 'checking' })
@@ -180,6 +214,48 @@ export function SettingsPage() {
 
       <Card className="mt-3 w-full">
         <CardHeader className="gap-0.5">
+          <CardTitle>{t('settings.system')}</CardTitle>
+          <CardDescription>{t('settings.systemDescription')}</CardDescription>
+        </CardHeader>
+        <CardContent>
+          <div className="flex flex-col gap-4">
+            <div className="flex items-center justify-between gap-2">
+              <div className="flex flex-col gap-0">
+                <span className="text-sm font-medium">{t('settings.autostart')}</span>
+                <span className="text-xs text-muted-foreground">{t('settings.autostartDescription')}</span>
+              </div>
+              <Switch
+                checked={autostart}
+                onCheckedChange={v => handleAutostart(!!v)}
+              />
+            </div>
+            <div className="flex items-center justify-between gap-2">
+              <div className="flex flex-col gap-0">
+                <span className="text-sm font-medium">{t('settings.autostartToTray')}</span>
+                <span className="text-xs text-muted-foreground">{t('settings.autostartToTrayDescription')}</span>
+              </div>
+              <Switch
+                checked={autostartToTray}
+                disabled={!autostart}
+                onCheckedChange={v => setAutostartToTray(!!v)}
+              />
+            </div>
+            <div className="flex items-center justify-between gap-2">
+              <div className="flex flex-col gap-0">
+                <span className="text-sm font-medium">{t('settings.minimizeToTray')}</span>
+                <span className="text-xs text-muted-foreground">{t('settings.minimizeToTrayDescription')}</span>
+              </div>
+              <Switch
+                checked={minimizeToTray}
+                onCheckedChange={v => handleMinimizeToTray(!!v)}
+              />
+            </div>
+          </div>
+        </CardContent>
+      </Card>
+
+      <Card className="mt-3 w-full">
+        <CardHeader className="gap-0.5">
           <div className="flex items-center gap-2">
             <CardTitle>{t('settings.updates')}</CardTitle>
             {version && (
@@ -195,13 +271,13 @@ export function SettingsPage() {
           <CardAction className="self-center">
             <Button
               variant="outline"
-              size="sm"
+              size="default"
               disabled={check.kind === 'checking'}
               onClick={handleCheck}
             >
               <RefreshCw
                 className={cn(
-                  'size-3.5',
+                  'size-4',
                   check.kind === 'checking' && 'animate-spin',
                 )}
               />

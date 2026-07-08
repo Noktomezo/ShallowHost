@@ -246,7 +246,7 @@ export function HomePage() {
                 <TooltipTrigger render={(
                   <Button
                     variant="default"
-                    size="icon-sm"
+                    size="icon"
                     className="cursor-pointer"
                     aria-label={t('home.goToPlugins')}
                   >
@@ -261,7 +261,7 @@ export function HomePage() {
               <TooltipTrigger render={(
                 <Button
                   variant="outline"
-                  size="icon-sm"
+                  size="icon"
                   disabled={chain.length === 0}
                   onClick={clearChain}
                   className="cursor-pointer hover:!bg-red/10 hover:!text-red hover:!border-red/20 disabled:pointer-events-none disabled:opacity-50"

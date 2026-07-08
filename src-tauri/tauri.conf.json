@@ -36,7 +36,13 @@
     ],
     "resources": [
       "shallow_host_cpp.dll"
-    ]
+    ],
+    "windows": {
+      "nsis": {
+        "installerIcon": "icons/icon.ico",
+        "uninstallerIcon": "icons/icon.ico"
+      }
+    }
   },
   "plugins": {
     "updater": {

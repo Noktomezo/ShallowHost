@@ -6,7 +6,7 @@ _default:
 
 # Generate icons from the same source used in CI
 gen-icons:
-  bun tauri icon assets/app-logo.png
+  bun tauri icon assets/app-logo.svg
 
 # Run in dev mode with hot reload
 dev:

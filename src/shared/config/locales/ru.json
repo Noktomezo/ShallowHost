@@ -86,7 +86,15 @@
       "updates": "Обновления",
       "updatesDescription": "Проверка и установка обновлений приложения.",
       "autoCheck": "Автоматическая проверка",
-      "autoCheckDescription": "Проверять обновления в фоне."
+      "autoCheckDescription": "Проверять обновления в фоне.",
+      "system": "Система",
+      "systemDescription": "Автозапуск и поведение в трее.",
+      "autostart": "Автозапуск при входе в систему",
+      "autostartDescription": "Запускать приложение при входе в систему.",
+      "autostartToTray": "Автозапуск в трей",
+      "autostartToTrayDescription": "Сворачивать в трей при автозапуске.",
+      "minimizeToTray": "Сворачивать в трей при закрытии",
+      "minimizeToTrayDescription": "Скрывать в трей вместо закрытия."
     },
     "update": {
       "check": "Проверить обновления",

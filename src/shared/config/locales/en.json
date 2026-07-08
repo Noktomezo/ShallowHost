@@ -86,7 +86,15 @@
       "updates": "Updates",
       "updatesDescription": "Check and install app updates.",
       "autoCheck": "Automatic checks",
-      "autoCheckDescription": "Check for updates in the background."
+      "autoCheckDescription": "Check for updates in the background.",
+      "system": "System",
+      "systemDescription": "Autostart and tray behavior.",
+      "autostart": "Autostart on login",
+      "autostartDescription": "Launch the app on system login.",
+      "autostartToTray": "Autostart to tray",
+      "autostartToTrayDescription": "Minimize to tray on autostart.",
+      "minimizeToTray": "Minimize to tray on close",
+      "minimizeToTrayDescription": "Hide to tray instead of closing."
     },
     "update": {
       "check": "Check for updates",
