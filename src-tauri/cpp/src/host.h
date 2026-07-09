@@ -27,6 +27,24 @@
 #include <memory>
 #include <unordered_map>
 
+// ponytail: subclass AudioProcessorPlayer to add ScopedNoDenormals before the
+// entire plugin chain processes. JUCE doesn't auto-handle denormals — without
+// this, decaying signals from plugins produce subnormal floats that trigger
+// 100x CPU spikes → audio dropouts. ScopedNoDenormals sets FTZ+DAZ CPU flags
+// for the audio thread scope.
+class DenormalsPlayer : public juce::AudioProcessorPlayer {
+public:
+    using AudioProcessorPlayer::AudioProcessorPlayer;
+    void audioDeviceIOCallbackWithContext(const float* const* inputChannelData, int numInputChannels,
+                                          float* const* outputChannelData, int numOutputChannels,
+                                          int numSamples, const juce::AudioIODeviceCallbackContext& context) override
+    {
+        juce::ScopedNoDenormals denormals;
+        juce::AudioProcessorPlayer::audioDeviceIOCallbackWithContext(
+            inputChannelData, numInputChannels, outputChannelData, numOutputChannels, numSamples, context);
+    }
+};
+
 class SHALLOW_HOST_API ShallowHost : public juce::ChangeListener {
 public:
     static void initialize();
@@ -73,7 +91,7 @@ private:
     juce::AudioDeviceManager deviceManager;
     juce::AudioPluginFormatManager formatManager;
     juce::AudioProcessorGraph graph;
-    juce::AudioProcessorPlayer player;
+    DenormalsPlayer player;
 
     juce::AudioProcessorGraph::Node::Ptr inputNode;
     juce::AudioProcessorGraph::Node::Ptr outputNode;

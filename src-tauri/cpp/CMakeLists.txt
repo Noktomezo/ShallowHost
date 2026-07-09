@@ -40,6 +40,12 @@ target_compile_definitions(shallow_host_cpp PRIVATE
     JUCE_MODAL_LOOPS_PERMITTED=1
 )
 
+# ponytail: /fp:fast on MSVC — allows FP optimizations + complements ScopedNoDenormals
+# (runtime FTZ/DAZ) at compiler level. Denormals cause 100x CPU spikes → audio dropouts.
+if((CMAKE_CXX_COMPILER_ID STREQUAL "MSVC") OR (CMAKE_CXX_COMPILER_FRONTEND_VARIANT STREQUAL "MSVC"))
+    target_compile_options(shallow_host_cpp PRIVATE /fp:fast)
+endif()
+
 target_include_directories(shallow_host_cpp PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}/src
     ${JUCE_MODULES_DIR}
