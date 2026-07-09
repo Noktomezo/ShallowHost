@@ -17,7 +17,12 @@ export interface DownloadProgress {
 
 export const updateService = {
   async check() {
-    const update = await check()
+    // ponytail: tauri updater has no built-in timeout — flaky network hangs
+    // the check button forever. 10s ceiling; upgrade to configurable if needed.
+    const update = await Promise.race([
+      check(),
+      new Promise<null>(resolve => setTimeout(resolve, 10000, null)),
+    ])
     if (!update)
       return null
     return {

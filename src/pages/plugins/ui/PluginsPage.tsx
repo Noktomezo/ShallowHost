@@ -152,22 +152,12 @@ export function PluginsPage() {
                         <div className="flex gap-1">
                           {inChain
                             ? (
-                                <Tooltip>
-                                  <TooltipTrigger
-                                    render={(
-                                      <Link to="/">
-                                        <Button
-                                          variant="default"
-                                          size="icon"
-                                          aria-label={t('plugins.goToChain')}
-                                        >
-                                          <ArrowRight className="size-4" />
-                                        </Button>
-                                      </Link>
-                                    )}
-                                  />
-                                  <TooltipContent>{t('plugins.goToChain')}</TooltipContent>
-                                </Tooltip>
+                                <Link to="/">
+                                  <Button variant="default">
+                                    {t('plugins.goToChain')}
+                                    <ArrowRight className="size-4" />
+                                  </Button>
+                                </Link>
                               )
                             : (
                                 <Tooltip>

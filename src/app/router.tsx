@@ -111,15 +111,25 @@ export function App() {
       if (isUpdateToastVisible())
         return
       setCheckResult({ kind: 'checking' })
-      const info = await updateService.check()
-      if (cancelled)
-        return
-      if (info) {
-        setCheckResult({ kind: 'available', info })
-        if (!isUpdateToastVisible())
-          showUpdateToast(info)
+      try {
+        const info = await updateService.check()
+        if (cancelled)
+          return
+        if (info) {
+          setCheckResult({ kind: 'available', info })
+          if (!isUpdateToastVisible())
+            showUpdateToast(info)
+        }
+        else {
+          setCheckResult({ kind: 'up-to-date' })
+        }
       }
-      else {
+      catch (e) {
+        if (cancelled)
+          return
+        // ponytail: network/endpoint errors → treat as up-to-date so UI doesn't
+        // stick on 'checking' forever. Logged for diagnosis.
+        console.error('[update] auto-check failed:', e)
         setCheckResult({ kind: 'up-to-date' })
       }
     }

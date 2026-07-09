@@ -16,7 +16,7 @@ import {
 import { Link } from '@tanstack/react-router'
 import { invoke } from '@tauri-apps/api/core'
 import { listen } from '@tauri-apps/api/event'
-import { ArrowRight, Paintbrush, Plus } from 'lucide-react'
+import { ArrowRight, Plus, Trash2 } from 'lucide-react'
 import { useEffect, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { useAudioConfigStore } from '@/shared/model/audio-config-store'
@@ -247,20 +247,13 @@ export function HomePage() {
           <CardDescription>{t('home.addHint')}</CardDescription>
           <CardAction className="flex items-center gap-1.5 self-center">
             <Link to="/plugins">
-              <Tooltip>
-                <TooltipTrigger render={(
-                  <Button
-                    variant="default"
-                    size="icon"
-                    className="cursor-pointer"
-                    aria-label={t('home.goToPlugins')}
-                  >
-                    <ArrowRight className="size-4" />
-                  </Button>
-                )}
-                />
-                <TooltipContent>{t('home.goToPlugins')}</TooltipContent>
-              </Tooltip>
+              <Button
+                variant="default"
+                className="cursor-pointer"
+              >
+                {t('home.goToPlugins')}
+                <ArrowRight className="size-4" />
+              </Button>
             </Link>
             <Tooltip>
               <TooltipTrigger render={(
@@ -272,7 +265,7 @@ export function HomePage() {
                   className="cursor-pointer hover:!bg-red/10 hover:!text-red hover:!border-red/20 disabled:pointer-events-none disabled:opacity-50"
                   aria-label={t('home.clearChain')}
                 >
-                  <Paintbrush className="size-4" />
+                  <Trash2 className="size-4" />
                 </Button>
               )}
               />
