@@ -36,7 +36,7 @@ function RootLayout() {
           <main className="relative min-w-0 flex-1 overflow-hidden rounded-tl-[8px] bg-background">
             <ScrollArea className="h-full">
               <div className="flex min-h-full flex-col p-4">
-                <div key={location.pathname} className="animate-in fade-in slide-in-from-bottom-2 duration-200 ease-out">
+                <div key={location.pathname} className="transition-opacity transition-transform duration-200 ease-out animate-in fade-in slide-in-from-bottom-2">
                   <Outlet />
                 </div>
               </div>

@@ -109,16 +109,18 @@ export function HomePage() {
           setDevices(freshDevs)
         }
       }
-
-      setTimeout(async () => {
-        try {
-          const fresh = await invoke<AudioDevices>('get_audio_devices')
-          setDevices(fresh)
-        }
-        catch {}
-      }, 300)
     }
     init().catch(() => {})
+
+    const timerId = setTimeout(async () => {
+      try {
+        const fresh = await invoke<AudioDevices>('get_audio_devices')
+        setDevices(fresh)
+      }
+      catch {}
+    }, 300)
+
+    return () => clearTimeout(timerId)
   }, [refreshChain, loadFromBackend, updateConfigStore])
 
   // ponytail: backend polls devices every 500ms for hotplug; react to events
