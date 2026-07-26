@@ -378,7 +378,9 @@ impl AudioEngine {
                 let uid = unique_id.clone();
                 let sb = state_base64.clone();
                 let res = tauri::async_runtime::spawn_blocking(move || {
-                    ffi::add_to_chain_with_state(&uid, &sb, bypassed)
+                    let r = ffi::add_to_chain_with_state(&uid, &sb, bypassed);
+                    std::thread::sleep(std::time::Duration::from_millis(50));
+                    r
                 })
                 .await;
 
@@ -390,7 +392,6 @@ impl AudioEngine {
 
                 use tauri::Emitter;
                 let _ = app.emit("chain_updated", ());
-                std::thread::sleep(std::time::Duration::from_millis(50));
             }
         }
     }

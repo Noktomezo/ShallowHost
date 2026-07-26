@@ -170,13 +170,15 @@ int ShallowHost::audioStop()
 int ShallowHost::audioStopOnMessageThread()
 {
     deviceManager.closeAudioDevice();
-    return 0;
+    scannedDeviceTypes.clear();
+    return 1;
 }
 
 void ShallowHost::changeListenerCallback(juce::ChangeBroadcaster* source)
 {
     if (source == &deviceManager)
     {
+        scannedDeviceTypes.clear();
         rebuildConnections();
     }
 }
@@ -213,7 +215,12 @@ std::string ShallowHost::getAudioDevicesJson(const char* driver, const char* dev
 
         if (typeObject != nullptr)
         {
-            typeObject->scanForDevices();
+            std::string tName = targetType.toStdString();
+            if (ps->host->scannedDeviceTypes.find(tName) == ps->host->scannedDeviceTypes.end())
+            {
+                typeObject->scanForDevices();
+                ps->host->scannedDeviceTypes.insert(tName);
+            }
 
             juce::String defaultInputName;
             juce::String defaultOutputName;

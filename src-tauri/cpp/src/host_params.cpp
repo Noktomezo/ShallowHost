@@ -105,11 +105,6 @@ bool ShallowHost::setPluginParameterOnMessageThread(const std::string& nodeId, i
     return false;
 }
 
-#if defined(_WIN32) || defined(_WIN64)
-#include <windows.h>
-#include <shellapi.h>
-#endif
-
 bool ShallowHost::openPluginGui(const std::string& nodeId, const std::string& titlePrefix)
 {
     struct Params {
@@ -169,22 +164,25 @@ bool ShallowHost::openPluginGuiOnMessageThread(const std::string& nodeId, const 
         HWND hwnd = (HWND) peer->getNativeHandle();
         if (hwnd != NULL)
         {
-            HICON hIconBig = NULL;
-            HICON hIconSmall = NULL;
-            char exePath[MAX_PATH];
-            if (GetModuleFileNameA(NULL, exePath, MAX_PATH) > 0)
+            static HICON s_hIconBig = NULL;
+            static HICON s_hIconSmall = NULL;
+            static bool s_iconLoaded = false;
+            if (!s_iconLoaded)
             {
-                ExtractIconExA(exePath, 0, &hIconBig, &hIconSmall, 1);
+                char exePath[MAX_PATH];
+                if (GetModuleFileNameA(NULL, exePath, MAX_PATH) > 0)
+                {
+                    ExtractIconExA(exePath, 0, &s_hIconBig, &s_hIconSmall, 1);
+                }
+                s_iconLoaded = true;
             }
-            if (hIconSmall != NULL)
+            if (s_hIconSmall != NULL)
             {
-                SendMessageA(hwnd, WM_SETICON, ICON_SMALL, (LPARAM)hIconSmall);
-                DestroyIcon(hIconSmall);
+                SendMessageA(hwnd, WM_SETICON, ICON_SMALL, (LPARAM)s_hIconSmall);
             }
-            if (hIconBig != NULL)
+            if (s_hIconBig != NULL)
             {
-                SendMessageA(hwnd, WM_SETICON, ICON_BIG, (LPARAM)hIconBig);
-                DestroyIcon(hIconBig);
+                SendMessageA(hwnd, WM_SETICON, ICON_BIG, (LPARAM)s_hIconBig);
             }
         }
     }

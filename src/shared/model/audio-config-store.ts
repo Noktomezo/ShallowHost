@@ -63,9 +63,19 @@ export const useAudioConfigStore = create<AudioConfigState>()(
     }),
     {
       name: 'audio-config',
+      version: 1,
       storage: createJSONStorage(() => tauriStorage),
+      migrate: (persistedState: any, _version: number) => {
+        if (persistedState && persistedState.config) {
+          if ('mono' in persistedState.config && !('is_mono' in persistedState.config)) {
+            persistedState.config.is_mono = Boolean(persistedState.config.mono)
+          }
+        }
+        return persistedState
+      },
+      onRehydrateStorage: () => (state) => {
+        state?.loadFromBackend()
+      },
     },
   ),
 )
-
-useAudioConfigStore.getState().loadFromBackend()

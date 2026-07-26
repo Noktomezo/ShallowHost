@@ -1,5 +1,6 @@
 #include "host.h"
 #include <algorithm>
+#include <future>
 #include <iostream>
 
 #if defined(_WIN32) || defined(_WIN64)
@@ -175,14 +176,20 @@ void ShallowHost::initialize()
 {
     if (g_juceThread != nullptr) return;
     g_juceRunning.store(true);
-    g_juceThread = new std::thread([]() {
+    std::promise<void> initPromise;
+    auto initFuture = initPromise.get_future();
+
+    g_juceThread = new std::thread([p = std::move(initPromise)]() mutable {
         juce::ScopedJuceInitialiser_GUI guiInit;
         auto* mm = juce::MessageManager::getInstance();
+        p.set_value();
         while (g_juceRunning.load())
         {
             mm->runDispatchLoopUntil(20);
         }
     });
+
+    initFuture.wait();
 }
 
 void ShallowHost::shutdown()
@@ -191,7 +198,13 @@ void ShallowHost::shutdown()
 
     auto& host = getInstance();
     host.audioStop();
-    host.activeWindows.clear();
+
+    juce::MessageManager::getInstance()->callFunctionOnMessageThread([](void* p) -> void* {
+        auto* h = static_cast<ShallowHost*>(p);
+        h->activeWindows.clear();
+        return nullptr;
+    }, &host);
+
     host.deviceManager.removeChangeListener(&host);
 
     g_juceRunning.store(false);

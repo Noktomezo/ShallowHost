@@ -83,7 +83,7 @@ function formatChannelPair(ch1: string, ch2: string): string {
   if (rem1 && rem2) {
     return `${prefix}${rem1} + ${rem2}${suffix}`
   }
-  return `${prefix}${suffix}`
+  return `${ch1} / ${ch2}`
 }
 
 function groupChannels(channels: string[]): { label: string, indices: number[] }[] {

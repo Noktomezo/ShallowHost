@@ -4,6 +4,24 @@
 
 std::string ShallowHost::scanPluginsJson(const std::string& vst2PathsJson, const std::string& vst3PathsJson)
 {
+    struct Params {
+        ShallowHost* host;
+        const std::string* vst2PathsJson;
+        const std::string* vst3PathsJson;
+        std::string result;
+    } params { this, &vst2PathsJson, &vst3PathsJson, "" };
+
+    juce::MessageManager::getInstance()->callFunctionOnMessageThread([](void* p) -> void* {
+        auto* ps = static_cast<Params*>(p);
+        ps->result = ps->host->scanPluginsJsonOnMessageThread(*ps->vst2PathsJson, *ps->vst3PathsJson);
+        return nullptr;
+    }, &params);
+
+    return params.result;
+}
+
+std::string ShallowHost::scanPluginsJsonOnMessageThread(const std::string& vst2PathsJson, const std::string& vst3PathsJson)
+{
     juce::FileSearchPath vst2Path;
     juce::var vst2Arr = juce::JSON::parse(juce::String(vst2PathsJson));
     if (vst2Arr.isArray())
@@ -143,7 +161,6 @@ std::string ShallowHost::addToChainOnMessageThread(const std::string& uniqueId, 
     node->setBypassed(bypassed);
     chainNodes.push_back(node);
     rebuildConnections();
-    pumpMessageLoop();
 
     return std::to_string(node->nodeID.uid);
 }
@@ -441,7 +458,6 @@ bool ShallowHost::loadStateJsonOnMessageThread(const std::string& stateJson)
 
     for (int i = 0; i < arr->size(); ++i)
     {
-        pumpMessageLoop();
         auto& item = arr->getReference(i);
         auto uniqueId = item.getProperty("unique_id", "").toString();
         auto bypassed = (bool)item.getProperty("bypassed", false);
@@ -472,7 +488,6 @@ bool ShallowHost::loadStateJsonOnMessageThread(const std::string& stateJson)
             node->setBypassed(bypassed);
             chainNodes.push_back(node);
         }
-        pumpMessageLoop();
     }
 
     rebuildConnections();

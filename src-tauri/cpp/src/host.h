@@ -91,8 +91,6 @@ public:
     {
         inPeak = inputPeak.load(std::memory_order_relaxed);
         outPeak = outputPeak.load(std::memory_order_relaxed);
-        inputPeak.store(inPeak * 0.88f, std::memory_order_relaxed);
-        outputPeak.store(outPeak * 0.88f, std::memory_order_relaxed);
     }
 };
 
@@ -182,6 +180,7 @@ private:
     };
 
     std::unordered_map<std::string, std::unique_ptr<PluginWindow>> activeWindows;
+    std::unordered_set<std::string> scannedDeviceTypes;
 
     juce::File appDataDir;
     void loadKnownPlugins();
@@ -190,6 +189,8 @@ private:
     void setupGraph();
     void rebuildConnections();
     void rebuildConnectionsOnMessageThread();
+
+    std::string scanPluginsJsonOnMessageThread(const std::string& vst2PathsJson, const std::string& vst3PathsJson);
 
     bool openPluginGuiOnMessageThread(const std::string& nodeId, const std::string& titlePrefix = "");
     bool closePluginGuiOnMessageThread(const std::string& nodeId);

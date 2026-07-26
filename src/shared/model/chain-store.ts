@@ -82,9 +82,6 @@ export const useChainStore = create<ChainStore>((set, get) => ({
           if (item.unique_id && nextMap[item.unique_id]) {
             delete nextMap[item.unique_id]
           }
-          if (item.name && nextMap[item.name]) {
-            delete nextMap[item.name]
-          }
         }
         return {
           rawChain: result,
@@ -117,20 +114,30 @@ export const useChainStore = create<ChainStore>((set, get) => ({
       }
     })
 
-    invoke('add_to_chain', { pluginId: plugin.unique_id })
+    let timer: ReturnType<typeof setTimeout>
+    const timeoutPromise = new Promise((_, reject) => {
+      timer = setTimeout(() => {
+        reject(new Error(`Loading ${plugin.name} timed out`))
+      }, 15000)
+    })
+
+    Promise.race([
+      invoke('add_to_chain', { pluginId: plugin.unique_id }),
+      timeoutPromise,
+    ])
       .then(async () => {
+        clearTimeout(timer)
         await get().refresh()
       })
       .catch((e) => {
-        set({ error: String(e) })
-      })
-      .finally(() => {
+        clearTimeout(timer)
         set((s) => {
           const nextMap = { ...s.initializingMap }
           delete nextMap[plugin.unique_id]
           return {
             initializingMap: nextMap,
             chain: computeChain(s.rawChain, nextMap),
+            error: String(e),
           }
         })
       })
