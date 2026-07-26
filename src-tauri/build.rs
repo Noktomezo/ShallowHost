@@ -11,6 +11,9 @@ fn main() {
 
     println!("cargo:rerun-if-changed=cpp/src/host.h");
     println!("cargo:rerun-if-changed=cpp/src/host.cpp");
+    println!("cargo:rerun-if-changed=cpp/src/host_audio.cpp");
+    println!("cargo:rerun-if-changed=cpp/src/host_chain.cpp");
+    println!("cargo:rerun-if-changed=cpp/src/host_params.cpp");
     println!("cargo:rerun-if-changed=cpp/src/ffi.cpp");
     println!("cargo:rerun-if-changed=cpp/CMakeLists.txt");
 
@@ -64,10 +67,10 @@ fn main() {
         "cargo:rustc-link-search=native={}",
         build_output_dir.display()
     );
-    println!("cargo:rustc-link-lib=dylib=shallow_host_cpp");
+    println!("cargo:rustc-link-lib=dylib=engine");
 
     // Copy DLL to OUT_DIR and target dir so it is available at runtime/linking
-    let dll_name = "shallow_host_cpp.dll";
+    let dll_name = "engine.dll";
     let src_dll = build_output_dir.join(dll_name);
 
     // Copy to OUT_DIR

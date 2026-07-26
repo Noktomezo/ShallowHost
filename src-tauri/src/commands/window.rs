@@ -2,9 +2,13 @@ use crate::engine::audio_io::AudioEngine;
 use tauri::Manager;
 
 #[tauri::command]
-pub async fn open_plugin_gui(app: tauri::AppHandle, plugin_id: String) -> Result<(), String> {
+pub async fn open_plugin_gui(
+    app: tauri::AppHandle,
+    plugin_id: String,
+    title_prefix: Option<String>,
+) -> Result<(), String> {
     let engine = app.state::<AudioEngine>();
-    engine.open_plugin_gui(plugin_id)
+    engine.open_plugin_gui(plugin_id, title_prefix)
 }
 
 #[tauri::command]

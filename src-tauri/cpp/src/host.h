@@ -26,6 +26,8 @@
 #include <vector>
 #include <memory>
 #include <unordered_map>
+#include <atomic>
+#include <algorithm>
 
 // ponytail: subclass AudioProcessorPlayer to add ScopedNoDenormals before the
 // entire plugin chain processes. JUCE doesn't auto-handle denormals — without
@@ -35,6 +37,9 @@
 class DenormalsPlayer : public juce::AudioProcessorPlayer {
 public:
     using AudioProcessorPlayer::AudioProcessorPlayer;
+    std::atomic<float> inputPeak{ 0.0f };
+    std::atomic<float> outputPeak{ 0.0f };
+
     void audioDeviceIOCallbackWithContext(const float* const* inputChannelData, int numInputChannels,
                                           float* const* outputChannelData, int numOutputChannels,
                                           int numSamples, const juce::AudioIODeviceCallbackContext& context) override
@@ -42,6 +47,52 @@ public:
         juce::ScopedNoDenormals denormals;
         juce::AudioProcessorPlayer::audioDeviceIOCallbackWithContext(
             inputChannelData, numInputChannels, outputChannelData, numOutputChannels, numSamples, context);
+
+        float inMax = 0.0f;
+        if (inputChannelData != nullptr)
+        {
+            for (int c = 0; c < numInputChannels; ++c)
+            {
+                if (const float* buf = inputChannelData[c])
+                {
+                    for (int s = 0; s < numSamples; ++s)
+                    {
+                        float mag = std::abs(buf[s]);
+                        if (mag > inMax) inMax = mag;
+                    }
+                }
+            }
+        }
+
+        float outMax = 0.0f;
+        if (outputChannelData != nullptr)
+        {
+            for (int c = 0; c < numOutputChannels; ++c)
+            {
+                if (const float* buf = outputChannelData[c])
+                {
+                    for (int s = 0; s < numSamples; ++s)
+                    {
+                        float mag = std::abs(buf[s]);
+                        if (mag > outMax) outMax = mag;
+                    }
+                }
+            }
+        }
+
+        float curIn = inputPeak.load(std::memory_order_relaxed);
+        inputPeak.store(std::max(inMax, curIn * 0.94f), std::memory_order_relaxed);
+
+        float curOut = outputPeak.load(std::memory_order_relaxed);
+        outputPeak.store(std::max(outMax, curOut * 0.94f), std::memory_order_relaxed);
+    }
+
+    void getAudioLevels(float& inPeak, float& outPeak)
+    {
+        inPeak = inputPeak.load(std::memory_order_relaxed);
+        outPeak = outputPeak.load(std::memory_order_relaxed);
+        inputPeak.store(inPeak * 0.88f, std::memory_order_relaxed);
+        outputPeak.store(outPeak * 0.88f, std::memory_order_relaxed);
     }
 };
 
@@ -54,11 +105,12 @@ public:
     void setAppDataDirectory(const std::string& path);
 
     int audioStart(const char* driver, const char* inputDevice, const char* outputDevice,
-                   int sampleRate, int bufferSize, int mono, int inputMask = 0, int outputMask = 0);
+                   int sampleRate, int bufferSize, int inputMask = 0, int outputMask = 0);
     int audioStop();
+    void getAudioLevels(float& inPeak, float& outPeak) { player.getAudioLevels(inPeak, outPeak); }
 
     int audioStartOnMessageThread(const char* driver, const char* inputDevice, const char* outputDevice,
-                                 int sampleRate, int bufferSize, int mono, int inputMask = 0, int outputMask = 0);
+                                 int sampleRate, int bufferSize, int inputMask = 0, int outputMask = 0);
     int audioStopOnMessageThread();
 
     std::string getAudioDevicesJson(const char* driver = nullptr, const char* deviceName = nullptr);
@@ -74,11 +126,16 @@ public:
     std::string getPluginParametersJson(const std::string& nodeId);
     bool setPluginParameter(const std::string& nodeId, int paramIndex, float value);
 
-    bool openPluginGui(const std::string& nodeId);
+    bool openPluginGui(const std::string& nodeId, const std::string& titlePrefix = "");
     bool closePluginGui(const std::string& nodeId);
+
+    std::string addToChainWithState(const std::string& uniqueId, const std::string& base64State, bool bypassed);
+    void clearChain();
 
     std::string saveStateJson();
     bool loadStateJson(const std::string& stateJson);
+
+    void pumpMessageLoop();
 
     juce::AudioPluginFormatManager& getFormatManager() { return formatManager; }
 
@@ -95,7 +152,6 @@ private:
 
     juce::AudioProcessorGraph::Node::Ptr inputNode;
     juce::AudioProcessorGraph::Node::Ptr outputNode;
-    juce::AudioProcessorGraph::Node::Ptr monoNode;
 
     std::vector<juce::AudioProcessorGraph::Node::Ptr> chainNodes;
     juce::KnownPluginList knownPluginList;
@@ -110,7 +166,10 @@ private:
             setUsingNativeTitleBar(true);
             setVisible(true);
         }
-        void closeButtonPressed() override;
+        void closeButtonPressed() override
+        {
+            ShallowHost::getInstance().closePluginGui(nodeId);
+        }
     private:
         std::string nodeId;
     };
@@ -118,7 +177,6 @@ private:
     std::unordered_map<std::string, std::unique_ptr<PluginWindow>> activeWindows;
 
     juce::File appDataDir;
-    bool monoMode = false;
     void loadKnownPlugins();
     void saveKnownPlugins();
 
@@ -126,14 +184,18 @@ private:
     void rebuildConnections();
     void rebuildConnectionsOnMessageThread();
 
-    bool openPluginGuiOnMessageThread(const std::string& nodeId);
+    bool openPluginGuiOnMessageThread(const std::string& nodeId, const std::string& titlePrefix = "");
     bool closePluginGuiOnMessageThread(const std::string& nodeId);
 
     std::string addToChainOnMessageThread(const std::string& uniqueId);
     bool removeFromChainOnMessageThread(const std::string& nodeId);
     bool movePluginOnMessageThread(const std::string& nodeId, bool up);
     bool reorderChainOnMessageThread(const std::string& nodeId, int toIndex);
+    bool bypassPluginOnMessageThread(const std::string& nodeId, bool bypassed);
     bool loadStateJsonOnMessageThread(const std::string& stateJson);
+
+    std::string getPluginParametersJsonOnMessageThread(const std::string& nodeId);
+    bool setPluginParameterOnMessageThread(const std::string& nodeId, int paramIndex, float value);
 
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(ShallowHost)
 };
@@ -147,8 +209,9 @@ private:
 SH_EXPORT void sh_init();
 SH_EXPORT void sh_shutdown();
 SH_EXPORT void sh_set_data_dir(const char* path);
-SH_EXPORT bool sh_audio_start(const char* driver, const char* input, const char* output, int sample_rate, int buffer_size, bool mono, int input_mask, int output_mask);
+SH_EXPORT bool sh_audio_start(const char* driver, const char* input, const char* output, int sample_rate, int buffer_size, int input_mask, int output_mask);
 SH_EXPORT bool sh_audio_stop();
+SH_EXPORT void sh_get_audio_levels(float* in_peak, float* out_peak);
 
 SH_EXPORT char* sh_get_audio_devices(const char* driver, const char* device_name);
 SH_EXPORT char* sh_scan_plugins(const char* vst2_paths_json, const char* vst3_paths_json);
@@ -163,7 +226,7 @@ SH_EXPORT char* sh_get_chain();
 SH_EXPORT char* sh_get_plugin_parameters(const char* node_id);
 SH_EXPORT bool sh_set_plugin_parameter(const char* node_id, int param_index, float value);
 
-SH_EXPORT bool sh_open_plugin_gui(const char* node_id);
+SH_EXPORT bool sh_open_plugin_gui(const char* node_id, const char* title_prefix);
 SH_EXPORT bool sh_close_plugin_gui(const char* node_id);
 
 SH_EXPORT char* sh_save_state();

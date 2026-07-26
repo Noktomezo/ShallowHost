@@ -26,12 +26,15 @@ else()
     set(JUCE_MODULES_DIR "${juce_SOURCE_DIR}/modules")
 endif()
 
-add_library(shallow_host_cpp SHARED
+add_library(engine SHARED
     src/host.cpp
+    src/host_audio.cpp
+    src/host_chain.cpp
+    src/host_params.cpp
     src/ffi.cpp
 )
 
-target_compile_definitions(shallow_host_cpp PRIVATE
+target_compile_definitions(engine PRIVATE
     SHALLOW_HOST_DLL_BUILD=1
     JUCE_PLUGINHOST_VST3=1
     JUCE_WASAPI=1
@@ -43,15 +46,15 @@ target_compile_definitions(shallow_host_cpp PRIVATE
 # ponytail: /fp:fast on MSVC — allows FP optimizations + complements ScopedNoDenormals
 # (runtime FTZ/DAZ) at compiler level. Denormals cause 100x CPU spikes → audio dropouts.
 if((CMAKE_CXX_COMPILER_ID STREQUAL "MSVC") OR (CMAKE_CXX_COMPILER_FRONTEND_VARIANT STREQUAL "MSVC"))
-    target_compile_options(shallow_host_cpp PRIVATE /fp:fast)
+    target_compile_options(engine PRIVATE /fp:fast)
 endif()
 
-target_include_directories(shallow_host_cpp PRIVATE
+target_include_directories(engine PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}/src
     ${JUCE_MODULES_DIR}
 )
 
-target_link_libraries(shallow_host_cpp PRIVATE
+target_link_libraries(engine PRIVATE
     juce::juce_audio_basics
     juce::juce_audio_devices
     juce::juce_audio_formats

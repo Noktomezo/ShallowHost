@@ -68,6 +68,7 @@ export function HomePage() {
     async function init() {
       refreshChain()
       await loadFromBackend()
+      invoke('app_ready').catch(console.error)
       const devs = await invoke<AudioDevices>('get_audio_devices')
       setDevices(devs)
 
@@ -108,6 +109,14 @@ export function HomePage() {
           setDevices(freshDevs)
         }
       }
+
+      setTimeout(async () => {
+        try {
+          const fresh = await invoke<AudioDevices>('get_audio_devices')
+          setDevices(fresh)
+        }
+        catch {}
+      }, 300)
     }
     init().catch(() => {})
   }, [refreshChain, loadFromBackend, updateConfigStore])

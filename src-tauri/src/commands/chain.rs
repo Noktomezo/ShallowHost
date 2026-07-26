@@ -48,3 +48,8 @@ pub fn bypass_plugin(
 pub fn get_chain(engine: tauri::State<'_, AudioEngine>) -> Result<Vec<ChainItem>, String> {
     engine.get_chain()
 }
+
+#[tauri::command]
+pub fn get_saved_chain_placeholders(engine: tauri::State<'_, AudioEngine>) -> Vec<ChainItem> {
+    engine.get_saved_chain_placeholders()
+}

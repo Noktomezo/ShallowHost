@@ -9,7 +9,6 @@ export interface AudioConfig {
   output_device: string | null
   sample_rate: number
   buffer_size: number
-  mono: boolean
   active_inputs?: number[] | null
   active_outputs?: number[] | null
 }
@@ -32,7 +31,6 @@ const DEFAULT_CONFIG: AudioConfig = {
   output_device: null,
   sample_rate: 48000,
   buffer_size: 512,
-  mono: false,
   active_inputs: null,
   active_outputs: null,
 }
@@ -67,3 +65,5 @@ export const useAudioConfigStore = create<AudioConfigState>()(
     },
   ),
 )
+
+useAudioConfigStore.getState().loadFromBackend()

@@ -46,7 +46,7 @@
       "icons/icon.ico"
     ],
     "resources": [
-      "shallow_host_cpp.dll"
+      "engine.dll"
     ],
     "windows": {
       "nsis": {

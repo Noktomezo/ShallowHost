@@ -1,7 +1,7 @@
 import type { ScannedPlugin } from '@/shared/model/plugin-store'
 import { Link } from '@tanstack/react-router'
 import { invoke } from '@tauri-apps/api/core'
-import { ArrowRight, FolderOpen, Plus, RefreshCw, RotateCcw, Settings, Trash2 } from 'lucide-react'
+import { ArrowRight, FolderOpen, Loader2, Plus, RefreshCw, RotateCcw, Settings, Trash2 } from 'lucide-react'
 import { useEffect, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { useChainStore } from '@/shared/model/chain-store'
@@ -30,7 +30,8 @@ export function PluginsPage() {
 
   const chain = useChainStore(s => s.chain)
   const refreshChain = useChainStore(s => s.refresh)
-  const setLoading = useChainStore(s => s.setLoading)
+  const addPluginAsync = useChainStore(s => s.addPluginAsync)
+  const checkInitializing = useChainStore(s => s.isInitializing)
   const [scanning, setScanning] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [settingsOpen, setSettingsOpen] = useState(false)
@@ -63,20 +64,6 @@ export function PluginsPage() {
     }
     catch (e) {
       setError(String(e))
-    }
-  }
-
-  async function addToChain(pluginId: string) {
-    setLoading(true, t('plugins.loading'))
-    try {
-      await invoke('add_to_chain', { pluginId })
-      await refreshChain()
-    }
-    catch (e) {
-      setError(String(e))
-    }
-    finally {
-      setLoading(false)
     }
   }
 
@@ -132,6 +119,7 @@ export function PluginsPage() {
         {plugins.length > 0
           ? (
               plugins.map((p) => {
+                const isInitializing = checkInitializing(p.unique_id)
                 const inChain = chain.some(c => c.unique_id === p.unique_id || c.name === p.name)
                 return (
                   <Card key={p.unique_id} size="sm">
@@ -141,16 +129,25 @@ export function PluginsPage() {
                         <Badge variant="purple" className="shrink-0">
                           {p.format.toUpperCase()}
                         </Badge>
-                        {inChain && (
-                          <Badge variant="green" className="shrink-0">
-                            {t('plugins.inChain')}
-                          </Badge>
-                        )}
+                        {isInitializing
+                          ? (
+                              <Badge variant="outline" className="gap-1.5 shrink-0 border-amber-500/40 text-amber-400 bg-amber-500/10">
+                                <Loader2 className="size-3 animate-spin text-amber-400" />
+                                {t('plugins.initializing')}
+                              </Badge>
+                            )
+                          : inChain
+                            ? (
+                                <Badge variant="green" className="shrink-0">
+                                  {t('plugins.inChain')}
+                                </Badge>
+                              )
+                            : null}
                       </div>
                       {p.vendor && <CardDescription>{p.vendor}</CardDescription>}
                       <CardAction className="self-center">
                         <div className="flex gap-1">
-                          {inChain
+                          {inChain || isInitializing
                             ? (
                                 <Link to="/">
                                   <Button variant="default">
@@ -166,7 +163,8 @@ export function PluginsPage() {
                                       <Button
                                         variant="outline"
                                         size="icon"
-                                        onClick={() => addToChain(p.unique_id)}
+                                        onClick={() => addPluginAsync(p)}
+                                        disabled={scanning}
                                       >
                                         <Plus className="size-4" />
                                       </Button>

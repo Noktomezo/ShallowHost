@@ -1,4 +1,6 @@
 import type { AudioConfig } from '@/shared/model/audio-config-store'
+import { invoke } from '@tauri-apps/api/core'
+import { useEffect, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import {
   Card,
@@ -16,6 +18,7 @@ import {
   SelectValue,
 } from '@/shared/ui/select'
 import { Separator } from '@/shared/ui/separator'
+import { VolumeMeter } from '@/shared/ui/VolumeMeter'
 
 interface DeviceInfo {
   name: string
@@ -29,6 +32,59 @@ interface AudioDevices {
   output_channels?: string[] | null
 }
 
+function formatChannelPair(ch1: string, ch2: string): string {
+  if (!ch1 || !ch2)
+    return ch1 || ch2 || ''
+  if (ch1 === ch2)
+    return ch1
+
+  let prefixLen = 0
+  const minLen = Math.min(ch1.length, ch2.length)
+  while (prefixLen < minLen && ch1[prefixLen] === ch2[prefixLen]) {
+    prefixLen++
+  }
+
+  while (
+    prefixLen > 0
+    && /\d/.test(ch1[prefixLen - 1])
+    && prefixLen < ch1.length
+    && /\d/.test(ch1[prefixLen])
+  ) {
+    prefixLen--
+  }
+
+  const prefix = ch1.slice(0, prefixLen)
+  let rem1 = ch1.slice(prefixLen)
+  let rem2 = ch2.slice(prefixLen)
+
+  let suffixLen = 0
+  const minRemLen = Math.min(rem1.length, rem2.length)
+  while (
+    suffixLen < minRemLen
+    && rem1[rem1.length - 1 - suffixLen] === rem2[rem2.length - 1 - suffixLen]
+  ) {
+    suffixLen++
+  }
+
+  while (
+    suffixLen > 0
+    && /\d/.test(rem1[rem1.length - suffixLen])
+    && rem1.length - suffixLen > 0
+    && /\d/.test(rem1[rem1.length - 1 - suffixLen])
+  ) {
+    suffixLen--
+  }
+
+  const suffix = rem1.slice(rem1.length - suffixLen)
+  rem1 = rem1.slice(0, rem1.length - suffixLen)
+  rem2 = rem2.slice(0, rem2.length - suffixLen)
+
+  if (rem1 && rem2) {
+    return `${prefix}${rem1} + ${rem2}${suffix}`
+  }
+  return `${prefix}${suffix}`
+}
+
 function groupChannels(channels: string[]): { label: string, indices: number[] }[] {
   const pairs: { label: string, indices: number[] }[] = []
   if (!channels)
@@ -36,7 +92,7 @@ function groupChannels(channels: string[]): { label: string, indices: number[] }
   for (let i = 0; i < channels.length; i += 2) {
     if (i + 1 < channels.length) {
       pairs.push({
-        label: `${channels[i]} + ${channels[i + 1]}`,
+        label: formatChannelPair(channels[i], channels[i + 1]),
         indices: [i, i + 1],
       })
     }
@@ -48,6 +104,17 @@ function groupChannels(channels: string[]): { label: string, indices: number[] }
     }
   }
   return pairs
+}
+
+function toggleChannelIndices(active: number[], indices: number[], checked: boolean) {
+  const next = new Set(active)
+  if (checked) {
+    indices.forEach(idx => next.add(idx))
+  }
+  else {
+    indices.forEach(idx => next.delete(idx))
+  }
+  return [...next]
 }
 
 const SAMPLE_RATES = [44100, 48000, 88200, 96000, 192000]
@@ -63,6 +130,7 @@ function DeviceSelect({
   onChange,
   defaultLabel,
   hideDefault = false,
+  meter,
 }: {
   label: string
   description: string
@@ -72,6 +140,7 @@ function DeviceSelect({
   onChange: (v: string | null) => void
   defaultLabel: string
   hideDefault?: boolean
+  meter?: React.ReactNode
 }) {
   return (
     <div className="flex items-center justify-between gap-2">
@@ -79,37 +148,29 @@ function DeviceSelect({
         <span className="text-sm font-medium">{label}</span>
         <span className="text-xs text-muted-foreground">{description}</span>
       </div>
-      <Select
-        value={value}
-        onValueChange={onChange}
-        items={items}
-      >
-        <SelectTrigger className="w-40">
-          <SelectValue placeholder={hideDefault ? 'Select...' : undefined} />
-        </SelectTrigger>
-        <SelectContent>
-          {!hideDefault && <SelectItem value="__default">{defaultLabel}</SelectItem>}
-          {hideDefault && <SelectItem value="__none">{defaultLabel}</SelectItem>}
-          {devices.map(d => (
-            <SelectItem key={d.name} value={d.name}>
-              {d.name}
-            </SelectItem>
-          ))}
-        </SelectContent>
-      </Select>
+      <div className="flex items-center gap-3">
+        {meter}
+        <Select
+          value={value}
+          onValueChange={onChange}
+          items={items}
+        >
+          <SelectTrigger className="w-40">
+            <SelectValue placeholder={hideDefault ? 'Select...' : undefined} />
+          </SelectTrigger>
+          <SelectContent>
+            {!hideDefault && <SelectItem value="__default">{defaultLabel}</SelectItem>}
+            {hideDefault && <SelectItem value="__none">{defaultLabel}</SelectItem>}
+            {devices.map(d => (
+              <SelectItem key={d.name} value={d.name}>
+                {d.name}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+      </div>
     </div>
   )
-}
-
-function toggleChannelIndices(active: number[], indices: number[], checked: boolean) {
-  const next = new Set(active)
-  if (checked) {
-    indices.forEach(idx => next.add(idx))
-  }
-  else {
-    indices.forEach(idx => next.delete(idx))
-  }
-  return [...next]
 }
 
 export function AudioConfigCard({
@@ -122,6 +183,23 @@ export function AudioConfigCard({
   updateConfig: (patch: Partial<AudioConfig>) => void
 }) {
   const { t } = useTranslation()
+  const [levels, setLevels] = useState({ input: 0, output: 0 })
+
+  useEffect(() => {
+    let mounted = true
+    const timer = setInterval(async () => {
+      try {
+        const res = await invoke<{ input: number, output: number }>('get_audio_levels')
+        if (mounted)
+          setLevels(res)
+      }
+      catch {}
+    }, 30)
+    return () => {
+      mounted = false
+      clearInterval(timer)
+    }
+  }, [])
 
   const inputPairs = groupChannels(devices.input_channels || [])
   const outputPairs = groupChannels(devices.output_channels || [])
@@ -168,50 +246,15 @@ export function AudioConfigCard({
     ]),
   )
 
+  const isOutputActive = config.output_device && config.output_device !== '__none'
+  const isInputActive = config.input_device && config.input_device !== '__none'
+
   return (
     <Card className="w-full">
       <CardHeader className="flex flex-row items-center justify-between gap-4 space-y-0 pb-5">
         <div className="flex flex-col gap-0.5">
           <CardTitle>{t('home.audio')}</CardTitle>
           <CardDescription>{t('home.audioDescription')}</CardDescription>
-        </div>
-
-        {/* Custom sliding toggle between Stereo and Mono */}
-        <div className="relative inline-flex items-center rounded-md bg-muted/60 p-0 border border-border/40 select-none text-xs font-semibold h-8 w-40 overflow-hidden shrink-0">
-          {/* Moving background thumb */}
-          <div
-            className={`absolute top-0 bottom-0 left-0 rounded-[calc(var(--radius)-1px)] transition-all duration-300 ease-in-out w-[79px] ${
-              config.mono
-                ? 'translate-x-[79px] bg-purple shadow-sm shadow-purple/20'
-                : 'translate-x-0 bg-primary shadow-sm shadow-primary/20'
-            }`}
-          />
-          {/* Stereo Label */}
-          <button
-            type="button"
-            onClick={(e) => {
-              e.stopPropagation()
-              updateConfig({ mono: false })
-            }}
-            className={`relative z-10 flex-1 text-center h-full flex items-center justify-center cursor-pointer transition-colors duration-300 ${
-              !config.mono ? 'text-primary-foreground font-semibold' : 'text-muted-foreground hover:text-foreground/80'
-            }`}
-          >
-            {t('home.stereo')}
-          </button>
-          {/* Mono Label */}
-          <button
-            type="button"
-            onClick={(e) => {
-              e.stopPropagation()
-              updateConfig({ mono: true })
-            }}
-            className={`relative z-10 flex-1 text-center h-full flex items-center justify-center cursor-pointer transition-colors duration-300 ${
-              config.mono ? 'text-white' : 'text-muted-foreground hover:text-foreground/80'
-            }`}
-          >
-            {t('home.mono')}
-          </button>
         </div>
       </CardHeader>
       <CardContent>
@@ -281,12 +324,15 @@ export function AudioConfigCard({
                                   outputPairs.map((p) => {
                                     const isChecked = p.indices.every(i => activeOutputsSet.has(i))
                                     return (
-                                      <label key={p.label} className="flex items-center gap-2 text-sm select-none cursor-pointer">
-                                        <Checkbox
-                                          checked={isChecked}
-                                          onCheckedChange={checked => handleOutputToggle(p.indices, !!checked)}
-                                        />
-                                        <span>{p.label}</span>
+                                      <label key={p.label} className="flex items-center justify-between gap-2 text-sm select-none cursor-pointer p-0.5 rounded hover:bg-muted/40 overflow-hidden">
+                                        <div className="flex items-center gap-2 min-w-0 flex-1">
+                                          <Checkbox
+                                            checked={isChecked}
+                                            onCheckedChange={checked => handleOutputToggle(p.indices, !!checked)}
+                                          />
+                                          <span className="truncate">{p.label}</span>
+                                        </div>
+                                        <VolumeMeter level={isChecked ? levels.output : 0} />
                                       </label>
                                     )
                                   })
@@ -308,12 +354,15 @@ export function AudioConfigCard({
                                   inputPairs.map((p) => {
                                     const isChecked = p.indices.every(i => activeInputsSet.has(i))
                                     return (
-                                      <label key={p.label} className="flex items-center gap-2 text-sm select-none cursor-pointer">
-                                        <Checkbox
-                                          checked={isChecked}
-                                          onCheckedChange={checked => handleInputToggle(p.indices, !!checked)}
-                                        />
-                                        <span>{p.label}</span>
+                                      <label key={p.label} className="flex items-center justify-between gap-2 text-sm select-none cursor-pointer p-0.5 rounded hover:bg-muted/40 overflow-hidden">
+                                        <div className="flex items-center gap-2 min-w-0 flex-1">
+                                          <Checkbox
+                                            checked={isChecked}
+                                            onCheckedChange={checked => handleInputToggle(p.indices, !!checked)}
+                                          />
+                                          <span className="truncate">{p.label}</span>
+                                        </div>
+                                        <VolumeMeter level={isChecked ? levels.input : 0} />
                                       </label>
                                     )
                                   })
@@ -337,6 +386,7 @@ export function AudioConfigCard({
                       updateConfig({ output_device: v })}
                     defaultLabel={t('home.noneDevice')}
                     hideDefault={true}
+                    meter={<VolumeMeter level={isOutputActive ? levels.output : 0} />}
                   />
 
                   <Separator />
@@ -351,6 +401,7 @@ export function AudioConfigCard({
                       updateConfig({ input_device: v })}
                     defaultLabel={t('home.noneDevice')}
                     hideDefault={true}
+                    meter={<VolumeMeter level={isInputActive ? levels.input : 0} />}
                   />
                 </>
               )}
