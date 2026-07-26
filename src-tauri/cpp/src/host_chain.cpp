@@ -25,7 +25,17 @@ std::string ShallowHost::scanPluginsJson(const std::string& vst2PathsJson, const
     }
     else
     {
-        vst3Path = formatManager.getFormat(1)->getDefaultLocationsToSearch();
+        for (int i = 0; i < formatManager.getNumFormats(); ++i)
+        {
+            if (auto* fmt = formatManager.getFormat(i))
+            {
+                if (fmt->getName() == "VST3")
+                {
+                    vst3Path = fmt->getDefaultLocationsToSearch();
+                    break;
+                }
+            }
+        }
     }
 
     for (int fmtIdx = 0; fmtIdx < formatManager.getNumFormats(); ++fmtIdx)
@@ -94,7 +104,7 @@ std::string ShallowHost::addToChain(const std::string& uniqueId)
     return params.result;
 }
 
-std::string ShallowHost::addToChainOnMessageThread(const std::string& uniqueId)
+std::string ShallowHost::addToChainOnMessageThread(const std::string& uniqueId, const std::string& base64State, bool bypassed)
 {
     pumpMessageLoop();
     auto desc = knownPluginList.getTypeForIdentifierString(juce::String(uniqueId));
@@ -114,12 +124,23 @@ std::string ShallowHost::addToChainOnMessageThread(const std::string& uniqueId)
 
     instance->enableAllBuses();
 
+    if (base64State.length() > 0)
+    {
+        juce::MemoryOutputStream os;
+        if (juce::Base64::convertFromBase64(os, juce::String(base64State)))
+        {
+            auto block = os.getMemoryBlock();
+            instance->setStateInformation(block.getData(), (int)block.getSize());
+        }
+    }
+
     auto node = graph.addNode(std::move(instance));
     if (node == nullptr)
     {
         return "";
     }
 
+    node->setBypassed(bypassed);
     chainNodes.push_back(node);
     rebuildConnections();
     pumpMessageLoop();
@@ -139,35 +160,7 @@ std::string ShallowHost::addToChainWithState(const std::string& uniqueId, const 
 
     juce::MessageManager::getInstance()->callFunctionOnMessageThread([](void* p) -> void* {
         auto* ps = static_cast<Params*>(p);
-        ps->host->pumpMessageLoop();
-        auto desc = ps->host->knownPluginList.getTypeForIdentifierString(juce::String(*ps->uniqueId));
-        if (desc == nullptr) return nullptr;
-
-        juce::String error;
-        auto instance = ps->host->formatManager.createPluginInstance(*desc, ps->host->graph.getSampleRate(), ps->host->graph.getBlockSize(), error);
-        if (instance == nullptr) return nullptr;
-
-        instance->enableAllBuses();
-
-        if (ps->base64State->length() > 0)
-        {
-            juce::MemoryOutputStream os;
-            if (juce::Base64::convertFromBase64(os, juce::String(*ps->base64State)))
-            {
-                auto block = os.getMemoryBlock();
-                instance->setStateInformation(block.getData(), (int)block.getSize());
-            }
-        }
-
-        auto node = ps->host->graph.addNode(std::move(instance));
-        if (node != nullptr)
-        {
-            node->setBypassed(ps->bypassed);
-            ps->host->chainNodes.push_back(node);
-            ps->host->rebuildConnections();
-            ps->result = std::to_string(node->nodeID.uid);
-        }
-        ps->host->pumpMessageLoop();
+        ps->result = ps->host->addToChainOnMessageThread(*ps->uniqueId, *ps->base64State, ps->bypassed);
         return nullptr;
     }, &params);
 
@@ -208,7 +201,7 @@ bool ShallowHost::removeFromChain(const std::string& nodeId)
 
 bool ShallowHost::removeFromChainOnMessageThread(const std::string& nodeId)
 {
-    closePluginGui(nodeId);
+    closePluginGuiOnMessageThread(nodeId);
 
     auto it = std::find_if(chainNodes.begin(), chainNodes.end(), [&](const auto& node) {
         return std::to_string(node->nodeID.uid) == nodeId;
@@ -342,53 +335,75 @@ bool ShallowHost::bypassPluginOnMessageThread(const std::string& nodeId, bool by
 
 std::string ShallowHost::getChainJson()
 {
-    juce::Array<juce::var> arr;
-    for (auto& node : chainNodes)
-    {
-        auto* proc = node->getProcessor();
-        if (proc == nullptr) continue;
+    struct Params {
+        ShallowHost* host;
+        std::string result;
+    } params { this, "" };
 
-        auto* instance = dynamic_cast<juce::AudioPluginInstance*>(proc);
-        if (instance == nullptr) continue;
+    juce::MessageManager::getInstance()->callFunctionOnMessageThread([](void* p) -> void* {
+        auto* ps = static_cast<Params*>(p);
+        juce::Array<juce::var> arr;
+        for (auto& node : ps->host->chainNodes)
+        {
+            auto* proc = node->getProcessor();
+            if (proc == nullptr) continue;
 
-        juce::DynamicObject::Ptr obj = new juce::DynamicObject();
-        obj->setProperty("id", juce::String(std::to_string(node->nodeID.uid)));
-        obj->setProperty("name", instance->getPluginDescription().name);
-        obj->setProperty("vendor", instance->getPluginDescription().manufacturerName);
-        obj->setProperty("format", instance->getPluginDescription().pluginFormatName);
-        obj->setProperty("bypassed", node->isBypassed());
-        obj->setProperty("unique_id", instance->getPluginDescription().createIdentifierString());
-        arr.add(juce::var(obj.get()));
-    }
-    return juce::JSON::toString(juce::var(arr)).toStdString();
+            auto* instance = dynamic_cast<juce::AudioPluginInstance*>(proc);
+            if (instance == nullptr) continue;
+
+            juce::DynamicObject::Ptr obj = new juce::DynamicObject();
+            obj->setProperty("id", juce::String(std::to_string(node->nodeID.uid)));
+            obj->setProperty("name", instance->getPluginDescription().name);
+            obj->setProperty("vendor", instance->getPluginDescription().manufacturerName);
+            obj->setProperty("format", instance->getPluginDescription().pluginFormatName);
+            obj->setProperty("bypassed", node->isBypassed());
+            obj->setProperty("unique_id", instance->getPluginDescription().createIdentifierString());
+            arr.add(juce::var(obj.get()));
+        }
+        ps->result = juce::JSON::toString(juce::var(arr)).toStdString();
+        return nullptr;
+    }, &params);
+
+    return params.result;
 }
 
 std::string ShallowHost::saveStateJson()
 {
-    juce::Array<juce::var> arr;
-    for (auto& node : chainNodes)
-    {
-        auto* proc = node->getProcessor();
-        if (proc == nullptr) continue;
+    struct Params {
+        ShallowHost* host;
+        std::string result;
+    } params { this, "" };
 
-        auto* instance = dynamic_cast<juce::AudioPluginInstance*>(proc);
-        if (instance == nullptr) continue;
+    juce::MessageManager::getInstance()->callFunctionOnMessageThread([](void* p) -> void* {
+        auto* ps = static_cast<Params*>(p);
+        juce::Array<juce::var> arr;
+        for (auto& node : ps->host->chainNodes)
+        {
+            auto* proc = node->getProcessor();
+            if (proc == nullptr) continue;
 
-        juce::DynamicObject::Ptr obj = new juce::DynamicObject();
-        obj->setProperty("unique_id", instance->getPluginDescription().createIdentifierString());
-        obj->setProperty("name", instance->getPluginDescription().name);
-        obj->setProperty("vendor", instance->getPluginDescription().manufacturerName);
-        obj->setProperty("format", instance->getPluginDescription().pluginFormatName);
-        obj->setProperty("bypassed", node->isBypassed());
+            auto* instance = dynamic_cast<juce::AudioPluginInstance*>(proc);
+            if (instance == nullptr) continue;
 
-        juce::MemoryBlock block;
-        proc->getStateInformation(block);
-        juce::String base64 = juce::Base64::toBase64(block.getData(), block.getSize());
-        obj->setProperty("state", juce::var(base64));
+            juce::DynamicObject::Ptr obj = new juce::DynamicObject();
+            obj->setProperty("unique_id", instance->getPluginDescription().createIdentifierString());
+            obj->setProperty("name", instance->getPluginDescription().name);
+            obj->setProperty("vendor", instance->getPluginDescription().manufacturerName);
+            obj->setProperty("format", instance->getPluginDescription().pluginFormatName);
+            obj->setProperty("bypassed", node->isBypassed());
 
-        arr.add(juce::var(obj.get()));
-    }
-    return juce::JSON::toString(juce::var(arr)).toStdString();
+            juce::MemoryBlock block;
+            proc->getStateInformation(block);
+            juce::String base64 = juce::Base64::toBase64(block.getData(), block.getSize());
+            obj->setProperty("state", juce::var(base64));
+
+            arr.add(juce::var(obj.get()));
+        }
+        ps->result = juce::JSON::toString(juce::var(arr)).toStdString();
+        return nullptr;
+    }, &params);
+
+    return params.result;
 }
 
 bool ShallowHost::loadStateJson(const std::string& stateJson)

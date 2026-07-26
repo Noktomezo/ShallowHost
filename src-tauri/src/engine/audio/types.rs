@@ -7,6 +7,7 @@ pub struct AudioConfig {
     pub buffer_size: u32,
     pub active_inputs: Option<Vec<i32>>,
     pub active_outputs: Option<Vec<i32>>,
+    #[serde(alias = "mono")]
     pub is_mono: Option<bool>,
 }
 

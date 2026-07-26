@@ -188,13 +188,20 @@ export function AudioConfigCard({
 
   useEffect(() => {
     let mounted = true
+    let inFlight = false
     const timer = setInterval(async () => {
+      if (inFlight)
+        return
+      inFlight = true
       try {
         const res = await invoke<{ input: number, output: number }>('get_audio_levels')
         if (mounted)
           setLevels(res)
       }
       catch {}
+      finally {
+        inFlight = false
+      }
     }, 30)
     return () => {
       mounted = false
@@ -312,10 +319,13 @@ export function AudioConfigCard({
                       <Separator />
                       <div className="grid grid-cols-2 gap-4">
                         <div className="flex flex-col gap-2">
-                          <span className="text-sm font-medium">
-                            {t('home.activeOutputChannels')}
-                            :
-                          </span>
+                          <div className="flex items-center justify-between">
+                            <span className="text-sm font-medium">
+                              {t('home.activeOutputChannels')}
+                              :
+                            </span>
+                            <VolumeMeter level={isOutputActive ? levels.output : 0} />
+                          </div>
                           <div className="flex flex-col gap-1.5 rounded-md border border-input p-3 bg-muted/20 max-h-40 overflow-y-auto">
                             {outputPairs.length === 0
                               ? (
@@ -333,7 +343,6 @@ export function AudioConfigCard({
                                           />
                                           <span className="truncate">{p.label}</span>
                                         </div>
-                                        <VolumeMeter level={isChecked ? levels.output : 0} />
                                       </label>
                                     )
                                   })
@@ -342,10 +351,13 @@ export function AudioConfigCard({
                         </div>
 
                         <div className="flex flex-col gap-2">
-                          <span className="text-sm font-medium">
-                            {t('home.activeInputChannels')}
-                            :
-                          </span>
+                          <div className="flex items-center justify-between">
+                            <span className="text-sm font-medium">
+                              {t('home.activeInputChannels')}
+                              :
+                            </span>
+                            <VolumeMeter level={isInputActive ? levels.input : 0} />
+                          </div>
                           <div className="flex flex-col gap-1.5 rounded-md border border-input p-3 bg-muted/20 max-h-40 overflow-y-auto">
                             {inputPairs.length === 0
                               ? (
@@ -363,7 +375,6 @@ export function AudioConfigCard({
                                           />
                                           <span className="truncate">{p.label}</span>
                                         </div>
-                                        <VolumeMeter level={isChecked ? levels.input : 0} />
                                       </label>
                                     )
                                   })
@@ -477,6 +488,7 @@ export function AudioConfigCard({
               </span>
             </div>
             <Switch
+              aria-label={t('home.monoMode')}
               checked={!!config.is_mono}
               onCheckedChange={checked => updateConfig({ is_mono: !!checked })}
             />

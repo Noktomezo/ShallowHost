@@ -377,11 +377,16 @@ impl AudioEngine {
 
                 let uid = unique_id.clone();
                 let sb = state_base64.clone();
-                tauri::async_runtime::spawn_blocking(move || {
-                    ffi::add_to_chain_with_state(&uid, &sb, bypassed);
+                let res = tauri::async_runtime::spawn_blocking(move || {
+                    ffi::add_to_chain_with_state(&uid, &sb, bypassed)
                 })
-                .await
-                .ok();
+                .await;
+
+                if let Ok(node_id) = res {
+                    if node_id.is_empty() {
+                        eprintln!("[shallow-host] plugin restoration returned empty node id for: {unique_id}");
+                    }
+                }
 
                 use tauri::Emitter;
                 let _ = app.emit("chain_updated", ());

@@ -29,12 +29,15 @@ export function PluginsPage() {
   } = usePluginStore()
 
   const chain = useChainStore(s => s.chain)
+  const chainError = useChainStore(s => s.error)
   const refreshChain = useChainStore(s => s.refresh)
   const addPluginAsync = useChainStore(s => s.addPluginAsync)
   const checkInitializing = useChainStore(s => s.isInitializing)
   const [scanning, setScanning] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [settingsOpen, setSettingsOpen] = useState(false)
+
+  const displayError = error || chainError
 
   useEffect(() => {
     refreshChain()
@@ -43,6 +46,7 @@ export function PluginsPage() {
   async function scan() {
     setScanning(true)
     setError(null)
+    useChainStore.getState().setError(null)
     try {
       const result = await invoke<ScannedPlugin[]>('scan_plugins', {
         vst2Paths,
@@ -111,8 +115,8 @@ export function PluginsPage() {
         </div>
       </div>
 
-      {error && (
-        <p className="mt-2 text-sm text-destructive">{error}</p>
+      {displayError && (
+        <p className="mt-2 text-sm text-destructive">{displayError}</p>
       )}
 
       <div className="mt-3 flex flex-1 flex-col gap-2">
@@ -120,7 +124,7 @@ export function PluginsPage() {
           ? (
               plugins.map((p) => {
                 const isInitializing = checkInitializing(p.unique_id)
-                const inChain = chain.some(c => c.unique_id === p.unique_id || c.name === p.name)
+                const inChain = chain.some(c => c.unique_id === p.unique_id)
                 return (
                   <Card key={p.unique_id} size="sm">
                     <CardHeader className="gap-0.5">

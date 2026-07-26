@@ -102,7 +102,7 @@ int ShallowHost::audioStartOnMessageThread(const char* driver, const char* input
         {
             for (int i = 0; i < 32; ++i)
             {
-                if ((inputMask & (1 << i)) != 0)
+                if (((unsigned int)inputMask & (1u << i)) != 0)
                     setup.inputChannels.setBit(i);
             }
         }
@@ -119,7 +119,7 @@ int ShallowHost::audioStartOnMessageThread(const char* driver, const char* input
         {
             for (int i = 0; i < 32; ++i)
             {
-                if ((outputMask & (1 << i)) != 0)
+                if (((unsigned int)outputMask & (1u << i)) != 0)
                     setup.outputChannels.setBit(i);
             }
         }
@@ -170,7 +170,7 @@ int ShallowHost::audioStop()
 int ShallowHost::audioStopOnMessageThread()
 {
     deviceManager.closeAudioDevice();
-    return 1;
+    return 0;
 }
 
 void ShallowHost::changeListenerCallback(juce::ChangeBroadcaster* source)
@@ -183,111 +183,124 @@ void ShallowHost::changeListenerCallback(juce::ChangeBroadcaster* source)
 
 std::string ShallowHost::getAudioDevicesJson(const char* driver, const char* deviceName)
 {
-    juce::DynamicObject::Ptr obj = new juce::DynamicObject();
+    struct Params {
+        ShallowHost* host;
+        const char* driver;
+        const char* deviceName;
+        std::string result;
+    } params { this, driver, deviceName, "" };
 
-    juce::Array<juce::var> inputsArray;
-    juce::Array<juce::var> outputsArray;
-    juce::Array<juce::var> inputChannelNamesArray;
-    juce::Array<juce::var> outputChannelNamesArray;
+    juce::MessageManager::getInstance()->callFunctionOnMessageThread([](void* p) -> void* {
+        auto* ps = static_cast<Params*>(p);
+        juce::DynamicObject::Ptr obj = new juce::DynamicObject();
 
-    juce::String targetType = (driver != nullptr && juce::String(driver).equalsIgnoreCase("asio")) ? "ASIO" : "Windows Audio";
+        juce::Array<juce::var> inputsArray;
+        juce::Array<juce::var> outputsArray;
+        juce::Array<juce::var> inputChannelNamesArray;
+        juce::Array<juce::var> outputChannelNamesArray;
 
-    juce::AudioIODeviceType* typeObject = nullptr;
-    for (auto* type : deviceManager.getAvailableDeviceTypes())
-    {
-        if (type->getTypeName() == targetType)
+        juce::String targetType = (ps->driver != nullptr && juce::String(ps->driver).equalsIgnoreCase("asio")) ? "ASIO" : "Windows Audio";
+
+        juce::AudioIODeviceType* typeObject = nullptr;
+        for (auto* type : ps->host->deviceManager.getAvailableDeviceTypes())
         {
-            typeObject = type;
-            break;
-        }
-    }
-
-    if (typeObject != nullptr)
-    {
-        typeObject->scanForDevices();
-
-        juce::String defaultInputName;
-        juce::String defaultOutputName;
-
-        int defInIdx = typeObject->getDefaultDeviceIndex(true);
-        auto inDevNames = typeObject->getDeviceNames(true);
-        if (defInIdx >= 0 && defInIdx < inDevNames.size()) {
-            defaultInputName = inDevNames[defInIdx];
-        }
-
-        int defOutIdx = typeObject->getDefaultDeviceIndex(false);
-        auto outDevNames = typeObject->getDeviceNames(false);
-        if (defOutIdx >= 0 && defOutIdx < outDevNames.size()) {
-            defaultOutputName = outDevNames[defOutIdx];
-        }
-
-        for (int i = 0; i < inDevNames.size(); ++i)
-        {
-            juce::DynamicObject::Ptr devObj = new juce::DynamicObject();
-            devObj->setProperty("name", inDevNames[i]);
-            devObj->setProperty("default", inDevNames[i] == defaultInputName);
-            inputsArray.add(juce::var(devObj.get()));
-        }
-
-        for (int i = 0; i < outDevNames.size(); ++i)
-        {
-            juce::DynamicObject::Ptr devObj = new juce::DynamicObject();
-            devObj->setProperty("name", outDevNames[i]);
-            devObj->setProperty("default", outDevNames[i] == defaultOutputName);
-            outputsArray.add(juce::var(devObj.get()));
-        }
-
-        juce::String activeDeviceName;
-        if (deviceName != nullptr && juce::String(deviceName).isNotEmpty() && juce::String(deviceName) != "__none" && juce::String(deviceName) != "__default")
-        {
-            activeDeviceName = deviceName;
-        }
-        else if (auto* currentDevice = deviceManager.getCurrentAudioDevice())
-        {
-            if (deviceManager.getCurrentAudioDeviceType() == targetType)
-                activeDeviceName = currentDevice->getName();
-        }
-
-        if (activeDeviceName.isNotEmpty())
-        {
-            bool gotChannels = false;
-            if (auto* currentDevice = deviceManager.getCurrentAudioDevice())
+            if (type->getTypeName() == targetType)
             {
-                if (currentDevice->getName() == activeDeviceName && deviceManager.getCurrentAudioDeviceType() == targetType)
-                {
-                    auto inNames = currentDevice->getInputChannelNames();
-                    for (int i = 0; i < inNames.size(); ++i)
-                        inputChannelNamesArray.add(inNames[i]);
-
-                    auto outNames = currentDevice->getOutputChannelNames();
-                    for (int i = 0; i < outNames.size(); ++i)
-                        outputChannelNamesArray.add(outNames[i]);
-
-                    gotChannels = true;
-                }
-            }
-
-            if (!gotChannels)
-            {
-                std::unique_ptr<juce::AudioIODevice> tempDevice (typeObject->createDevice (activeDeviceName, activeDeviceName));
-                if (tempDevice != nullptr)
-                {
-                    auto inNames = tempDevice->getInputChannelNames();
-                    for (int i = 0; i < inNames.size(); ++i)
-                        inputChannelNamesArray.add(inNames[i]);
-
-                    auto outNames = tempDevice->getOutputChannelNames();
-                    for (int i = 0; i < outNames.size(); ++i)
-                        outputChannelNamesArray.add(outNames[i]);
-                }
+                typeObject = type;
+                break;
             }
         }
-    }
 
-    obj->setProperty("inputs", inputsArray);
-    obj->setProperty("outputs", outputsArray);
-    obj->setProperty("input_channels", inputChannelNamesArray);
-    obj->setProperty("output_channels", outputChannelNamesArray);
+        if (typeObject != nullptr)
+        {
+            typeObject->scanForDevices();
 
-    return juce::JSON::toString(juce::var(obj.get())).toStdString();
+            juce::String defaultInputName;
+            juce::String defaultOutputName;
+
+            int defInIdx = typeObject->getDefaultDeviceIndex(true);
+            auto inDevNames = typeObject->getDeviceNames(true);
+            if (defInIdx >= 0 && defInIdx < inDevNames.size()) {
+                defaultInputName = inDevNames[defInIdx];
+            }
+
+            int defOutIdx = typeObject->getDefaultDeviceIndex(false);
+            auto outDevNames = typeObject->getDeviceNames(false);
+            if (defOutIdx >= 0 && defOutIdx < outDevNames.size()) {
+                defaultOutputName = outDevNames[defOutIdx];
+            }
+
+            for (int i = 0; i < inDevNames.size(); ++i)
+            {
+                juce::DynamicObject::Ptr devObj = new juce::DynamicObject();
+                devObj->setProperty("name", inDevNames[i]);
+                devObj->setProperty("default", inDevNames[i] == defaultInputName);
+                inputsArray.add(juce::var(devObj.get()));
+            }
+
+            for (int i = 0; i < outDevNames.size(); ++i)
+            {
+                juce::DynamicObject::Ptr devObj = new juce::DynamicObject();
+                devObj->setProperty("name", outDevNames[i]);
+                devObj->setProperty("default", outDevNames[i] == defaultOutputName);
+                outputsArray.add(juce::var(devObj.get()));
+            }
+
+            juce::String activeDeviceName;
+            if (ps->deviceName != nullptr && juce::String(ps->deviceName).isNotEmpty() && juce::String(ps->deviceName) != "__none" && juce::String(ps->deviceName) != "__default")
+            {
+                activeDeviceName = ps->deviceName;
+            }
+            else if (auto* currentDevice = ps->host->deviceManager.getCurrentAudioDevice())
+            {
+                if (ps->host->deviceManager.getCurrentAudioDeviceType() == targetType)
+                    activeDeviceName = currentDevice->getName();
+            }
+
+            if (activeDeviceName.isNotEmpty())
+            {
+                bool gotChannels = false;
+                if (auto* currentDevice = ps->host->deviceManager.getCurrentAudioDevice())
+                {
+                    if (currentDevice->getName() == activeDeviceName && ps->host->deviceManager.getCurrentAudioDeviceType() == targetType)
+                    {
+                        auto inNames = currentDevice->getInputChannelNames();
+                        for (int i = 0; i < inNames.size(); ++i)
+                            inputChannelNamesArray.add(inNames[i]);
+
+                        auto outNames = currentDevice->getOutputChannelNames();
+                        for (int i = 0; i < outNames.size(); ++i)
+                            outputChannelNamesArray.add(outNames[i]);
+
+                        gotChannels = true;
+                    }
+                }
+
+                if (!gotChannels)
+                {
+                    std::unique_ptr<juce::AudioIODevice> tempDevice (typeObject->createDevice (activeDeviceName, activeDeviceName));
+                    if (tempDevice != nullptr)
+                    {
+                        auto inNames = tempDevice->getInputChannelNames();
+                        for (int i = 0; i < inNames.size(); ++i)
+                            inputChannelNamesArray.add(inNames[i]);
+
+                        auto outNames = tempDevice->getOutputChannelNames();
+                        for (int i = 0; i < outNames.size(); ++i)
+                            outputChannelNamesArray.add(outNames[i]);
+                    }
+                }
+            }
+        }
+
+        obj->setProperty("inputs", inputsArray);
+        obj->setProperty("outputs", outputsArray);
+        obj->setProperty("input_channels", inputChannelNamesArray);
+        obj->setProperty("output_channels", outputChannelNamesArray);
+
+        ps->result = juce::JSON::toString(juce::var(obj.get())).toStdString();
+        return nullptr;
+    }, &params);
+
+    return params.result;
 }

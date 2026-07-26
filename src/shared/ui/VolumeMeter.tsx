@@ -20,22 +20,11 @@ export function VolumeMeter({ level, className }: VolumeMeterProps) {
   const [displayLevel, setDisplayLevel] = useState(0)
   const [peakHold, setPeakHold] = useState(false)
   const peakTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
+  const targetRef = useRef(0)
 
   useEffect(() => {
     const target = scaleLevel(level)
-    if (target === 0) {
-      setDisplayLevel(0)
-    }
-    else {
-      setDisplayLevel((prev) => {
-        if (target >= prev) {
-          return target
-        }
-        // Decay timeout hold (~350ms smooth falloff)
-        const next = prev * 0.86
-        return next < THRESHOLDS[0] ? 0 : next
-      })
-    }
+    targetRef.current = target
 
     if (target >= THRESHOLDS[6]) {
       setPeakHold(true)
@@ -49,7 +38,19 @@ export function VolumeMeter({ level, className }: VolumeMeterProps) {
   }, [level])
 
   useEffect(() => {
+    const timer = setInterval(() => {
+      setDisplayLevel((prev) => {
+        const tgt = targetRef.current
+        if (prev <= tgt) {
+          return tgt
+        }
+        const next = prev * 0.86
+        return next < THRESHOLDS[0] ? 0 : next
+      })
+    }, 40)
+
     return () => {
+      clearInterval(timer)
       if (peakTimerRef.current) {
         clearTimeout(peakTimerRef.current)
       }

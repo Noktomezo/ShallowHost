@@ -105,12 +105,12 @@ public:
     void setAppDataDirectory(const std::string& path);
 
     int audioStart(const char* driver, const char* inputDevice, const char* outputDevice,
-                   int sampleRate, int bufferSize, int inputMask = 0, int outputMask = 0);
+                   int sampleRate, int bufferSize, int inputMask = -1, int outputMask = -1);
     int audioStop();
     void getAudioLevels(float& inPeak, float& outPeak) { player.getAudioLevels(inPeak, outPeak); }
 
     int audioStartOnMessageThread(const char* driver, const char* inputDevice, const char* outputDevice,
-                                 int sampleRate, int bufferSize, int inputMask = 0, int outputMask = 0);
+                                 int sampleRate, int bufferSize, int inputMask = -1, int outputMask = -1);
     int audioStopOnMessageThread();
 
     std::string getAudioDevicesJson(const char* driver = nullptr, const char* deviceName = nullptr);
@@ -172,7 +172,10 @@ private:
         }
         void closeButtonPressed() override
         {
-            ShallowHost::getInstance().closePluginGui(nodeId);
+            juce::String idCopy = nodeId;
+            juce::MessageManager::callAsync([idCopy]() {
+                ShallowHost::getInstance().closePluginGui(idCopy.toStdString());
+            });
         }
     private:
         std::string nodeId;
@@ -191,7 +194,7 @@ private:
     bool openPluginGuiOnMessageThread(const std::string& nodeId, const std::string& titlePrefix = "");
     bool closePluginGuiOnMessageThread(const std::string& nodeId);
 
-    std::string addToChainOnMessageThread(const std::string& uniqueId);
+    std::string addToChainOnMessageThread(const std::string& uniqueId, const std::string& base64State = "", bool bypassed = false);
     bool removeFromChainOnMessageThread(const std::string& nodeId);
     bool movePluginOnMessageThread(const std::string& nodeId, bool up);
     bool reorderChainOnMessageThread(const std::string& nodeId, int toIndex);

@@ -1,6 +1,17 @@
 #include "host.h"
 #include <algorithm>
 
+#if defined(_WIN32) || defined(_WIN64)
+#ifndef NOMINMAX
+#define NOMINMAX
+#endif
+#ifndef WIN32_LEAN_AND_MEAN
+#define WIN32_LEAN_AND_MEAN
+#endif
+#include <windows.h>
+#include <shellapi.h>
+#endif
+
 std::string ShallowHost::getPluginParametersJson(const std::string& nodeId)
 {
     struct Params {
@@ -168,10 +179,12 @@ bool ShallowHost::openPluginGuiOnMessageThread(const std::string& nodeId, const 
             if (hIconSmall != NULL)
             {
                 SendMessageA(hwnd, WM_SETICON, ICON_SMALL, (LPARAM)hIconSmall);
+                DestroyIcon(hIconSmall);
             }
             if (hIconBig != NULL)
             {
                 SendMessageA(hwnd, WM_SETICON, ICON_BIG, (LPARAM)hIconBig);
+                DestroyIcon(hIconBig);
             }
         }
     }
@@ -203,7 +216,11 @@ bool ShallowHost::closePluginGuiOnMessageThread(const std::string& nodeId)
     auto it = activeWindows.find(nodeId);
     if (it != activeWindows.end())
     {
+        auto win = std::move(it->second);
         activeWindows.erase(it);
+        juce::MessageManager::callAsync([w = std::move(win)]() mutable {
+            w.reset();
+        });
         return true;
     }
     return false;

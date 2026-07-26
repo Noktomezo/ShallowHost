@@ -19,6 +19,7 @@ interface ChainStore {
   error: string | null
   setError: (e: string | null) => void
   setChain: (c: ChainItem[]) => void
+  updateChainItem: (id: string, patch: Partial<ChainItem>) => void
   refresh: () => Promise<void>
   loadPlaceholders: () => Promise<void>
   addPluginAsync: (plugin: { unique_id: string, name: string, vendor: string, format: string }) => void
@@ -28,7 +29,7 @@ interface ChainStore {
 
 function computeChain(rawChain: ChainItem[], initializingMap: Record<string, ChainItem>): ChainItem[] {
   const pending = Object.values(initializingMap).filter(
-    item => !rawChain.some(c => c.unique_id === item.unique_id || c.name === item.name),
+    item => !rawChain.some(c => c.unique_id === item.unique_id),
   )
   return [...rawChain, ...pending]
 }
@@ -44,6 +45,14 @@ export const useChainStore = create<ChainStore>((set, get) => ({
       rawChain,
       chain: computeChain(rawChain, s.initializingMap),
     })),
+  updateChainItem: (id, patch) =>
+    set((s) => {
+      const nextRaw = s.rawChain.map(p => (p.id === id ? { ...p, ...patch } : p))
+      return {
+        rawChain: nextRaw,
+        chain: computeChain(nextRaw, s.initializingMap),
+      }
+    }),
   loadPlaceholders: async () => {
     try {
       const placeholders = await invoke<ChainItem[]>('get_saved_chain_placeholders')

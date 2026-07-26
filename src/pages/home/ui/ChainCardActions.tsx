@@ -20,10 +20,7 @@ async function openGui(id: string, titlePrefix: string) {
 function bypassPlugin(id: string, bypassed: boolean) {
   invoke('bypass_plugin', { pluginId: id, bypassed: !bypassed })
     .then(() => {
-      const cur = useChainStore.getState().chain
-      useChainStore.setState({
-        chain: cur.map(p => (p.id === id ? { ...p, bypassed: !bypassed } : p)),
-      })
+      useChainStore.getState().updateChainItem(id, { bypassed: !bypassed })
     })
     .catch(console.error)
 }

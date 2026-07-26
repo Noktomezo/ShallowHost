@@ -3,6 +3,12 @@
 #include <iostream>
 
 #if defined(_WIN32) || defined(_WIN64)
+#ifndef NOMINMAX
+#define NOMINMAX
+#endif
+#ifndef WIN32_LEAN_AND_MEAN
+#define WIN32_LEAN_AND_MEAN
+#endif
 #include <windows.h>
 #endif
 
@@ -114,7 +120,9 @@ void ShallowHost::rebuildConnectionsOnMessageThread()
         int bs = device->getCurrentBufferSizeSamples();
         if (sr > 0 && bs > 0)
         {
+            graph.suspendProcessing(true);
             graph.prepareToPlay(sr, bs);
+            graph.suspendProcessing(false);
         }
     }
 }
@@ -179,18 +187,18 @@ void ShallowHost::initialize()
 
 void ShallowHost::shutdown()
 {
-    g_juceRunning.store(false);
-    if (g_juceThread != nullptr)
-    {
-        if (g_juceThread->joinable())
-            g_juceThread->join();
-        delete g_juceThread;
-        g_juceThread = nullptr;
-    }
+    if (g_juceThread == nullptr) return;
+
     auto& host = getInstance();
-    host.deviceManager.removeChangeListener(&host);
     host.audioStop();
     host.activeWindows.clear();
+    host.deviceManager.removeChangeListener(&host);
+
+    g_juceRunning.store(false);
+    if (g_juceThread->joinable())
+        g_juceThread->join();
+    delete g_juceThread;
+    g_juceThread = nullptr;
 }
 
 ShallowHost& ShallowHost::getInstance()
