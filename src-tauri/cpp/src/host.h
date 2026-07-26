@@ -39,6 +39,14 @@ public:
     using AudioProcessorPlayer::AudioProcessorPlayer;
     std::atomic<float> inputPeak{ 0.0f };
     std::atomic<float> outputPeak{ 0.0f };
+    double sampleRate{ 48000.0 };
+
+    void audioDeviceAboutToStart(juce::AudioIODevice* device) override
+    {
+        if (device != nullptr && device->getCurrentSampleRate() > 0)
+            sampleRate = device->getCurrentSampleRate();
+        juce::AudioProcessorPlayer::audioDeviceAboutToStart(device);
+    }
 
     void audioDeviceIOCallbackWithContext(const float* const* inputChannelData, int numInputChannels,
                                           float* const* outputChannelData, int numOutputChannels,
@@ -80,11 +88,14 @@ public:
             }
         }
 
+        float duration = (numSamples > 0 && sampleRate > 0) ? (float)((double)numSamples / sampleRate) : 0.01f;
+        float decay = std::exp(-duration * 4.0f);
+
         float curIn = inputPeak.load(std::memory_order_relaxed);
-        inputPeak.store(std::max(inMax, curIn * 0.94f), std::memory_order_relaxed);
+        inputPeak.store(std::max(inMax, curIn * decay), std::memory_order_relaxed);
 
         float curOut = outputPeak.load(std::memory_order_relaxed);
-        outputPeak.store(std::max(outMax, curOut * 0.94f), std::memory_order_relaxed);
+        outputPeak.store(std::max(outMax, curOut * decay), std::memory_order_relaxed);
     }
 
     void getAudioLevels(float& inPeak, float& outPeak)
@@ -189,8 +200,6 @@ private:
     void setupGraph();
     void rebuildConnections();
     void rebuildConnectionsOnMessageThread();
-
-    std::string scanPluginsJsonOnMessageThread(const std::string& vst2PathsJson, const std::string& vst3PathsJson);
 
     bool openPluginGuiOnMessageThread(const std::string& nodeId, const std::string& titlePrefix = "");
     bool closePluginGuiOnMessageThread(const std::string& nodeId);

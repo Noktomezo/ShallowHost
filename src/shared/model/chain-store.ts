@@ -95,6 +95,10 @@ export const useChainStore = create<ChainStore>((set, get) => ({
     }
   },
   addPluginAsync: (plugin) => {
+    if (get().initializingMap[plugin.unique_id]) {
+      return
+    }
+
     const tempItem: ChainItem = {
       id: `temp-${plugin.unique_id}`,
       name: plugin.name,

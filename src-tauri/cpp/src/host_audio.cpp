@@ -28,6 +28,15 @@ int ShallowHost::audioStart(const char* driver, const char* inputDevice, const c
     return params.result;
 }
 
+static juce::String getAudioTypeName(const char* driver)
+{
+    if (driver != nullptr && strlen(driver) > 0)
+    {
+        return juce::String(driver).equalsIgnoreCase("asio") ? "ASIO" : "Windows Audio";
+    }
+    return "Windows Audio";
+}
+
 int ShallowHost::audioStartOnMessageThread(const char* driver, const char* inputDevice, const char* outputDevice,
                                          int sampleRate, int bufferSize, int inputMask, int outputMask)
 {
@@ -36,11 +45,7 @@ int ShallowHost::audioStartOnMessageThread(const char* driver, const char* input
               << ", outputDevice=" << (outputDevice ? outputDevice : "null")
               << ", inputMask=" << inputMask << ", outputMask=" << outputMask << std::endl;
 
-    juce::String typeName = "Windows Audio";
-    if (driver != nullptr && strlen(driver) > 0)
-    {
-        typeName = juce::String(driver).equalsIgnoreCase("asio") ? "ASIO" : "Windows Audio";
-    }
+    juce::String typeName = getAudioTypeName(driver);
 
     deviceManager.closeAudioDevice();
     deviceManager.setCurrentAudioDeviceType(typeName, true);
@@ -79,8 +84,8 @@ int ShallowHost::audioStartOnMessageThread(const char* driver, const char* input
         }
     }
 
-    bool isNoneInput = (inputMask == 0 || juce::String(inputDevice) == "__none");
-    bool isNoneOutput = (outputMask == 0 || juce::String(outputDevice) == "__none");
+    bool isNoneInput = (inputMask == 0 || (inputDevice != nullptr && juce::String(inputDevice) == "__none"));
+    bool isNoneOutput = (outputMask == 0 || (outputDevice != nullptr && juce::String(outputDevice) == "__none"));
 
     if (isNoneInput && isNoneOutput)
     {
@@ -201,7 +206,7 @@ std::string ShallowHost::getAudioDevicesJson(const char* driver, const char* dev
         juce::Array<juce::var> inputChannelNamesArray;
         juce::Array<juce::var> outputChannelNamesArray;
 
-        juce::String targetType = (ps->driver != nullptr && juce::String(ps->driver).equalsIgnoreCase("asio")) ? "ASIO" : "Windows Audio";
+        juce::String targetType = getAudioTypeName(ps->driver);
 
         juce::AudioIODeviceType* typeObject = nullptr;
         for (auto* type : ps->host->deviceManager.getAvailableDeviceTypes())

@@ -97,7 +97,8 @@ bool ShallowHost::setPluginParameterOnMessageThread(const std::string& nodeId, i
     {
         if (auto* param = pList[paramIndex])
         {
-            param->setValueNotifyingHost(value);
+            float clampedValue = std::max(0.0f, std::min(1.0f, value));
+            param->setValueNotifyingHost(clampedValue);
             return true;
         }
     }

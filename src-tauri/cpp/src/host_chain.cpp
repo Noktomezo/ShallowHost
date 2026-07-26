@@ -4,24 +4,6 @@
 
 std::string ShallowHost::scanPluginsJson(const std::string& vst2PathsJson, const std::string& vst3PathsJson)
 {
-    struct Params {
-        ShallowHost* host;
-        const std::string* vst2PathsJson;
-        const std::string* vst3PathsJson;
-        std::string result;
-    } params { this, &vst2PathsJson, &vst3PathsJson, "" };
-
-    juce::MessageManager::getInstance()->callFunctionOnMessageThread([](void* p) -> void* {
-        auto* ps = static_cast<Params*>(p);
-        ps->result = ps->host->scanPluginsJsonOnMessageThread(*ps->vst2PathsJson, *ps->vst3PathsJson);
-        return nullptr;
-    }, &params);
-
-    return params.result;
-}
-
-std::string ShallowHost::scanPluginsJsonOnMessageThread(const std::string& vst2PathsJson, const std::string& vst3PathsJson)
-{
     juce::FileSearchPath vst2Path;
     juce::var vst2Arr = juce::JSON::parse(juce::String(vst2PathsJson));
     if (vst2Arr.isArray())
@@ -56,6 +38,7 @@ std::string ShallowHost::scanPluginsJsonOnMessageThread(const std::string& vst2P
         }
     }
 
+    juce::KnownPluginList tempKnownList;
     for (int fmtIdx = 0; fmtIdx < formatManager.getNumFormats(); ++fmtIdx)
     {
         auto* fmt = formatManager.getFormat(fmtIdx);
@@ -65,7 +48,7 @@ std::string ShallowHost::scanPluginsJsonOnMessageThread(const std::string& vst2P
         if (searchPath.getNumPaths() == 0) continue;
 
         juce::PluginDirectoryScanner scanner(
-            knownPluginList,
+            tempKnownList,
             *fmt,
             searchPath,
             true,
@@ -76,33 +59,49 @@ std::string ShallowHost::scanPluginsJsonOnMessageThread(const std::string& vst2P
         while (scanner.scanNextFile(true, name)) {}
     }
 
-    for (int i = knownPluginList.getNumTypes() - 1; i >= 0; --i)
-    {
-        auto* desc = knownPluginList.getType(i);
-        if (desc != nullptr && !juce::File(desc->fileOrIdentifier).exists())
+    struct Params {
+        ShallowHost* host;
+        const juce::KnownPluginList* tempKnownList;
+        std::string result;
+    } params { this, &tempKnownList, "" };
+
+    juce::MessageManager::getInstance()->callFunctionOnMessageThread([](void* p) -> void* {
+        auto* ps = static_cast<Params*>(p);
+        for (auto& desc : ps->tempKnownList->getTypes())
         {
-            knownPluginList.removeType(*desc);
+            ps->host->knownPluginList.addType(desc);
         }
-    }
+        for (int i = ps->host->knownPluginList.getNumTypes() - 1; i >= 0; --i)
+        {
+            auto* desc = ps->host->knownPluginList.getType(i);
+            if (desc != nullptr && !juce::File(desc->fileOrIdentifier).exists())
+            {
+                ps->host->knownPluginList.removeType(*desc);
+            }
+        }
 
-    juce::Array<juce::var> arr;
-    for (auto& desc : knownPluginList.getTypes())
-    {
-        juce::DynamicObject::Ptr obj = new juce::DynamicObject();
-        obj->setProperty("name", desc.name);
-        obj->setProperty("vendor", desc.manufacturerName);
-        obj->setProperty("version", desc.version);
-        obj->setProperty("category", desc.category);
-        obj->setProperty("path", desc.fileOrIdentifier);
-        obj->setProperty("unique_id", desc.createIdentifierString());
-        obj->setProperty("format", desc.pluginFormatName);
-        obj->setProperty("has_editor", true);
-        obj->setProperty("accepts_midi", desc.isInstrument);
-        arr.add(juce::var(obj.get()));
-    }
+        juce::Array<juce::var> arr;
+        for (auto& desc : ps->host->knownPluginList.getTypes())
+        {
+            juce::DynamicObject::Ptr obj = new juce::DynamicObject();
+            obj->setProperty("name", desc.name);
+            obj->setProperty("vendor", desc.manufacturerName);
+            obj->setProperty("version", desc.version);
+            obj->setProperty("category", desc.category);
+            obj->setProperty("path", desc.fileOrIdentifier);
+            obj->setProperty("unique_id", desc.createIdentifierString());
+            obj->setProperty("format", desc.pluginFormatName);
+            obj->setProperty("has_editor", true);
+            obj->setProperty("accepts_midi", desc.isInstrument);
+            arr.add(juce::var(obj.get()));
+        }
 
-    saveKnownPlugins();
-    return juce::JSON::toString(juce::var(arr)).toStdString();
+        ps->host->saveKnownPlugins();
+        ps->result = juce::JSON::toString(juce::var(arr)).toStdString();
+        return nullptr;
+    }, &params);
+
+    return params.result;
 }
 
 std::string ShallowHost::addToChain(const std::string& uniqueId)

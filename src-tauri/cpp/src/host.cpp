@@ -65,11 +65,20 @@ void ShallowHost::rebuildConnections()
 
 void ShallowHost::setMonoMode(bool mono)
 {
-    if (isMono != mono)
-    {
-        isMono = mono;
-        rebuildConnections();
-    }
+    struct Params {
+        ShallowHost* host;
+        bool mono;
+    } params { this, mono };
+
+    juce::MessageManager::getInstance()->callFunctionOnMessageThread([](void* p) -> void* {
+        auto* ps = static_cast<Params*>(p);
+        if (ps->host->isMono != ps->mono)
+        {
+            ps->host->isMono = ps->mono;
+            ps->host->rebuildConnectionsOnMessageThread();
+        }
+        return nullptr;
+    }, &params);
 }
 
 void ShallowHost::rebuildConnectionsOnMessageThread()
@@ -131,6 +140,10 @@ void ShallowHost::rebuildConnectionsOnMessageThread()
 void ShallowHost::pumpMessageLoop()
 {
 #if defined(_WIN32) || defined(_WIN64)
+    if (auto* mm = juce::MessageManager::getInstanceWithoutCreating())
+    {
+        if (!mm->isThisTheMessageThread()) return;
+    }
     MSG msg;
     while (PeekMessage(&msg, NULL, 0, 0, PM_REMOVE))
     {

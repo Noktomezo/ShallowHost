@@ -401,6 +401,11 @@ fn start_streams(
                 for &s in data {
                     let _ = producer.push_slice(&[s, s]);
                 }
+            } else if in_ch == 2 && out_ch == 1 {
+                for frame in data.chunks_exact(2) {
+                    let mixed = (frame[0] + frame[1]) * 0.5;
+                    let _ = producer.push_slice(&[mixed]);
+                }
             } else {
                 let _ = producer.push_slice(data);
             }

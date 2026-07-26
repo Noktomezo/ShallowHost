@@ -112,15 +112,20 @@ export function HomePage() {
     }
     init().catch(() => {})
 
+    let active = true
     const timerId = setTimeout(async () => {
       try {
         const fresh = await invoke<AudioDevices>('get_audio_devices')
-        setDevices(fresh)
+        if (active)
+          setDevices(fresh)
       }
       catch {}
     }, 300)
 
-    return () => clearTimeout(timerId)
+    return () => {
+      active = false
+      clearTimeout(timerId)
+    }
   }, [refreshChain, loadFromBackend, updateConfigStore])
 
   // ponytail: backend polls devices every 500ms for hotplug; react to events
