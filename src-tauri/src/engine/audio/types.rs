@@ -7,6 +7,7 @@ pub struct AudioConfig {
     pub buffer_size: u32,
     pub active_inputs: Option<Vec<i32>>,
     pub active_outputs: Option<Vec<i32>>,
+    pub is_mono: Option<bool>,
 }
 
 impl Default for AudioConfig {
@@ -19,6 +20,7 @@ impl Default for AudioConfig {
             buffer_size: 512,
             active_inputs: None,
             active_outputs: None,
+            is_mono: Some(false),
         }
     }
 }

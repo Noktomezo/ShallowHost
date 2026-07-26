@@ -11,6 +11,7 @@ export interface AudioConfig {
   buffer_size: number
   active_inputs?: number[] | null
   active_outputs?: number[] | null
+  is_mono?: boolean | null
 }
 
 interface AudioConfigState {
@@ -33,6 +34,7 @@ const DEFAULT_CONFIG: AudioConfig = {
   buffer_size: 512,
   active_inputs: null,
   active_outputs: null,
+  is_mono: false,
 }
 
 export const useAudioConfigStore = create<AudioConfigState>()(

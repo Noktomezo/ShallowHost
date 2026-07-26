@@ -153,6 +153,11 @@ SH_EXPORT bool sh_load_state(const char* state)
     return ShallowHost::getInstance().loadStateJson(std::string(state));
 }
 
+SH_EXPORT void sh_set_mono_mode(bool mono)
+{
+    ShallowHost::getInstance().setMonoMode(mono);
+}
+
 SH_EXPORT void sh_free_string(char* ptr)
 {
     if (ptr)

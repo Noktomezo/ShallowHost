@@ -135,6 +135,9 @@ public:
     std::string saveStateJson();
     bool loadStateJson(const std::string& stateJson);
 
+    void setMonoMode(bool mono);
+    bool getMonoMode() const { return isMono; }
+
     void pumpMessageLoop();
 
     juce::AudioPluginFormatManager& getFormatManager() { return formatManager; }
@@ -155,6 +158,7 @@ private:
 
     std::vector<juce::AudioProcessorGraph::Node::Ptr> chainNodes;
     juce::KnownPluginList knownPluginList;
+    bool isMono = false;
 
     class PluginWindow : public juce::DocumentWindow {
     public:
@@ -231,5 +235,6 @@ SH_EXPORT bool sh_close_plugin_gui(const char* node_id);
 
 SH_EXPORT char* sh_save_state();
 SH_EXPORT bool sh_load_state(const char* state);
+SH_EXPORT void sh_set_mono_mode(bool mono);
 
 SH_EXPORT void sh_free_string(char* ptr);

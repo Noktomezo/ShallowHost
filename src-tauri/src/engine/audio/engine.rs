@@ -94,6 +94,7 @@ impl AudioEngine {
         if config.sample_rate == 0 {
             config.sample_rate = 48000;
         }
+        ffi::set_mono_mode(config.is_mono.unwrap_or(false));
         *self.config.lock().unwrap() = config;
         self.save_audio_config();
     }
@@ -141,6 +142,7 @@ impl AudioEngine {
             output_mask,
         );
         if success {
+            ffi::set_mono_mode(config.is_mono.unwrap_or(false));
             *self.running.lock().unwrap() = true;
             Ok(())
         } else {

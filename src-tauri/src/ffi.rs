@@ -42,6 +42,7 @@ extern "C" {
     fn sh_save_state() -> *mut c_char;
     #[allow(dead_code)]
     fn sh_load_state(state: *const c_char) -> bool;
+    fn sh_set_mono_mode(mono: bool);
 
     fn sh_free_string(ptr: *mut c_char);
 }
@@ -233,4 +234,9 @@ pub fn load_state(state: &str) -> bool {
     let _lock = get_lock();
     let state_c = to_c_string(state);
     unsafe { sh_load_state(state_c.as_ptr()) }
+}
+
+pub fn set_mono_mode(mono: bool) {
+    let _lock = get_lock();
+    unsafe { sh_set_mono_mode(mono) }
 }

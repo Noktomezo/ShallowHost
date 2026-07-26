@@ -56,6 +56,15 @@ void ShallowHost::rebuildConnections()
     }, &params);
 }
 
+void ShallowHost::setMonoMode(bool mono)
+{
+    if (isMono != mono)
+    {
+        isMono = mono;
+        rebuildConnections();
+    }
+}
+
 void ShallowHost::rebuildConnectionsOnMessageThread()
 {
     if (inputNode == nullptr || outputNode == nullptr) return;
@@ -68,12 +77,26 @@ void ShallowHost::rebuildConnectionsOnMessageThread()
     if (chainNodes.empty())
     {
         graph.addConnection({ { inputNode->nodeID, 0 }, { outputNode->nodeID, 0 } });
-        graph.addConnection({ { inputNode->nodeID, 1 }, { outputNode->nodeID, 1 } });
+        if (isMono)
+        {
+            graph.addConnection({ { inputNode->nodeID, 0 }, { outputNode->nodeID, 1 } });
+        }
+        else
+        {
+            graph.addConnection({ { inputNode->nodeID, 1 }, { outputNode->nodeID, 1 } });
+        }
     }
     else
     {
         graph.addConnection({ { inputNode->nodeID, 0 }, { chainNodes[0]->nodeID, 0 } });
-        graph.addConnection({ { inputNode->nodeID, 1 }, { chainNodes[0]->nodeID, 1 } });
+        if (isMono)
+        {
+            graph.addConnection({ { inputNode->nodeID, 0 }, { chainNodes[0]->nodeID, 1 } });
+        }
+        else
+        {
+            graph.addConnection({ { inputNode->nodeID, 1 }, { chainNodes[0]->nodeID, 1 } });
+        }
 
         for (size_t i = 0; i < chainNodes.size() - 1; ++i)
         {

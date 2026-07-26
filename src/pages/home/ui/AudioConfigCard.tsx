@@ -18,6 +18,7 @@ import {
   SelectValue,
 } from '@/shared/ui/select'
 import { Separator } from '@/shared/ui/separator'
+import { Switch } from '@/shared/ui/switch'
 import { VolumeMeter } from '@/shared/ui/VolumeMeter'
 
 interface DeviceInfo {
@@ -464,6 +465,21 @@ export function AudioConfigCard({
                 ))}
               </SelectContent>
             </Select>
+          </div>
+
+          <Separator />
+
+          <div className="flex items-center justify-between gap-2">
+            <div className="flex flex-col gap-0">
+              <span className="text-sm font-medium">{t('home.monoMode')}</span>
+              <span className="text-xs text-muted-foreground">
+                {t('home.monoModeDescription')}
+              </span>
+            </div>
+            <Switch
+              checked={!!config.is_mono}
+              onCheckedChange={checked => updateConfig({ is_mono: !!checked })}
+            />
           </div>
         </div>
       </CardContent>
