@@ -1,18 +1,14 @@
 import type { ScannedPlugin } from '@/shared/model/plugin-store'
-import { Link } from '@tanstack/react-router'
 import { invoke } from '@tauri-apps/api/core'
-import { ArrowRight, FolderOpen, Loader2, Plus, RefreshCw, RotateCcw, Settings, Trash2 } from 'lucide-react'
+import { RefreshCw, Settings } from 'lucide-react'
 import { useEffect, useState } from 'react'
 import { useTranslation } from 'react-i18next'
-import { cn } from '@/shared/lib/utils'
 import { useChainStore } from '@/shared/model/chain-store'
 import { usePluginStore } from '@/shared/model/plugin-store'
-import { Badge } from '@/shared/ui/badge'
 import { Button } from '@/shared/ui/button'
-import { buttonVariants } from '@/shared/ui/button-variants'
-import { Card, CardAction, CardDescription, CardHeader, CardTitle } from '@/shared/ui/card'
-import { Dialog, DialogContent, DialogDescription, DialogTitle } from '@/shared/ui/dialog'
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/shared/ui/tooltip'
+import { PluginItemCard } from './PluginItemCard'
+import { ScanPathsDialog } from './ScanPathsDialog'
 
 export function PluginsPage() {
   const { t } = useTranslation()
@@ -130,93 +126,15 @@ export function PluginsPage() {
                 const isInitializing = checkInitializing(p.unique_id)
                 const inChain = chain.some(c => c.unique_id === p.unique_id)
                 return (
-                  <Card key={p.unique_id} size="sm">
-                    <CardHeader className="gap-0.5">
-                      <div className="flex items-center gap-2">
-                        <CardTitle>{p.name}</CardTitle>
-                        <Badge variant="purple" className="shrink-0">
-                          {p.format.toUpperCase()}
-                        </Badge>
-                        {isInitializing
-                          ? (
-                              <Badge variant="outline" className="gap-1.5 shrink-0 border-amber-500/40 text-amber-400 bg-amber-500/10">
-                                <Loader2 className="size-3 animate-spin text-amber-400" />
-                                {t('plugins.initializing')}
-                              </Badge>
-                            )
-                          : inChain
-                            ? (
-                                <Badge variant="green" className="shrink-0">
-                                  {t('plugins.inChain')}
-                                </Badge>
-                              )
-                            : null}
-                      </div>
-                      {p.vendor && <CardDescription>{p.vendor}</CardDescription>}
-                      <CardAction className="self-center">
-                        <div className="flex gap-1">
-                          {inChain || isInitializing
-                            ? (
-                                <Link
-                                  to="/"
-                                  className={cn(buttonVariants({ variant: 'default' }))}
-                                >
-                                  {t('plugins.goToChain')}
-                                  <ArrowRight className="size-4" data-icon="inline-end" />
-                                </Link>
-                              )
-                            : (
-                                <Tooltip>
-                                  <TooltipTrigger
-                                    render={(
-                                      <Button
-                                        variant="outline"
-                                        size="icon"
-                                        aria-label={t('plugins.addToChain')}
-                                        onClick={() => addPluginAsync(p)}
-                                      >
-                                        <Plus className="size-4" />
-                                      </Button>
-                                    )}
-                                  />
-                                  <TooltipContent>{t('plugins.addToChain')}</TooltipContent>
-                                </Tooltip>
-                              )}
-                          <Tooltip>
-                            <TooltipTrigger
-                              render={(
-                                <Button
-                                  variant="outline"
-                                  size="icon"
-                                  aria-label={t('plugins.reveal')}
-                                  onClick={() => revealPlugin(p.path)}
-                                >
-                                  <FolderOpen className="size-4" />
-                                </Button>
-                              )}
-                            />
-                            <TooltipContent>{t('plugins.reveal')}</TooltipContent>
-                          </Tooltip>
-                          <Tooltip>
-                            <TooltipTrigger
-                              render={(
-                                <Button
-                                  variant="outline"
-                                  size="icon"
-                                  aria-label={t('plugins.remove')}
-                                  className="hover:bg-destructive/15 hover:text-destructive"
-                                  onClick={() => removePlugin(p.unique_id)}
-                                >
-                                  <Trash2 className="size-4" />
-                                </Button>
-                              )}
-                            />
-                            <TooltipContent>{t('plugins.remove')}</TooltipContent>
-                          </Tooltip>
-                        </div>
-                      </CardAction>
-                    </CardHeader>
-                  </Card>
+                  <PluginItemCard
+                    key={p.unique_id}
+                    plugin={p}
+                    inChain={inChain}
+                    isInitializing={isInitializing}
+                    onAdd={addPluginAsync}
+                    onReveal={revealPlugin}
+                    onRemove={removePlugin}
+                  />
                 )
               })
             )
@@ -231,129 +149,19 @@ export function PluginsPage() {
             )}
       </div>
 
-      <Dialog open={settingsOpen} onOpenChange={setSettingsOpen}>
-        <DialogContent className="sm:max-w-xl">
-          <DialogTitle>{t('plugins.scanPathsTitle')}</DialogTitle>
-          <DialogDescription>
-            {t('plugins.scanPathsDescription')}
-          </DialogDescription>
-
-          <div className="flex flex-col gap-4 py-4">
-            {/* VST2 Section */}
-            <div className="flex flex-col gap-2">
-              <div className="flex items-center justify-between">
-                <span className="text-sm font-semibold">VST2 Search Paths</span>
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={async () => {
-                    try {
-                      const path = await invoke<string | null>('select_directory')
-                      if (path)
-                        addVst2Path(path)
-                    }
-                    catch (e) {
-                      setError(String(e))
-                    }
-                  }}
-                  className="h-8 gap-1"
-                >
-                  <Plus className="size-3.5" />
-                  {t('plugins.addFolder')}
-                </Button>
-              </div>
-              <div className="rounded-md border border-border bg-muted/20 p-2 flex flex-col gap-1.5 max-h-[140px] overflow-y-auto">
-                {vst2Paths.length === 0
-                  ? (
-                      <p className="text-xs text-muted-foreground py-1 text-center">No VST2 paths configured</p>
-                    )
-                  : (
-                      vst2Paths.map(p => (
-                        <div key={p} className="flex items-center justify-between gap-2 bg-muted/40 p-1.5 rounded text-xs select-text">
-                          <span className="truncate flex-1 font-mono">{p}</span>
-                          <Button
-                            variant="ghost"
-                            size="icon"
-                            aria-label={t('plugins.remove')}
-                            onClick={() => removeVst2Path(p)}
-                            className="size-6 text-muted-foreground hover:text-destructive hover:bg-destructive/10"
-                          >
-                            <Trash2 className="size-3.5" />
-                          </Button>
-                        </div>
-                      ))
-                    )}
-              </div>
-            </div>
-
-            {/* VST3 Section */}
-            <div className="flex flex-col gap-2">
-              <div className="flex items-center justify-between">
-                <span className="text-sm font-semibold">VST3 Search Paths</span>
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={async () => {
-                    try {
-                      const path = await invoke<string | null>('select_directory')
-                      if (path)
-                        addVst3Path(path)
-                    }
-                    catch (e) {
-                      setError(String(e))
-                    }
-                  }}
-                  className="h-8 gap-1"
-                >
-                  <Plus className="size-3.5" />
-                  {t('plugins.addFolder')}
-                </Button>
-              </div>
-              <div className="rounded-md border border-border bg-muted/20 p-2 flex flex-col gap-1.5 max-h-[140px] overflow-y-auto">
-                {vst3Paths.length === 0
-                  ? (
-                      <p className="text-xs text-muted-foreground py-1 text-center">No VST3 paths configured</p>
-                    )
-                  : (
-                      vst3Paths.map(p => (
-                        <div key={p} className="flex items-center justify-between gap-2 bg-muted/40 p-1.5 rounded text-xs select-text">
-                          <span className="truncate flex-1 font-mono">{p}</span>
-                          <Button
-                            variant="ghost"
-                            size="icon"
-                            aria-label={t('plugins.remove')}
-                            onClick={() => removeVst3Path(p)}
-                            className="size-6 text-muted-foreground hover:text-destructive hover:bg-destructive/10"
-                          >
-                            <Trash2 className="size-3.5" />
-                          </Button>
-                        </div>
-                      ))
-                    )}
-              </div>
-            </div>
-          </div>
-
-          <div className="flex items-center justify-between gap-2 mt-2">
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={resetPaths}
-              className="gap-1.5 text-muted-foreground hover:text-foreground"
-            >
-              <RotateCcw className="size-3.5" />
-              {t('plugins.resetDefaults')}
-            </Button>
-            <Button
-              variant="default"
-              size="sm"
-              onClick={() => setSettingsOpen(false)}
-            >
-              {t('titlebar.close')}
-            </Button>
-          </div>
-        </DialogContent>
-      </Dialog>
+      <ScanPathsDialog
+        open={settingsOpen}
+        onOpenChange={setSettingsOpen}
+        vst2Paths={vst2Paths}
+        vst3Paths={vst3Paths}
+        addVst2Path={addVst2Path}
+        removeVst2Path={removeVst2Path}
+        addVst3Path={addVst3Path}
+        removeVst3Path={removeVst3Path}
+        resetVst2Paths={resetPaths}
+        resetVst3Paths={() => {}}
+        setError={setError}
+      />
     </div>
   )
 }

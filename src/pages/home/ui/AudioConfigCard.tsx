@@ -10,7 +10,6 @@ import {
   CardHeader,
   CardTitle,
 } from '@/shared/ui/card'
-import { Checkbox } from '@/shared/ui/checkbox'
 import {
   Select,
   SelectContent,
@@ -20,6 +19,8 @@ import {
 } from '@/shared/ui/select'
 import { Separator } from '@/shared/ui/separator'
 import { VolumeMeter } from '@/shared/ui/VolumeMeter'
+import { AsioChannelSection } from './AsioChannelSection'
+import { DeviceSelect } from './DeviceSelect'
 
 interface DeviceInfo {
   name: string
@@ -122,58 +123,6 @@ const SAMPLE_RATES = [44100, 48000, 88200, 96000, 192000]
 const BUFFER_SIZES = [8, 16, 32, 64, 128, 256, 512, 1024, 2048]
 const DRIVER_ITEMS = { wasapi: 'WASAPI', asio: 'ASIO' }
 
-function DeviceSelect({
-  label,
-  description,
-  value,
-  items,
-  devices,
-  onChange,
-  defaultLabel,
-  hideDefault = false,
-  meter,
-}: {
-  label: string
-  description: string
-  value: string
-  items: Record<string, React.ReactNode>
-  devices: DeviceInfo[]
-  onChange: (v: string | null) => void
-  defaultLabel: string
-  hideDefault?: boolean
-  meter?: React.ReactNode
-}) {
-  return (
-    <div className="flex items-center justify-between gap-2">
-      <div className="flex flex-col gap-0">
-        <span className="text-sm font-medium">{label}</span>
-        <span className="text-xs text-muted-foreground">{description}</span>
-      </div>
-      <div className="flex items-center gap-3">
-        {meter}
-        <Select
-          value={value}
-          onValueChange={onChange}
-          items={items}
-        >
-          <SelectTrigger className="w-40" aria-label={label}>
-            <SelectValue placeholder={hideDefault ? 'Select...' : undefined} />
-          </SelectTrigger>
-          <SelectContent>
-            {!hideDefault && <SelectItem value="__default">{defaultLabel}</SelectItem>}
-            {hideDefault && <SelectItem value="__none">{defaultLabel}</SelectItem>}
-            {devices.map(d => (
-              <SelectItem key={d.name} value={d.name}>
-                {d.name}
-              </SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
-      </div>
-    </div>
-  )
-}
-
 export function AudioConfigCard({
   config,
   devices,
@@ -260,9 +209,7 @@ export function AudioConfigCard({
         <CardTitle>{t('home.audio')}</CardTitle>
         <CardDescription>{t('home.audioDescription')}</CardDescription>
         <CardAction className="self-center">
-          {/* Custom sliding toggle between Stereo and Mono */}
           <div className="relative inline-flex items-center rounded-md bg-muted/60 p-0 border border-border/40 select-none text-xs font-semibold h-8 w-40 overflow-hidden shrink-0">
-            {/* Moving background thumb */}
             <div
               className={`absolute top-0 bottom-0 left-0 rounded-[calc(var(--radius)-1px)] transition-all duration-300 ease-in-out w-[79px] ${
                 config.is_mono
@@ -270,7 +217,6 @@ export function AudioConfigCard({
                   : 'translate-x-0 bg-primary shadow-sm shadow-primary/20'
               }`}
             />
-            {/* Stereo Label */}
             <button
               type="button"
               onClick={(e) => {
@@ -283,7 +229,6 @@ export function AudioConfigCard({
             >
               {t('home.stereo')}
             </button>
-            {/* Mono Label */}
             <button
               type="button"
               onClick={(e) => {
@@ -348,99 +293,17 @@ export function AudioConfigCard({
                   />
 
                   {config.output_device && config.output_device !== '__none' && (
-                    <div className="grid grid-cols-2 gap-4">
-                      <div className="flex flex-col gap-2">
-                        <div className="flex items-center justify-between">
-                          <span className="text-sm font-medium">
-                            {t('home.activeOutputChannels')}
-                            :
-                          </span>
-                          <VolumeMeter level={isOutputActive ? levels.output : 0} />
-                        </div>
-                        <div className="flex flex-col gap-1.5 rounded-md border border-input p-3 bg-muted/20 max-h-40 overflow-y-auto">
-                          {outputPairs.length === 0
-                            ? (
-                                <span className="text-xs text-muted-foreground">No channels available</span>
-                              )
-                            : (
-                                outputPairs.map((p) => {
-                                  const isChecked = p.indices.every(i => activeOutputsSet.has(i))
-                                  return (
-                                    <div
-                                      key={p.label}
-                                      role="checkbox"
-                                      aria-checked={isChecked}
-                                      tabIndex={0}
-                                      className="flex items-center justify-between gap-2 text-sm select-none cursor-pointer p-0.5 rounded hover:bg-muted/40 overflow-hidden"
-                                      onClick={() => handleOutputToggle(p.indices, !isChecked)}
-                                      onKeyDown={(e) => {
-                                        if (e.key === ' ' || e.key === 'Enter') {
-                                          e.preventDefault()
-                                          handleOutputToggle(p.indices, !isChecked)
-                                        }
-                                      }}
-                                    >
-                                      <div className="flex items-center gap-2 min-w-0 flex-1">
-                                        <Checkbox
-                                          aria-label={p.label}
-                                          checked={isChecked}
-                                          onCheckedChange={checked => handleOutputToggle(p.indices, !!checked)}
-                                        />
-                                        <span className="truncate">{p.label}</span>
-                                      </div>
-                                    </div>
-                                  )
-                                })
-                              )}
-                        </div>
-                      </div>
-
-                      <div className="flex flex-col gap-2">
-                        <div className="flex items-center justify-between">
-                          <span className="text-sm font-medium">
-                            {t('home.activeInputChannels')}
-                            :
-                          </span>
-                          <VolumeMeter level={isInputActive ? levels.input : 0} />
-                        </div>
-                        <div className="flex flex-col gap-1.5 rounded-md border border-input p-3 bg-muted/20 max-h-40 overflow-y-auto">
-                          {inputPairs.length === 0
-                            ? (
-                                <span className="text-xs text-muted-foreground">No channels available</span>
-                              )
-                            : (
-                                inputPairs.map((p) => {
-                                  const isChecked = p.indices.every(i => activeInputsSet.has(i))
-                                  return (
-                                    <div
-                                      key={p.label}
-                                      role="checkbox"
-                                      aria-checked={isChecked}
-                                      tabIndex={0}
-                                      className="flex items-center justify-between gap-2 text-sm select-none cursor-pointer p-0.5 rounded hover:bg-muted/40 overflow-hidden"
-                                      onClick={() => handleInputToggle(p.indices, !isChecked)}
-                                      onKeyDown={(e) => {
-                                        if (e.key === ' ' || e.key === 'Enter') {
-                                          e.preventDefault()
-                                          handleInputToggle(p.indices, !isChecked)
-                                        }
-                                      }}
-                                    >
-                                      <div className="flex items-center gap-2 min-w-0 flex-1">
-                                        <Checkbox
-                                          aria-label={p.label}
-                                          checked={isChecked}
-                                          onCheckedChange={checked => handleInputToggle(p.indices, !!checked)}
-                                        />
-                                        <span className="truncate">{p.label}</span>
-                                      </div>
-                                    </div>
-                                  )
-                                })
-                              )}
-                        </div>
-                      </div>
-                    </div>
+                    <AsioChannelSection
+                      outputPairs={outputPairs}
+                      inputPairs={inputPairs}
+                      activeOutputsSet={activeOutputsSet}
+                      activeInputsSet={activeInputsSet}
+                      isOutputActive={!!isOutputActive}
+                      isInputActive={!!isInputActive}
+                      levels={levels}
+                      handleOutputToggle={handleOutputToggle}
+                      handleInputToggle={handleInputToggle}
+                    />
                   )}
                 </>
               )
@@ -452,8 +315,7 @@ export function AudioConfigCard({
                     value={config.output_device ?? '__none'}
                     items={outputItems}
                     devices={devices.outputs}
-                    onChange={v =>
-                      updateConfig({ output_device: v })}
+                    onChange={v => updateConfig({ output_device: v })}
                     defaultLabel={t('home.noneDevice')}
                     hideDefault={true}
                     meter={<VolumeMeter level={isOutputActive ? levels.output : 0} />}
@@ -465,8 +327,7 @@ export function AudioConfigCard({
                     value={config.input_device ?? '__none'}
                     items={inputItems}
                     devices={devices.inputs}
-                    onChange={v =>
-                      updateConfig({ input_device: v })}
+                    onChange={v => updateConfig({ input_device: v })}
                     defaultLabel={t('home.noneDevice')}
                     hideDefault={true}
                     meter={<VolumeMeter level={isInputActive ? levels.input : 0} />}

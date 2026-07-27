@@ -3,7 +3,6 @@ import type { AudioDevices, DeviceInfo } from './AudioConfigCard'
 import type { AudioConfig } from '@/shared/model/audio-config-store'
 import {
   DndContext,
-
   PointerSensor,
   useSensor,
   useSensors,
@@ -34,11 +33,10 @@ import {
 } from '@/shared/ui/card'
 import { Separator } from '@/shared/ui/separator'
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/shared/ui/tooltip'
+import { handleAudioConfigUpdate } from '../lib/audio-config-actions'
 import { AudioConfigCard } from './AudioConfigCard'
 import { SortableChainCard } from './SortableChainCard'
 
-// ponytail: module-level cache survives route unmount/remount — avoids
-// channel section flash while get_audio_devices fetch is in-flight.
 let devicesCache: AudioDevices = { inputs: [], outputs: [] }
 
 export function HomePage() {
@@ -49,8 +47,7 @@ export function HomePage() {
   const config = useAudioConfigStore(s => s.config)
   const updateConfigStore = useAudioConfigStore(s => s.updateConfig)
   const loadFromBackend = useAudioConfigStore(s => s.loadFromBackend)
-  // ponytail: module-level cache survives route unmount/remount — avoids
-  // "No channels available" flash while get_audio_devices fetch is in-flight.
+
   const [devices, setDevicesState] = useState<AudioDevices>(devicesCache)
   const setDevices = (d: AudioDevices) => {
     devicesCache = d
@@ -75,21 +72,15 @@ export function HomePage() {
       const devs = await invoke<AudioDevices>('get_audio_devices')
       setDevices(devs)
 
-      // Get the freshly updated config from store
       const currentConfig = useAudioConfigStore.getState().config
 
-      // Auto-select system defaults if config is empty and driver is wasapi
       if (currentConfig.driver === 'wasapi') {
         const patch: Partial<AudioConfig> = {}
         let needsUpdate = false
-        // ponytail: also heal stale configs (e.g. ASIO device name saved under
-        // WASAPI driver from a prior bug) — if the device isn't in the fresh
-        // list, reset to default. __none is a valid user choice, keep it.
         const isStaleOrEmpty = (dev: string | null, list: DeviceInfo[]) =>
           !dev
           || dev === '__default'
           || (dev !== '__none' && !list.some(d => d.name === dev))
-        // ponytail: restore last WASAPI device with __none fallback — no auto-default.
         const resolveWasapi = (saved: string | null, list: DeviceInfo[]) =>
           saved && saved !== '__default' && (saved === '__none' || list.some(d => d.name === saved))
             ? saved
@@ -131,8 +122,6 @@ export function HomePage() {
     }
   }, [refreshChain, loadFromBackend, updateConfigStore])
 
-  // ponytail: backend polls devices every 500ms for hotplug; react to events
-  // instead of polling from frontend (avoids IPC spam + UI hangs).
   useEffect(() => {
     const unlistenDevices = listen<AudioDevices>('audio-devices-changed', (e) => {
       setDevices(e.payload)
@@ -146,77 +135,8 @@ export function HomePage() {
     }
   }, [loadFromBackend])
 
-  async function updateConfig(patch: Partial<AudioConfig>) {
-    const nextPatch = { ...patch }
-    // ponytail: both driver-switch branches clear devices, push to backend, fetch fresh list.
-    const clearDevicesAndFetch = async () => {
-      nextPatch.input_device = null
-      nextPatch.output_device = null
-      nextPatch.active_inputs = null
-      nextPatch.active_outputs = null
-      updateConfigStore(nextPatch)
-      await invoke('set_audio_config', { config: { ...config, ...nextPatch } })
-      const freshDevs = await invoke<AudioDevices>('get_audio_devices')
-      setDevices(freshDevs)
-      return freshDevs
-    }
-    if (patch.driver && patch.driver !== config.driver) {
-      if (patch.driver === 'asio') {
-        // ponytail: stash current WASAPI devices for restore on switch-back.
-        if (config.driver === 'wasapi') {
-          useAudioConfigStore.setState({
-            lastWasapiInput: config.input_device,
-            lastWasapiOutput: config.output_device,
-          })
-        }
-        // ponytail: restore last-used ASIO device if still present, else __none.
-        const freshDevs = await clearDevicesAndFetch()
-        const last = useAudioConfigStore.getState().lastAsioDevice
-        const restore = last && freshDevs.outputs.some(d => d.name === last) ? last : '__none'
-        nextPatch.input_device = restore
-        nextPatch.output_device = restore
-        // ponytail: restore stashed channels too — indices are bit-flags, device
-        // ignores invalid bits; same-device restore is exact.
-        const asioState = useAudioConfigStore.getState()
-        nextPatch.active_inputs = restore !== '__none' ? asioState.lastAsioInputs : null
-        nextPatch.active_outputs = restore !== '__none' ? asioState.lastAsioOutputs : null
-      }
-      else {
-        // ponytail: `devices` still holds the ASIO list here, so picking defaults
-        // from it copies the ASIO device name across → "No such device" on start.
-        // Push driver change to backend first, enumerate fresh WASAPI devices,
-        // then restore last WASAPI device with __none fallback (no auto-default).
-        // Stash current ASIO device for restore on switch-back.
-        if (config.driver === 'asio' && config.output_device && config.output_device !== '__none') {
-          useAudioConfigStore.setState({
-            lastAsioDevice: config.output_device,
-            lastAsioInputs: config.active_inputs ?? null,
-            lastAsioOutputs: config.active_outputs ?? null,
-          })
-        }
-        const freshDevs = await clearDevicesAndFetch()
-        const wasapiState = useAudioConfigStore.getState()
-        const restoreIn = wasapiState.lastWasapiInput && (wasapiState.lastWasapiInput === '__none' || freshDevs.inputs.some(d => d.name === wasapiState.lastWasapiInput))
-          ? wasapiState.lastWasapiInput
-          : '__none'
-        const restoreOut = wasapiState.lastWasapiOutput && (wasapiState.lastWasapiOutput === '__none' || freshDevs.outputs.some(d => d.name === wasapiState.lastWasapiOutput))
-          ? wasapiState.lastWasapiOutput
-          : '__none'
-        nextPatch.input_device = restoreIn
-        nextPatch.output_device = restoreOut
-      }
-    }
-    updateConfigStore(nextPatch)
-    const next = { ...config, ...nextPatch }
-    try {
-      await invoke('set_audio_config', { config: next })
-      await invoke('restart_audio')
-      const devs = await invoke<AudioDevices>('get_audio_devices')
-      setDevices(devs)
-    }
-    catch (e) {
-      setError(String(e))
-    }
+  const updateConfig = (patch: Partial<AudioConfig>) => {
+    return handleAudioConfigUpdate(patch, config, updateConfigStore, setDevices, setError)
   }
 
   async function reorderPlugin(id: string, toIndex: number) {

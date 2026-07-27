@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useEffect } from 'react'
+import React, { createContext, useContext, useEffect, useMemo } from 'react'
 import { useThemeStore } from '@/shared/model/theme-store'
 
 interface ThemeProviderProps {
@@ -40,8 +40,10 @@ export function ThemeProvider({ children }: ThemeProviderProps) {
     return () => window.removeEventListener('keydown', handleKeyDown)
   }, [theme, setTheme])
 
+  const contextValue = useMemo(() => ({ theme, setTheme }), [theme, setTheme])
+
   return (
-    <ThemeContext.Provider value={{ theme, setTheme }}>
+    <ThemeContext.Provider value={contextValue}>
       {children}
     </ThemeContext.Provider>
   )

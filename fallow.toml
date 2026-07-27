@@ -16,12 +16,6 @@ ignorePatterns = [
   "dist/**",
   "src-tauri/target/**",
 ]
-ignoreDependencies = [
-  "tailwindcss",
-  "shadcn",
-  "react-doctor",
-]
-ignoreExportsUsedInFile = true
 
 [rules]
 unused-files = "error"
@@ -33,11 +27,3 @@ mode = "mild"
 minTokens = 50
 minLines = 5
 threshold = 10
-
-[health]
-maxCyclomatic = 30
-maxCognitive = 40
-maxCrap = 500.0
-
-[audit]
-gate = "new-only"

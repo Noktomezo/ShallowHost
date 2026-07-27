@@ -8,9 +8,9 @@ import { useTranslation } from 'react-i18next'
 import { updateService } from '@/shared/lib/updater'
 import { cn } from '@/shared/lib/utils'
 import { useLanguageStore } from '@/shared/model/language-store'
-import { useThemeStore } from '@/shared/model/theme-store'
 import { useTrayStore } from '@/shared/model/tray-store'
 import { useUpdateStore } from '@/shared/model/update-store'
+import { useTheme } from '@/shared/providers/theme-provider'
 import { Badge } from '@/shared/ui/badge'
 import { Button } from '@/shared/ui/button'
 import {
@@ -28,7 +28,7 @@ import {
   SelectTrigger,
 } from '@/shared/ui/select'
 import { Separator } from '@/shared/ui/separator'
-import { showUpdateToast } from '@/shared/ui/sonner'
+import { showUpdateToast } from '@/shared/ui/sonner-utils'
 import { Switch } from '@/shared/ui/switch'
 
 function FlagRU() {
@@ -58,8 +58,7 @@ function FlagEN() {
 
 export function SettingsPage() {
   const { t } = useTranslation()
-  const theme = useThemeStore(s => s.theme)
-  const setTheme = useThemeStore(s => s.setTheme)
+  const { theme, setTheme } = useTheme()
   const language = useLanguageStore(s => s.language)
   const setLanguage = useLanguageStore(s => s.setLanguage)
   const check = useUpdateStore(s => s.checkResult)
