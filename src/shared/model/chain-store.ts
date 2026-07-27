@@ -61,6 +61,20 @@ export const useChainStore = create<ChainStore>((set, get) => ({
         for (const item of placeholders) {
           if (item.unique_id) {
             nextMap[item.unique_id] = { ...item, initializing: true }
+            const uid = item.unique_id
+            setTimeout(() => {
+              set((s) => {
+                if (s.initializingMap[uid]) {
+                  const map = { ...s.initializingMap }
+                  delete map[uid]
+                  return {
+                    initializingMap: map,
+                    chain: computeChain(s.rawChain, map),
+                  }
+                }
+                return s
+              })
+            }, 15000)
           }
         }
         set(s => ({
@@ -147,10 +161,23 @@ export const useChainStore = create<ChainStore>((set, get) => ({
       })
   },
   remove: (id) => {
-    set(s => ({
-      rawChain: s.rawChain.filter(p => p.id !== id),
-      chain: s.chain.filter(p => p.id !== id),
-    }))
+    set((s) => {
+      const nextMap = { ...s.initializingMap }
+      const item = s.rawChain.find(p => p.id === id) || s.chain.find(p => p.id === id)
+      if (item?.unique_id && nextMap[item.unique_id]) {
+        delete nextMap[item.unique_id]
+      }
+      if (id.startsWith('temp-')) {
+        const uid = id.replace('temp-', '')
+        delete nextMap[uid]
+      }
+      const nextRaw = s.rawChain.filter(p => p.id !== id)
+      return {
+        rawChain: nextRaw,
+        initializingMap: nextMap,
+        chain: computeChain(nextRaw, nextMap),
+      }
+    })
   },
   isInitializing: (uniqueId: string) => {
     return Boolean(get().initializingMap[uniqueId])

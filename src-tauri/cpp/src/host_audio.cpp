@@ -66,6 +66,7 @@ int ShallowHost::audioStartOnMessageThread(const char* driver, const char* input
     if (typeObject != nullptr)
     {
         typeObject->scanForDevices();
+        scannedDeviceTypes.insert(typeName.toStdString());
 
         if (inputDevice == nullptr || juce::String(inputDevice) == "__default" || juce::String(inputDevice).isEmpty())
         {

@@ -132,7 +132,9 @@ std::string ShallowHost::addToChainOnMessageThread(const std::string& uniqueId, 
     }
 
     juce::String error;
-    auto instance = formatManager.createPluginInstance(*desc, graph.getSampleRate(), graph.getBlockSize(), error);
+    double sr = graph.getSampleRate() > 0.0 ? graph.getSampleRate() : 48000.0;
+    int bs = graph.getBlockSize() > 0 ? graph.getBlockSize() : 512;
+    auto instance = formatManager.createPluginInstance(*desc, sr, bs, error);
     if (instance == nullptr)
     {
         std::cerr << "[sh] failed to instantiate plugin: " << error.toStdString() << std::endl;
@@ -217,7 +219,7 @@ bool ShallowHost::removeFromChain(const std::string& nodeId)
 
 bool ShallowHost::removeFromChainOnMessageThread(const std::string& nodeId)
 {
-    closePluginGuiOnMessageThread(nodeId);
+    activeWindows.erase(nodeId);
 
     auto it = std::find_if(chainNodes.begin(), chainNodes.end(), [&](const auto& node) {
         return std::to_string(node->nodeID.uid) == nodeId;
@@ -466,7 +468,9 @@ bool ShallowHost::loadStateJsonOnMessageThread(const std::string& stateJson)
         if (desc == nullptr) continue;
 
         juce::String error;
-        auto instance = formatManager.createPluginInstance(*desc, graph.getSampleRate(), graph.getBlockSize(), error);
+        double sr = graph.getSampleRate() > 0.0 ? graph.getSampleRate() : 48000.0;
+        int bs = graph.getBlockSize() > 0 ? graph.getBlockSize() : 512;
+        auto instance = formatManager.createPluginInstance(*desc, sr, bs, error);
         if (instance == nullptr) continue;
 
         instance->enableAllBuses();

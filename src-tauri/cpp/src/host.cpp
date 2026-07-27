@@ -90,29 +90,38 @@ void ShallowHost::rebuildConnectionsOnMessageThread()
         graph.removeConnection(conns[i]);
     }
 
-    if (chainNodes.empty())
+    int leftChannel = 0;
+    int rightChannel = 1;
+    if (isMono)
     {
-        graph.addConnection({ { inputNode->nodeID, 0 }, { outputNode->nodeID, 0 } });
-        if (isMono)
+        if (auto* device = deviceManager.getCurrentAudioDevice())
         {
-            graph.addConnection({ { inputNode->nodeID, 0 }, { outputNode->nodeID, 1 } });
+            auto mask = device->getActiveInputChannels();
+            for (int i = 0; i < 32; ++i)
+            {
+                if (mask[i])
+                {
+                    leftChannel = i;
+                    rightChannel = i;
+                    break;
+                }
+            }
         }
         else
         {
-            graph.addConnection({ { inputNode->nodeID, 1 }, { outputNode->nodeID, 1 } });
+            rightChannel = 0;
         }
+    }
+
+    if (chainNodes.empty())
+    {
+        graph.addConnection({ { inputNode->nodeID, leftChannel }, { outputNode->nodeID, 0 } });
+        graph.addConnection({ { inputNode->nodeID, rightChannel }, { outputNode->nodeID, 1 } });
     }
     else
     {
-        graph.addConnection({ { inputNode->nodeID, 0 }, { chainNodes[0]->nodeID, 0 } });
-        if (isMono)
-        {
-            graph.addConnection({ { inputNode->nodeID, 0 }, { chainNodes[0]->nodeID, 1 } });
-        }
-        else
-        {
-            graph.addConnection({ { inputNode->nodeID, 1 }, { chainNodes[0]->nodeID, 1 } });
-        }
+        graph.addConnection({ { inputNode->nodeID, leftChannel }, { chainNodes[0]->nodeID, 0 } });
+        graph.addConnection({ { inputNode->nodeID, rightChannel }, { chainNodes[0]->nodeID, 1 } });
 
         for (size_t i = 0; i < chainNodes.size() - 1; ++i)
         {
@@ -205,20 +214,26 @@ void ShallowHost::initialize()
     initFuture.wait();
 }
 
+static ShallowHost* g_instance = nullptr;
+
 void ShallowHost::shutdown()
 {
     if (g_juceThread == nullptr) return;
 
-    auto& host = getInstance();
-    host.audioStop();
+    if (g_instance != nullptr)
+    {
+        g_instance->audioStop();
 
-    juce::MessageManager::getInstance()->callFunctionOnMessageThread([](void* p) -> void* {
-        auto* h = static_cast<ShallowHost*>(p);
-        h->activeWindows.clear();
-        return nullptr;
-    }, &host);
+        juce::MessageManager::getInstance()->callFunctionOnMessageThread([](void* p) -> void* {
+            auto* h = static_cast<ShallowHost*>(p);
+            h->activeWindows.clear();
+            h->deviceManager.removeChangeListener(h);
+            delete h;
+            return nullptr;
+        }, g_instance);
 
-    host.deviceManager.removeChangeListener(&host);
+        g_instance = nullptr;
+    }
 
     g_juceRunning.store(false);
     if (g_juceThread->joinable())
@@ -229,6 +244,9 @@ void ShallowHost::shutdown()
 
 ShallowHost& ShallowHost::getInstance()
 {
-    static ShallowHost instance;
-    return instance;
+    if (g_instance == nullptr)
+    {
+        g_instance = new ShallowHost();
+    }
+    return *g_instance;
 }

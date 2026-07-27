@@ -43,7 +43,7 @@ export function Titlebar({ collapsed, onToggleCollapse }: TitlebarProps) {
           size="icon"
           onClick={() => appWindow.minimize()}
           aria-label={t('titlebar.minimize')}
-          className="text-muted-foreground border border-transparent transition-colors duration-200 group-hover/traffic:text-yellow hover:!bg-yellow hover:!text-primary-foreground hover:!border-yellow/20 cursor-pointer"
+          className="text-muted-foreground border border-transparent transition-colors duration-200 group-hover/traffic:text-yellow hover:bg-yellow! hover:text-primary-foreground! hover:border-yellow/20! cursor-pointer"
         >
           <Minus className="size-4" />
         </Button>
@@ -54,7 +54,7 @@ export function Titlebar({ collapsed, onToggleCollapse }: TitlebarProps) {
           size="icon"
           onClick={() => appWindow.toggleMaximize()}
           aria-label={t('titlebar.maximize')}
-          className="text-muted-foreground border border-transparent transition-colors duration-200 group-hover/traffic:text-green hover:!bg-green hover:!text-primary-foreground hover:!border-green/20 cursor-pointer"
+          className="text-muted-foreground border border-transparent transition-colors duration-200 group-hover/traffic:text-green hover:bg-green! hover:text-primary-foreground! hover:border-green/20! cursor-pointer"
         >
           <Square className="size-3.5" />
         </Button>
@@ -65,7 +65,7 @@ export function Titlebar({ collapsed, onToggleCollapse }: TitlebarProps) {
           size="icon"
           onClick={() => appWindow.close()}
           aria-label={t('titlebar.close')}
-          className="text-muted-foreground border border-transparent transition-colors duration-200 group-hover/traffic:text-red hover:!bg-red hover:!text-destructive-foreground hover:!border-red/20 cursor-pointer"
+          className="text-muted-foreground border border-transparent transition-colors duration-200 group-hover/traffic:text-red hover:bg-red! hover:text-destructive-foreground! hover:border-red/20! cursor-pointer"
         >
           <X className="size-4" />
         </Button>
