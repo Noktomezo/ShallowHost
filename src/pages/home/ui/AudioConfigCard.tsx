@@ -242,7 +242,7 @@ export function AudioConfigCard({
           ? (
               <>
                 {label}
-                <span className="text-muted-foreground">{` (${t('home.recommended')})`}</span>
+                <span className="text-muted-foreground opacity-75">{` (${t('home.recommended')})`}</span>
               </>
             )
           : (
@@ -256,7 +256,7 @@ export function AudioConfigCard({
       String(b),
       <>
         {b}
-        <span className="text-muted-foreground">
+        <span className="text-muted-foreground opacity-75">
           {` (${(b / config.sample_rate * 1000).toFixed(1)} ms)`}
         </span>
       </>,
@@ -480,7 +480,7 @@ export function AudioConfigCard({
                     <SelectItem key={r} value={String(r)}>
                       {label}
                       {r === 48000 && (
-                        <span className="text-muted-foreground">
+                        <span className="text-muted-foreground opacity-75">
                           {` (${t('home.recommended')})`}
                         </span>
                       )}
@@ -510,7 +510,7 @@ export function AudioConfigCard({
                 {BUFFER_SIZES.map(b => (
                   <SelectItem key={b} value={String(b)}>
                     {b}
-                    <span className="text-muted-foreground">
+                    <span className="text-muted-foreground opacity-75">
                       {` (${(b / config.sample_rate * 1000).toFixed(1)} ms)`}
                     </span>
                   </SelectItem>
