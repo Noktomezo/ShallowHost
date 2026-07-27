@@ -32,6 +32,8 @@
       "sampleRateDescription": "Частота обработки звука.",
       "bufferSize": "Размер буфера",
       "bufferSizeDescription": "Меньше = ниже задержка, выше нагрузка.",
+      "stereo": "Стерео",
+      "mono": "Моно",
       "monoMode": "Моно-вход",
       "monoModeDescription": "Дублировать первый входной канал на оба канала (L+R).",
       "chain": "Цепочка плагинов",

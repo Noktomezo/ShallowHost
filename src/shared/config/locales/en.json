@@ -32,6 +32,8 @@
       "sampleRateDescription": "Audio processing rate.",
       "bufferSize": "Buffer size",
       "bufferSizeDescription": "Lower = less latency, more load.",
+      "stereo": "Stereo",
+      "mono": "Mono",
       "monoMode": "Mono Input",
       "monoModeDescription": "Duplicate input channel 1 to both channels (L+R).",
       "chain": "Plugin Chain",

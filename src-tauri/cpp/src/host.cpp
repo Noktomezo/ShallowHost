@@ -13,6 +13,51 @@
 #include <windows.h>
 #endif
 
+namespace {
+class MonoSumProcessor : public juce::AudioProcessor {
+public:
+    MonoSumProcessor()
+        : juce::AudioProcessor(juce::AudioProcessor::BusesProperties()
+            .withInput("Input", juce::AudioChannelSet::stereo(), true)
+            .withOutput("Output", juce::AudioChannelSet::stereo(), true)) {}
+    ~MonoSumProcessor() override = default;
+
+    const juce::String getName() const override { return "MonoSum"; }
+    bool acceptsMidi() const override { return false; }
+    bool producesMidi() const override { return false; }
+    bool supportsMPE() const override { return false; }
+    bool isMidiEffect() const override { return false; }
+    double getTailLengthSeconds() const override { return 0.0; }
+    int getNumPrograms() override { return 1; }
+    int getCurrentProgram() override { return 0; }
+    void setCurrentProgram(int) override {}
+    const juce::String getProgramName(int) override { return {}; }
+    void changeProgramName(int, const juce::String&) override {}
+
+    void prepareToPlay(double, int) override {}
+    void releaseResources() override {}
+
+    void processBlock(juce::AudioBuffer<float>& buffer, juce::MidiBuffer&) override
+    {
+        if (buffer.getNumChannels() < 2) return;
+        auto* L = buffer.getWritePointer(0);
+        auto* R = buffer.getWritePointer(1);
+        for (int i = 0; i < buffer.getNumSamples(); ++i)
+        {
+            float m = std::abs(L[i]) >= std::abs(R[i]) ? L[i] : R[i];
+            L[i] = m;
+            R[i] = m;
+        }
+    }
+
+    void getStateInformation(juce::MemoryBlock&) override {}
+    void setStateInformation(const void*, int) override {}
+
+    bool hasEditor() const override { return false; }
+    juce::AudioProcessorEditor* createEditor() override { return nullptr; }
+};
+}
+
 ShallowHost::ShallowHost()
 {
     juce::addDefaultFormatsToManager(formatManager);
@@ -46,6 +91,9 @@ void ShallowHost::setupGraph()
         std::make_unique<juce::AudioProcessorGraph::AudioGraphIOProcessor>(
             juce::AudioProcessorGraph::AudioGraphIOProcessor::audioOutputNode),
         juce::AudioProcessorGraph::NodeID{ 1000001 });
+
+    monoNode = graph.addNode(std::make_unique<MonoSumProcessor>(),
+                             juce::AudioProcessorGraph::NodeID{ 1000002 });
 
     rebuildConnections();
 }
@@ -115,8 +163,18 @@ void ShallowHost::rebuildConnectionsOnMessageThread()
 
     if (chainNodes.empty())
     {
-        graph.addConnection({ { inputNode->nodeID, leftChannel }, { outputNode->nodeID, 0 } });
-        graph.addConnection({ { inputNode->nodeID, rightChannel }, { outputNode->nodeID, 1 } });
+        if (isMono && monoNode != nullptr)
+        {
+            graph.addConnection({ { inputNode->nodeID, leftChannel }, { monoNode->nodeID, 0 } });
+            graph.addConnection({ { inputNode->nodeID, rightChannel }, { monoNode->nodeID, 1 } });
+            graph.addConnection({ { monoNode->nodeID, 0 }, { outputNode->nodeID, 0 } });
+            graph.addConnection({ { monoNode->nodeID, 1 }, { outputNode->nodeID, 1 } });
+        }
+        else
+        {
+            graph.addConnection({ { inputNode->nodeID, leftChannel }, { outputNode->nodeID, 0 } });
+            graph.addConnection({ { inputNode->nodeID, rightChannel }, { outputNode->nodeID, 1 } });
+        }
     }
     else
     {
@@ -129,8 +187,18 @@ void ShallowHost::rebuildConnectionsOnMessageThread()
             graph.addConnection({ { chainNodes[i]->nodeID, 1 }, { chainNodes[i + 1]->nodeID, 1 } });
         }
 
-        graph.addConnection({ { chainNodes.back()->nodeID, 0 }, { outputNode->nodeID, 0 } });
-        graph.addConnection({ { chainNodes.back()->nodeID, 1 }, { outputNode->nodeID, 1 } });
+        if (isMono && monoNode != nullptr)
+        {
+            graph.addConnection({ { chainNodes.back()->nodeID, 0 }, { monoNode->nodeID, 0 } });
+            graph.addConnection({ { chainNodes.back()->nodeID, 1 }, { monoNode->nodeID, 1 } });
+            graph.addConnection({ { monoNode->nodeID, 0 }, { outputNode->nodeID, 0 } });
+            graph.addConnection({ { monoNode->nodeID, 1 }, { outputNode->nodeID, 1 } });
+        }
+        else
+        {
+            graph.addConnection({ { chainNodes.back()->nodeID, 0 }, { outputNode->nodeID, 0 } });
+            graph.addConnection({ { chainNodes.back()->nodeID, 1 }, { outputNode->nodeID, 1 } });
+        }
     }
 
     if (auto* device = deviceManager.getCurrentAudioDevice())

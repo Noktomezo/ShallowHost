@@ -18,7 +18,6 @@ import {
   SelectValue,
 } from '@/shared/ui/select'
 import { Separator } from '@/shared/ui/separator'
-import { Switch } from '@/shared/ui/switch'
 import { VolumeMeter } from '@/shared/ui/VolumeMeter'
 
 interface DeviceInfo {
@@ -264,6 +263,44 @@ export function AudioConfigCard({
           <CardTitle>{t('home.audio')}</CardTitle>
           <CardDescription>{t('home.audioDescription')}</CardDescription>
         </div>
+
+        {/* Custom sliding toggle between Stereo and Mono */}
+        <div className="relative inline-flex items-center rounded-md bg-muted/60 p-0 border border-border/40 select-none text-xs font-semibold h-8 w-40 overflow-hidden shrink-0">
+          {/* Moving background thumb */}
+          <div
+            className={`absolute top-0 bottom-0 left-0 rounded-[calc(var(--radius)-1px)] transition-all duration-300 ease-in-out w-[79px] ${
+              config.is_mono
+                ? 'translate-x-[79px] bg-purple shadow-sm shadow-purple/20'
+                : 'translate-x-0 bg-primary shadow-sm shadow-primary/20'
+            }`}
+          />
+          {/* Stereo Label */}
+          <button
+            type="button"
+            onClick={(e) => {
+              e.stopPropagation()
+              updateConfig({ is_mono: false })
+            }}
+            className={`relative z-10 flex-1 text-center h-full flex items-center justify-center cursor-pointer transition-colors duration-300 ${
+              !config.is_mono ? 'text-primary-foreground font-semibold' : 'text-muted-foreground hover:text-foreground/80'
+            }`}
+          >
+            {t('home.stereo')}
+          </button>
+          {/* Mono Label */}
+          <button
+            type="button"
+            onClick={(e) => {
+              e.stopPropagation()
+              updateConfig({ is_mono: true })
+            }}
+            className={`relative z-10 flex-1 text-center h-full flex items-center justify-center cursor-pointer transition-colors duration-300 ${
+              config.is_mono ? 'text-white' : 'text-muted-foreground hover:text-foreground/80'
+            }`}
+          >
+            {t('home.mono')}
+          </button>
+        </div>
       </CardHeader>
       <CardContent>
         <div className="flex flex-col gap-2">
@@ -476,22 +513,6 @@ export function AudioConfigCard({
                 ))}
               </SelectContent>
             </Select>
-          </div>
-
-          <Separator />
-
-          <div className="flex items-center justify-between gap-2">
-            <div className="flex flex-col gap-0">
-              <span className="text-sm font-medium">{t('home.monoMode')}</span>
-              <span className="text-xs text-muted-foreground">
-                {t('home.monoModeDescription')}
-              </span>
-            </div>
-            <Switch
-              aria-label={t('home.monoMode')}
-              checked={!!config.is_mono}
-              onCheckedChange={checked => updateConfig({ is_mono: !!checked })}
-            />
           </div>
         </div>
       </CardContent>
