@@ -30,6 +30,7 @@ import {
   CardHeader,
   CardTitle,
 } from '@/shared/ui/card'
+import { Separator } from '@/shared/ui/separator'
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/shared/ui/tooltip'
 import { AudioConfigCard } from './AudioConfigCard'
 import { SortableChainCard } from './SortableChainCard'
@@ -289,6 +290,7 @@ export function HomePage() {
             </Tooltip>
           </CardAction>
         </CardHeader>
+        <Separator />
         <CardContent>
           {chain.length > 0
             ? (
