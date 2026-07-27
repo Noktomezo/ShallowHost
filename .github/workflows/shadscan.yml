@@ -1,0 +1,36 @@
+# Shadscan — deterministic UI audit for shadcn/ui components.
+#
+# Docs: https://www.shadscan.com/docs#github-action
+# Source: https://github.com/TheOrcDev/shadscan
+
+name: Shadscan
+
+on:
+  # Scans the PR's changed files and reports the audit score and category summary.
+  pull_request:
+    types: [opened, synchronize, reopened, ready_for_review]
+  # Scans `main` on every push to track UI quality and accessibility trend.
+  push:
+    branches: [main]
+
+permissions:
+  contents: read
+  pull-requests: write
+  issues: write
+  statuses: write
+
+# Cancels any in-flight scan for the same PR (or branch, on push) when a new commit arrives.
+concurrency:
+  group: shadscan-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  shadscan:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: TheOrcDev/shadscan@main
+        with:
+          version: "0.7.0"
+          fail-under: "90"
