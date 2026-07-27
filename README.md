@@ -1,5 +1,5 @@
 <div align="center">
-  <img src="assets/thumbnail.svg" width="100%" alt="ShallowHost" />
+  <img src="assets/thumbnail.png" width="100%" alt="ShallowHost" />
 
   <p><a href="https://github.com/opencma/LightHost">LightHost</a>'s spiritual successor for real-time audio processing via a VST2/VST3 plug-in chain</p>
 
