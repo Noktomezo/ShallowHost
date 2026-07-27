@@ -73,23 +73,26 @@ export function Sidebar({ collapsed }: SidebarProps) {
   return (
     <LazyMotion strict features={domAnimation}>
       <nav
+        aria-label="Main navigation"
         className={cn(
           'flex shrink-0 flex-col items-start overflow-hidden bg-sidebar py-1 px-1 gap-1 transition-[width] duration-200 ease-in-out',
           collapsed ? 'w-10' : 'w-36',
         )}
       >
-        <SideNavItem
-          to="/"
-          label={t('sidebar.home')}
-          icon={<Mic className="size-4" />}
-          collapsed={collapsed}
-        />
-        <SideNavItem
-          to="/plugins"
-          label={t('sidebar.plugins')}
-          icon={<Plug className="size-4" />}
-          collapsed={collapsed}
-        />
+        <div className="flex flex-col gap-1 w-full">
+          <SideNavItem
+            to="/"
+            label={t('sidebar.home')}
+            icon={<Mic className="size-4" />}
+            collapsed={collapsed}
+          />
+          <SideNavItem
+            to="/plugins"
+            label={t('sidebar.plugins')}
+            icon={<Plug className="size-4" />}
+            collapsed={collapsed}
+          />
+        </div>
         <div className="mt-auto w-full">
           <SideNavItem
             to="/settings"

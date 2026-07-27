@@ -19,9 +19,11 @@ import { listen } from '@tauri-apps/api/event'
 import { ArrowRight, Plus, Trash2 } from 'lucide-react'
 import { useEffect, useState } from 'react'
 import { useTranslation } from 'react-i18next'
+import { cn } from '@/shared/lib/utils'
 import { useAudioConfigStore } from '@/shared/model/audio-config-store'
 import { useChainStore } from '@/shared/model/chain-store'
 import { Button } from '@/shared/ui/button'
+import { buttonVariants } from '@/shared/ui/button-variants'
 import {
   Card,
   CardAction,
@@ -263,14 +265,12 @@ export function HomePage() {
           <CardTitle>{t('home.chain')}</CardTitle>
           <CardDescription>{t('home.addHint')}</CardDescription>
           <CardAction className="flex items-center gap-1.5 self-center">
-            <Link to="/plugins">
-              <Button
-                variant="default"
-                className="cursor-pointer"
-              >
-                {t('home.goToPlugins')}
-                <ArrowRight className="size-4" />
-              </Button>
+            <Link
+              to="/plugins"
+              className={cn(buttonVariants({ variant: 'default' }), 'cursor-pointer')}
+            >
+              {t('home.goToPlugins')}
+              <ArrowRight className="size-4" data-icon="inline-end" />
             </Link>
             <Tooltip>
               <TooltipTrigger render={(

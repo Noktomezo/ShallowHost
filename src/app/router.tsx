@@ -17,6 +17,7 @@ import { useUpdateStore } from '@/shared/model/update-store'
 import { ScrollArea } from '@/shared/ui/scroll-area'
 import { isUpdateToastVisible, showUpdateToast } from '@/shared/ui/sonner'
 import { TooltipProvider } from '@/shared/ui/tooltip'
+import { CommandMenu } from '@/widgets/command-menu/ui/CommandMenu'
 import { Sidebar } from '@/widgets/sidebar'
 import { Titlebar } from '@/widgets/titlebar'
 
@@ -43,6 +44,7 @@ function RootLayout() {
             </ScrollArea>
           </main>
         </div>
+        <CommandMenu />
       </div>
     </TooltipProvider>
   )

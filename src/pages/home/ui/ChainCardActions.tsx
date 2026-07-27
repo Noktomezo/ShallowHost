@@ -60,6 +60,7 @@ export function ChainCardActions({ plugin: p }: { plugin: ChainItem }) {
               <Button
                 variant="outline"
                 size="icon"
+                aria-label={t('home.bypass')}
                 className={
                   p.bypassed
                     ? 'border-amber-600/30 bg-amber-600/15 text-amber-600 hover:bg-amber-600/25 dark:text-amber-500'
@@ -86,6 +87,7 @@ export function ChainCardActions({ plugin: p }: { plugin: ChainItem }) {
               <Button
                 variant="outline"
                 size="icon"
+                aria-label={t('home.removeFromChain')}
                 className="hover:bg-destructive/15 hover:text-destructive hover:border-destructive/30"
                 onClick={() => removeFromChain(p.id)}
                 disabled={p.initializing}

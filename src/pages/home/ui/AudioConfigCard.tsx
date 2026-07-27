@@ -156,7 +156,7 @@ function DeviceSelect({
           onValueChange={onChange}
           items={items}
         >
-          <SelectTrigger className="w-40">
+          <SelectTrigger className="w-40" aria-label={label}>
             <SelectValue placeholder={hideDefault ? 'Select...' : undefined} />
           </SelectTrigger>
           <SelectContent>
@@ -314,7 +314,7 @@ export function AudioConfigCard({
               onValueChange={v => updateConfig({ driver: v as string })}
               items={DRIVER_ITEMS}
             >
-              <SelectTrigger className="w-40">
+              <SelectTrigger className="w-40" aria-label={t('home.driver')}>
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
@@ -368,11 +368,21 @@ export function AudioConfigCard({
                                   return (
                                     <div
                                       key={p.label}
+                                      role="checkbox"
+                                      aria-checked={isChecked}
+                                      tabIndex={0}
                                       className="flex items-center justify-between gap-2 text-sm select-none cursor-pointer p-0.5 rounded hover:bg-muted/40 overflow-hidden"
                                       onClick={() => handleOutputToggle(p.indices, !isChecked)}
+                                      onKeyDown={(e) => {
+                                        if (e.key === ' ' || e.key === 'Enter') {
+                                          e.preventDefault()
+                                          handleOutputToggle(p.indices, !isChecked)
+                                        }
+                                      }}
                                     >
                                       <div className="flex items-center gap-2 min-w-0 flex-1">
                                         <Checkbox
+                                          aria-label={p.label}
                                           checked={isChecked}
                                           onCheckedChange={checked => handleOutputToggle(p.indices, !!checked)}
                                         />
@@ -404,11 +414,21 @@ export function AudioConfigCard({
                                   return (
                                     <div
                                       key={p.label}
+                                      role="checkbox"
+                                      aria-checked={isChecked}
+                                      tabIndex={0}
                                       className="flex items-center justify-between gap-2 text-sm select-none cursor-pointer p-0.5 rounded hover:bg-muted/40 overflow-hidden"
                                       onClick={() => handleInputToggle(p.indices, !isChecked)}
+                                      onKeyDown={(e) => {
+                                        if (e.key === ' ' || e.key === 'Enter') {
+                                          e.preventDefault()
+                                          handleInputToggle(p.indices, !isChecked)
+                                        }
+                                      }}
                                     >
                                       <div className="flex items-center gap-2 min-w-0 flex-1">
                                         <Checkbox
+                                          aria-label={p.label}
                                           checked={isChecked}
                                           onCheckedChange={checked => handleInputToggle(p.indices, !!checked)}
                                         />
@@ -466,7 +486,7 @@ export function AudioConfigCard({
               onValueChange={v => updateConfig({ sample_rate: Number(v) })}
               items={rateItems}
             >
-              <SelectTrigger className="w-40">
+              <SelectTrigger className="w-40" aria-label={t('home.sampleRate')}>
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
@@ -491,7 +511,7 @@ export function AudioConfigCard({
               onValueChange={v => updateConfig({ buffer_size: Number(v) })}
               items={bufferItems}
             >
-              <SelectTrigger className="w-40">
+              <SelectTrigger className="w-40" aria-label={t('home.bufferSize')}>
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>

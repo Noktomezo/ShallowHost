@@ -4,10 +4,12 @@ import { invoke } from '@tauri-apps/api/core'
 import { ArrowRight, FolderOpen, Loader2, Plus, RefreshCw, RotateCcw, Settings, Trash2 } from 'lucide-react'
 import { useEffect, useState } from 'react'
 import { useTranslation } from 'react-i18next'
+import { cn } from '@/shared/lib/utils'
 import { useChainStore } from '@/shared/model/chain-store'
 import { usePluginStore } from '@/shared/model/plugin-store'
 import { Badge } from '@/shared/ui/badge'
 import { Button } from '@/shared/ui/button'
+import { buttonVariants } from '@/shared/ui/button-variants'
 import { Card, CardAction, CardDescription, CardHeader, CardTitle } from '@/shared/ui/card'
 import { Dialog, DialogContent, DialogDescription, DialogTitle } from '@/shared/ui/dialog'
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/shared/ui/tooltip'
@@ -87,6 +89,7 @@ export function PluginsPage() {
                 <Button
                   variant="outline"
                   size="icon"
+                  aria-label={t('plugins.scanPathsTitle')}
                   onClick={() => setSettingsOpen(true)}
                   disabled={scanning}
                 >
@@ -103,6 +106,7 @@ export function PluginsPage() {
                 <Button
                   variant="default"
                   size="icon"
+                  aria-label={t('plugins.scan')}
                   onClick={scan}
                   disabled={scanning}
                 >
@@ -153,11 +157,12 @@ export function PluginsPage() {
                         <div className="flex gap-1">
                           {inChain || isInitializing
                             ? (
-                                <Link to="/">
-                                  <Button variant="default">
-                                    {t('plugins.goToChain')}
-                                    <ArrowRight className="size-4" />
-                                  </Button>
+                                <Link
+                                  to="/"
+                                  className={cn(buttonVariants({ variant: 'default' }))}
+                                >
+                                  {t('plugins.goToChain')}
+                                  <ArrowRight className="size-4" data-icon="inline-end" />
                                 </Link>
                               )
                             : (
@@ -167,8 +172,8 @@ export function PluginsPage() {
                                       <Button
                                         variant="outline"
                                         size="icon"
+                                        aria-label={t('plugins.addToChain')}
                                         onClick={() => addPluginAsync(p)}
-                                        disabled={scanning}
                                       >
                                         <Plus className="size-4" />
                                       </Button>
@@ -183,6 +188,7 @@ export function PluginsPage() {
                                 <Button
                                   variant="outline"
                                   size="icon"
+                                  aria-label={t('plugins.reveal')}
                                   onClick={() => revealPlugin(p.path)}
                                 >
                                   <FolderOpen className="size-4" />
@@ -197,6 +203,7 @@ export function PluginsPage() {
                                 <Button
                                   variant="outline"
                                   size="icon"
+                                  aria-label={t('plugins.remove')}
                                   className="hover:bg-destructive/15 hover:text-destructive"
                                   onClick={() => removePlugin(p.unique_id)}
                                 >
@@ -267,6 +274,7 @@ export function PluginsPage() {
                           <Button
                             variant="ghost"
                             size="icon"
+                            aria-label={t('plugins.remove')}
                             onClick={() => removeVst2Path(p)}
                             className="size-6 text-muted-foreground hover:text-destructive hover:bg-destructive/10"
                           >
@@ -313,6 +321,7 @@ export function PluginsPage() {
                           <Button
                             variant="ghost"
                             size="icon"
+                            aria-label={t('plugins.remove')}
                             onClick={() => removeVst3Path(p)}
                             className="size-6 text-muted-foreground hover:text-destructive hover:bg-destructive/10"
                           >

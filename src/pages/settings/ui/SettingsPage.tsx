@@ -227,6 +227,7 @@ export function SettingsPage() {
                 <span className="text-xs text-muted-foreground">{t('settings.autostartDescription')}</span>
               </div>
               <Switch
+                aria-label={t('settings.autostart')}
                 checked={autostart}
                 onCheckedChange={v => handleAutostart(!!v)}
               />
@@ -237,6 +238,7 @@ export function SettingsPage() {
                 <span className="text-xs text-muted-foreground">{t('settings.autostartToTrayDescription')}</span>
               </div>
               <Switch
+                aria-label={t('settings.autostartToTray')}
                 checked={autostartToTray}
                 disabled={!autostart}
                 onCheckedChange={v => setAutostartToTray(!!v)}
@@ -248,6 +250,7 @@ export function SettingsPage() {
                 <span className="text-xs text-muted-foreground">{t('settings.minimizeToTrayDescription')}</span>
               </div>
               <Switch
+                aria-label={t('settings.minimizeToTray')}
                 checked={minimizeToTray}
                 onCheckedChange={v => handleMinimizeToTray(!!v)}
               />
@@ -299,6 +302,7 @@ export function SettingsPage() {
               <span className="text-xs text-muted-foreground">{t('settings.autoCheckDescription')}</span>
             </div>
             <Switch
+              aria-label={t('settings.autoCheck')}
               checked={autoCheckEnabled}
               onCheckedChange={v => setAutoCheckEnabled(!!v)}
             />

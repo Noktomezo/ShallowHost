@@ -115,6 +115,7 @@ export function ChainParamsButton({
                             </span>
                           </div>
                           <Slider
+                            aria-label={p.name}
                             value={[p.value]}
                             min={p.min}
                             max={p.max}
