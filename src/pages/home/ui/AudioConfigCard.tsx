@@ -234,10 +234,22 @@ export function AudioConfigCard({
     ...devices.inputs.map(d => [d.name, d.name]),
   ])
   const rateItems = Object.fromEntries(
-    SAMPLE_RATES.map(r => [
-      String(r),
-      r >= 1000 ? `${r / 1000} kHz` : `${r} Hz`,
-    ]),
+    SAMPLE_RATES.map((r) => {
+      const label = r >= 1000 ? `${r / 1000} kHz` : `${r} Hz`
+      return [
+        String(r),
+        r === 48000
+          ? (
+              <>
+                {label}
+                <span className="text-muted-foreground">{` (${t('home.recommended')})`}</span>
+              </>
+            )
+          : (
+              label
+            ),
+      ]
+    }),
   )
   const bufferItems = Object.fromEntries(
     BUFFER_SIZES.map(b => [
@@ -458,15 +470,23 @@ export function AudioConfigCard({
               onValueChange={v => updateConfig({ sample_rate: Number(v) })}
               items={rateItems}
             >
-              <SelectTrigger className="w-40">
+              <SelectTrigger className="w-auto min-w-40">
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
-                {SAMPLE_RATES.map(r => (
-                  <SelectItem key={r} value={String(r)}>
-                    {r >= 1000 ? `${r / 1000} kHz` : `${r} Hz`}
-                  </SelectItem>
-                ))}
+                {SAMPLE_RATES.map((r) => {
+                  const label = r >= 1000 ? `${r / 1000} kHz` : `${r} Hz`
+                  return (
+                    <SelectItem key={r} value={String(r)}>
+                      {label}
+                      {r === 48000 && (
+                        <span className="text-muted-foreground">
+                          {` (${t('home.recommended')})`}
+                        </span>
+                      )}
+                    </SelectItem>
+                  )
+                })}
               </SelectContent>
             </Select>
           </div>
