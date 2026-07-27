@@ -18,7 +18,6 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/shared/ui/select'
-import { Separator } from '@/shared/ui/separator'
 import { VolumeMeter } from '@/shared/ui/VolumeMeter'
 
 interface DeviceInfo {
@@ -303,7 +302,7 @@ export function AudioConfigCard({
         </CardAction>
       </CardHeader>
       <CardContent>
-        <div className="flex flex-col gap-2">
+        <div className="flex flex-col gap-4">
           <div className="flex items-center justify-between gap-2">
             <div className="flex flex-col gap-0">
               <span className="text-sm font-medium">{t('home.driver')}</span>
@@ -328,8 +327,6 @@ export function AudioConfigCard({
             </Select>
           </div>
 
-          <Separator />
-
           {config.driver === 'asio'
             ? (
                 <>
@@ -352,74 +349,71 @@ export function AudioConfigCard({
                   />
 
                   {config.output_device && config.output_device !== '__none' && (
-                    <>
-                      <Separator />
-                      <div className="grid grid-cols-2 gap-4">
-                        <div className="flex flex-col gap-2">
-                          <div className="flex items-center justify-between">
-                            <span className="text-sm font-medium">
-                              {t('home.activeOutputChannels')}
-                              :
-                            </span>
-                            <VolumeMeter level={isOutputActive ? levels.output : 0} />
-                          </div>
-                          <div className="flex flex-col gap-1.5 rounded-md border border-input p-3 bg-muted/20 max-h-40 overflow-y-auto">
-                            {outputPairs.length === 0
-                              ? (
-                                  <span className="text-xs text-muted-foreground">No channels available</span>
-                                )
-                              : (
-                                  outputPairs.map((p) => {
-                                    const isChecked = p.indices.every(i => activeOutputsSet.has(i))
-                                    return (
-                                      <label key={p.label} className="flex items-center justify-between gap-2 text-sm select-none cursor-pointer p-0.5 rounded hover:bg-muted/40 overflow-hidden">
-                                        <div className="flex items-center gap-2 min-w-0 flex-1">
-                                          <Checkbox
-                                            checked={isChecked}
-                                            onCheckedChange={checked => handleOutputToggle(p.indices, !!checked)}
-                                          />
-                                          <span className="truncate">{p.label}</span>
-                                        </div>
-                                      </label>
-                                    )
-                                  })
-                                )}
-                          </div>
+                    <div className="grid grid-cols-2 gap-4">
+                      <div className="flex flex-col gap-2">
+                        <div className="flex items-center justify-between">
+                          <span className="text-sm font-medium">
+                            {t('home.activeOutputChannels')}
+                            :
+                          </span>
+                          <VolumeMeter level={isOutputActive ? levels.output : 0} />
                         </div>
-
-                        <div className="flex flex-col gap-2">
-                          <div className="flex items-center justify-between">
-                            <span className="text-sm font-medium">
-                              {t('home.activeInputChannels')}
-                              :
-                            </span>
-                            <VolumeMeter level={isInputActive ? levels.input : 0} />
-                          </div>
-                          <div className="flex flex-col gap-1.5 rounded-md border border-input p-3 bg-muted/20 max-h-40 overflow-y-auto">
-                            {inputPairs.length === 0
-                              ? (
-                                  <span className="text-xs text-muted-foreground">No channels available</span>
-                                )
-                              : (
-                                  inputPairs.map((p) => {
-                                    const isChecked = p.indices.every(i => activeInputsSet.has(i))
-                                    return (
-                                      <label key={p.label} className="flex items-center justify-between gap-2 text-sm select-none cursor-pointer p-0.5 rounded hover:bg-muted/40 overflow-hidden">
-                                        <div className="flex items-center gap-2 min-w-0 flex-1">
-                                          <Checkbox
-                                            checked={isChecked}
-                                            onCheckedChange={checked => handleInputToggle(p.indices, !!checked)}
-                                          />
-                                          <span className="truncate">{p.label}</span>
-                                        </div>
-                                      </label>
-                                    )
-                                  })
-                                )}
-                          </div>
+                        <div className="flex flex-col gap-1.5 rounded-md border border-input p-3 bg-muted/20 max-h-40 overflow-y-auto">
+                          {outputPairs.length === 0
+                            ? (
+                                <span className="text-xs text-muted-foreground">No channels available</span>
+                              )
+                            : (
+                                outputPairs.map((p) => {
+                                  const isChecked = p.indices.every(i => activeOutputsSet.has(i))
+                                  return (
+                                    <label key={p.label} className="flex items-center justify-between gap-2 text-sm select-none cursor-pointer p-0.5 rounded hover:bg-muted/40 overflow-hidden">
+                                      <div className="flex items-center gap-2 min-w-0 flex-1">
+                                        <Checkbox
+                                          checked={isChecked}
+                                          onCheckedChange={checked => handleOutputToggle(p.indices, !!checked)}
+                                        />
+                                        <span className="truncate">{p.label}</span>
+                                      </div>
+                                    </label>
+                                  )
+                                })
+                              )}
                         </div>
                       </div>
-                    </>
+
+                      <div className="flex flex-col gap-2">
+                        <div className="flex items-center justify-between">
+                          <span className="text-sm font-medium">
+                            {t('home.activeInputChannels')}
+                            :
+                          </span>
+                          <VolumeMeter level={isInputActive ? levels.input : 0} />
+                        </div>
+                        <div className="flex flex-col gap-1.5 rounded-md border border-input p-3 bg-muted/20 max-h-40 overflow-y-auto">
+                          {inputPairs.length === 0
+                            ? (
+                                <span className="text-xs text-muted-foreground">No channels available</span>
+                              )
+                            : (
+                                inputPairs.map((p) => {
+                                  const isChecked = p.indices.every(i => activeInputsSet.has(i))
+                                  return (
+                                    <label key={p.label} className="flex items-center justify-between gap-2 text-sm select-none cursor-pointer p-0.5 rounded hover:bg-muted/40 overflow-hidden">
+                                      <div className="flex items-center gap-2 min-w-0 flex-1">
+                                        <Checkbox
+                                          checked={isChecked}
+                                          onCheckedChange={checked => handleInputToggle(p.indices, !!checked)}
+                                        />
+                                        <span className="truncate">{p.label}</span>
+                                      </div>
+                                    </label>
+                                  )
+                                })
+                              )}
+                        </div>
+                      </div>
+                    </div>
                   )}
                 </>
               )
@@ -438,8 +432,6 @@ export function AudioConfigCard({
                     meter={<VolumeMeter level={isOutputActive ? levels.output : 0} />}
                   />
 
-                  <Separator />
-
                   <DeviceSelect
                     label={t('home.inputDevice')}
                     description={t('home.inputDeviceDescription')}
@@ -454,8 +446,6 @@ export function AudioConfigCard({
                   />
                 </>
               )}
-
-          <Separator />
 
           <div className="flex items-center justify-between gap-2">
             <div className="flex flex-col gap-0">
@@ -481,8 +471,6 @@ export function AudioConfigCard({
               </SelectContent>
             </Select>
           </div>
-
-          <Separator />
 
           <div className="flex items-center justify-between gap-2">
             <div className="flex flex-col gap-0">
