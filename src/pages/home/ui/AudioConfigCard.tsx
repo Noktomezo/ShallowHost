@@ -18,6 +18,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/shared/ui/select'
+import { Separator } from '@/shared/ui/separator'
 import { VolumeMeter } from '@/shared/ui/VolumeMeter'
 
 interface DeviceInfo {
@@ -301,6 +302,7 @@ export function AudioConfigCard({
           </div>
         </CardAction>
       </CardHeader>
+      <Separator />
       <CardContent>
         <div className="flex flex-col gap-4">
           <div className="flex items-center justify-between gap-2">

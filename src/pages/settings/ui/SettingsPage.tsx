@@ -27,6 +27,7 @@ import {
   SelectItem,
   SelectTrigger,
 } from '@/shared/ui/select'
+import { Separator } from '@/shared/ui/separator'
 import { showUpdateToast } from '@/shared/ui/sonner'
 import { Switch } from '@/shared/ui/switch'
 
@@ -217,6 +218,7 @@ export function SettingsPage() {
           <CardTitle>{t('settings.system')}</CardTitle>
           <CardDescription>{t('settings.systemDescription')}</CardDescription>
         </CardHeader>
+        <Separator />
         <CardContent>
           <div className="flex flex-col gap-4">
             <div className="flex items-center justify-between gap-2">
@@ -289,6 +291,7 @@ export function SettingsPage() {
             </Button>
           </CardAction>
         </CardHeader>
+        <Separator />
         <CardContent>
           <div className="flex items-center justify-between gap-2">
             <div className="flex flex-col gap-0">
