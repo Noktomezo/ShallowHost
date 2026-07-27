@@ -144,8 +144,22 @@ export const useChainStore = create<ChainStore>((set, get) => ({
       timeoutPromise,
     ])
       .then(async () => {
-        clearTimeout(timer)
-        await get().refresh()
+        try {
+          await get().refresh()
+        }
+        finally {
+          clearTimeout(timer)
+          if (get().initializingMap[plugin.unique_id]) {
+            set((s) => {
+              const nextMap = { ...s.initializingMap }
+              delete nextMap[plugin.unique_id]
+              return {
+                initializingMap: nextMap,
+                chain: computeChain(s.rawChain, nextMap),
+              }
+            })
+          }
+        }
       })
       .catch((e) => {
         clearTimeout(timer)
@@ -184,8 +198,19 @@ export const useChainStore = create<ChainStore>((set, get) => ({
   },
 }))
 
+let unlistenChainUpdated: (() => void) | undefined
+
+if (unlistenChainUpdated) {
+  unlistenChainUpdated()
+  unlistenChainUpdated = undefined
+}
+
 listen('chain_updated', () => {
   useChainStore.getState().refresh()
-}).catch(() => {})
+})
+  .then((unlisten) => {
+    unlistenChainUpdated = unlisten
+  })
+  .catch(() => {})
 
 useChainStore.getState().loadPlaceholders()

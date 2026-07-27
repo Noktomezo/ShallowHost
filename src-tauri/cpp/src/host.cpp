@@ -142,22 +142,21 @@ void ShallowHost::rebuildConnectionsOnMessageThread()
     int rightChannel = 1;
     if (isMono)
     {
+        leftChannel = 0;
+        rightChannel = 0;
         if (auto* device = deviceManager.getCurrentAudioDevice())
         {
             auto mask = device->getActiveInputChannels();
+            int ordinalIndex = 0;
             for (int i = 0; i < 32; ++i)
             {
                 if (mask[i])
                 {
-                    leftChannel = i;
-                    rightChannel = i;
+                    leftChannel = ordinalIndex;
+                    rightChannel = ordinalIndex;
                     break;
                 }
             }
-        }
-        else
-        {
-            rightChannel = 0;
         }
     }
 
