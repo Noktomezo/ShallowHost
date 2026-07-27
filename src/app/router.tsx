@@ -86,7 +86,7 @@ function RootLayout() {
                 </nav>
               </div>
             )}
-            <ScrollArea className="h-full">
+            <ScrollArea key={location.pathname} className="h-full">
               <div className="flex min-h-full flex-col p-4">
                 <div key={location.pathname} className="transition-opacity transition-transform duration-200 ease-out animate-in fade-in slide-in-from-bottom-2">
                   <Outlet />

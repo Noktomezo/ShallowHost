@@ -32,4 +32,4 @@ jobs:
 
       - uses: TheOrcDev/shadscan@main
         with:
-          fail-under: "90"
+          fail-under: '90'

@@ -1,4 +1,5 @@
 import { ScrollArea as ScrollAreaPrimitive } from '@base-ui/react/scroll-area'
+import { useEffect, useRef } from 'react'
 
 import { cn } from '@/shared/lib/utils'
 
@@ -7,6 +8,25 @@ function ScrollArea({
   children,
   ...props
 }: ScrollAreaPrimitive.Root.Props) {
+  const viewportRef = useRef<HTMLDivElement>(null)
+
+  useEffect(() => {
+    const viewport = viewportRef.current
+    if (!viewport)
+      return
+
+    const observer = new ResizeObserver(() => {
+      viewport.dispatchEvent(new CustomEvent('scroll'))
+      viewport.dispatchEvent(new Event('scroll'))
+    })
+
+    if (viewport.firstElementChild) {
+      observer.observe(viewport.firstElementChild)
+    }
+
+    return () => observer.disconnect()
+  }, [])
+
   return (
     <ScrollAreaPrimitive.Root
       data-slot="scroll-area"
@@ -14,6 +34,7 @@ function ScrollArea({
       {...props}
     >
       <ScrollAreaPrimitive.Viewport
+        ref={viewportRef}
         data-slot="scroll-area-viewport"
         className="size-full rounded-[inherit] transition-[color,box-shadow] outline-none focus-visible:ring-[3px] focus-visible:ring-ring/50 focus-visible:outline-1"
       >
