@@ -178,9 +178,12 @@ function SelectScrollDownButton({
   )
 }
 
+const SelectGroup = SelectPrimitive.Group
+
 export {
   Select,
   SelectContent,
+  SelectGroup,
   SelectItem,
   SelectTrigger,
   SelectValue,

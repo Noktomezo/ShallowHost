@@ -13,6 +13,7 @@ import {
 import {
   Select,
   SelectContent,
+  SelectGroup,
   SelectItem,
   SelectTrigger,
   SelectValue,
@@ -263,10 +264,12 @@ export function AudioConfigCard({
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="wasapi">WASAPI</SelectItem>
-                <SelectItem value="asio">
-                  ASIO
-                </SelectItem>
+                <SelectGroup>
+                  <SelectItem value="wasapi">WASAPI</SelectItem>
+                  <SelectItem value="asio">
+                    ASIO
+                  </SelectItem>
+                </SelectGroup>
               </SelectContent>
             </Select>
           </div>
@@ -351,11 +354,13 @@ export function AudioConfigCard({
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
-                {SAMPLE_RATES.map(r => (
-                  <SelectItem key={r} value={String(r)}>
-                    {r >= 1000 ? `${r / 1000} kHz` : `${r} Hz`}
-                  </SelectItem>
-                ))}
+                <SelectGroup>
+                  {SAMPLE_RATES.map(r => (
+                    <SelectItem key={r} value={String(r)}>
+                      {r >= 1000 ? `${r / 1000} kHz` : `${r} Hz`}
+                    </SelectItem>
+                  ))}
+                </SelectGroup>
               </SelectContent>
             </Select>
           </div>
@@ -376,14 +381,16 @@ export function AudioConfigCard({
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
-                {BUFFER_SIZES.map(b => (
-                  <SelectItem key={b} value={String(b)}>
-                    {b}
-                    <span className="text-muted-foreground opacity-75">
-                      {` (${(b / config.sample_rate * 1000).toFixed(1)} ms)`}
-                    </span>
-                  </SelectItem>
-                ))}
+                <SelectGroup>
+                  {BUFFER_SIZES.map(b => (
+                    <SelectItem key={b} value={String(b)}>
+                      {b}
+                      <span className="text-muted-foreground opacity-75">
+                        {` (${(b / config.sample_rate * 1000).toFixed(1)} ms)`}
+                      </span>
+                    </SelectItem>
+                  ))}
+                </SelectGroup>
               </SelectContent>
             </Select>
           </div>

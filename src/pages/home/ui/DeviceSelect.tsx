@@ -2,6 +2,7 @@ import type React from 'react'
 import {
   Select,
   SelectContent,
+  SelectGroup,
   SelectItem,
   SelectTrigger,
   SelectValue,
@@ -50,13 +51,15 @@ export function DeviceSelect({
             <SelectValue placeholder={hideDefault ? 'Select...' : undefined} />
           </SelectTrigger>
           <SelectContent>
-            {!hideDefault && <SelectItem value="__default">{defaultLabel}</SelectItem>}
-            {hideDefault && <SelectItem value="__none">{defaultLabel}</SelectItem>}
-            {devices.map(d => (
-              <SelectItem key={d.name} value={d.name}>
-                {d.name}
-              </SelectItem>
-            ))}
+            <SelectGroup>
+              {!hideDefault && <SelectItem value="__default">{defaultLabel}</SelectItem>}
+              {hideDefault && <SelectItem value="__none">{defaultLabel}</SelectItem>}
+              {devices.map(d => (
+                <SelectItem key={d.name} value={d.name}>
+                  {d.name}
+                </SelectItem>
+              ))}
+            </SelectGroup>
           </SelectContent>
         </Select>
       </div>

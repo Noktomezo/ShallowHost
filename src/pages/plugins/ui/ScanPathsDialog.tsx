@@ -59,7 +59,7 @@ export function ScanPathsDialog({
                 }}
                 className="h-8 gap-1"
               >
-                <Plus className="size-3.5" />
+                <Plus className="size-3.5" data-icon="inline-start" />
                 {t('plugins.addFolder')}
               </Button>
             </div>
@@ -106,7 +106,7 @@ export function ScanPathsDialog({
                 }}
                 className="h-8 gap-1"
               >
-                <Plus className="size-3.5" />
+                <Plus className="size-3.5" data-icon="inline-start" />
                 {t('plugins.addFolder')}
               </Button>
             </div>
