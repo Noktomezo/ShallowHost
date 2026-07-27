@@ -19,16 +19,21 @@ const ThemeContext = createContext<ThemeContextType>({
 export function ThemeProvider({ children }: ThemeProviderProps) {
   const { theme, setTheme } = useThemeStore()
 
-  const toggleTheme = () => {
-    const nextTheme = theme === 'dark' ? 'light' : theme === 'light' ? 'system' : 'dark'
-    setTheme(nextTheme)
-  }
-
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
-      if ((e.metaKey || e.ctrlKey) && (e.key === 'd' || e.key === 't' || e.code === 'KeyD')) {
+      const target = e.target as HTMLElement
+      if (
+        target.tagName === 'INPUT'
+        || target.tagName === 'TEXTAREA'
+        || target.tagName === 'SELECT'
+        || target.isContentEditable
+      ) {
+        return
+      }
+
+      if (e.key.toLowerCase() === 'd') {
         e.preventDefault()
-        toggleTheme()
+        setTheme(theme === 'dark' ? 'light' : 'dark')
       }
     }
     window.addEventListener('keydown', handleKeyDown)

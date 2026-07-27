@@ -3,11 +3,14 @@ import {
   createRootRoute,
   createRoute,
   createRouter,
+  Link,
   Outlet,
   RouterProvider,
   useLocation,
 } from '@tanstack/react-router'
-import { useEffect } from 'react'
+import { Menu, Mic, Plug, Settings, X } from 'lucide-react'
+import { useEffect, useState } from 'react'
+import { useTranslation } from 'react-i18next'
 import { HomePage } from '@/pages/home'
 import { PluginsPage } from '@/pages/plugins'
 import { SettingsPage } from '@/pages/settings'
@@ -27,6 +30,8 @@ function RootLayout() {
   const collapsed = useUIStore(s => s.sidebarCollapsed)
   const toggle = useUIStore(s => s.toggleSidebar)
   const location = useLocation()
+  const { t } = useTranslation()
+  const [mobileNavOpen, setMobileNavOpen] = useState(false)
 
   return (
     <TooltipProvider>
@@ -35,6 +40,52 @@ function RootLayout() {
         <div className="flex min-h-0 flex-1 bg-sidebar">
           <Sidebar collapsed={collapsed} />
           <main className="relative min-w-0 flex-1 overflow-hidden rounded-tl-[8px] bg-background">
+            <div className="md:hidden flex items-center justify-between border-b border-border p-2 bg-sidebar">
+              <button
+                type="button"
+                aria-label="Toggle mobile navigation"
+                aria-expanded={mobileNavOpen}
+                aria-controls="mobile-navigation-panel"
+                className="flex items-center gap-2 rounded-md px-3 py-1.5 text-xs font-medium bg-muted hover:bg-muted/80 cursor-pointer"
+                onClick={() => setMobileNavOpen(!mobileNavOpen)}
+              >
+                {mobileNavOpen ? <X className="size-4" /> : <Menu className="size-4" />}
+                <span>Navigation</span>
+              </button>
+            </div>
+            {mobileNavOpen && (
+              <div
+                id="mobile-navigation-panel"
+                className="md:hidden absolute inset-0 z-50 bg-background/95 backdrop-blur-sm p-4 flex flex-col gap-4 animate-in fade-in"
+              >
+                <nav aria-label="Mobile navigation" className="flex flex-col gap-2">
+                  <Link
+                    to="/"
+                    onClick={() => setMobileNavOpen(false)}
+                    className="flex items-center gap-2 p-2 rounded-md hover:bg-accent text-sm font-medium"
+                  >
+                    <Mic className="size-4" />
+                    <span>{t('sidebar.home')}</span>
+                  </Link>
+                  <Link
+                    to="/plugins"
+                    onClick={() => setMobileNavOpen(false)}
+                    className="flex items-center gap-2 p-2 rounded-md hover:bg-accent text-sm font-medium"
+                  >
+                    <Plug className="size-4" />
+                    <span>{t('sidebar.plugins')}</span>
+                  </Link>
+                  <Link
+                    to="/settings"
+                    onClick={() => setMobileNavOpen(false)}
+                    className="flex items-center gap-2 p-2 rounded-md hover:bg-accent text-sm font-medium"
+                  >
+                    <Settings className="size-4" />
+                    <span>{t('sidebar.settings')}</span>
+                  </Link>
+                </nav>
+              </div>
+            )}
             <ScrollArea className="h-full">
               <div className="flex min-h-full flex-col p-4">
                 <div key={location.pathname} className="transition-opacity transition-transform duration-200 ease-out animate-in fade-in slide-in-from-bottom-2">
@@ -82,8 +133,6 @@ declare module '@tanstack/react-router' {
 }
 
 export function App() {
-  // ponytail: poll for updates every 30s; re-show after user dismisses (mock always finds one).
-  // State shared with SettingsPage via useUpdateStore — manual button disabled while auto-check runs.
   useEffect(() => {
     let cancelled = false
     const run = async () => {
@@ -111,8 +160,6 @@ export function App() {
       catch (e) {
         if (cancelled)
           return
-        // ponytail: network/endpoint errors → treat as up-to-date so UI doesn't
-        // stick on 'checking' forever. Logged for diagnosis.
         console.error('[update] auto-check failed:', e)
         setCheckResult({ kind: 'up-to-date' })
       }
