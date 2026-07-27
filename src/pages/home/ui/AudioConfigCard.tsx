@@ -244,11 +244,8 @@ export function AudioConfigCard({
       String(b),
       <>
         {b}
-        <span className="ml-1 text-muted-foreground">
-          (
-          {(b / config.sample_rate * 1000).toFixed(1)}
-          {' '}
-          ms)
+        <span className="text-muted-foreground">
+          {` (${(b / config.sample_rate * 1000).toFixed(1)} ms)`}
         </span>
       </>,
     ]),
@@ -493,11 +490,8 @@ export function AudioConfigCard({
                 {BUFFER_SIZES.map(b => (
                   <SelectItem key={b} value={String(b)}>
                     {b}
-                    <span className="ml-1 text-muted-foreground">
-                      (
-                      {(b / config.sample_rate * 1000).toFixed(1)}
-                      {' '}
-                      ms)
+                    <span className="text-muted-foreground">
+                      {` (${(b / config.sample_rate * 1000).toFixed(1)} ms)`}
                     </span>
                   </SelectItem>
                 ))}
