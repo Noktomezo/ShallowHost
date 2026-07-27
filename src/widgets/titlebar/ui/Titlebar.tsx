@@ -15,7 +15,7 @@ export function Titlebar({ collapsed, onToggleCollapse }: TitlebarProps) {
   return (
     <header
       data-tauri-drag-region
-      className="flex shrink-0 items-center justify-between bg-sidebar select-none py-1"
+      className="relative z-50 flex shrink-0 items-center justify-between bg-sidebar select-none py-1"
     >
       <div className="flex h-full items-center gap-1 pl-1">
         <Button

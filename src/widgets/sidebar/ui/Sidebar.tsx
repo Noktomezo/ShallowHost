@@ -75,7 +75,7 @@ export function Sidebar({ collapsed }: SidebarProps) {
       <nav
         aria-label="Main navigation"
         className={cn(
-          'flex shrink-0 flex-col items-start overflow-hidden bg-sidebar py-1 px-1 gap-1 transition-[width] duration-200 ease-in-out',
+          'relative z-50 flex shrink-0 flex-col items-start overflow-hidden bg-sidebar py-1 px-1 gap-1 transition-[width] duration-200 ease-in-out',
           collapsed ? 'w-10' : 'w-36',
         )}
       >
