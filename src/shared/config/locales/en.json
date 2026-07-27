@@ -30,7 +30,6 @@
       "defaultDevice": "Default",
       "sampleRate": "Sample rate",
       "sampleRateDescription": "Audio processing rate.",
-      "recommended": "recommended",
       "bufferSize": "Buffer size",
       "bufferSizeDescription": "Lower = less latency, more load.",
       "stereo": "Stereo",

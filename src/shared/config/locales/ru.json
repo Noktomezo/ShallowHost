@@ -30,7 +30,6 @@
       "defaultDevice": "По умолчанию",
       "sampleRate": "Частота дискретизации",
       "sampleRateDescription": "Частота обработки звука.",
-      "recommended": "рекомендуемое",
       "bufferSize": "Размер буфера",
       "bufferSizeDescription": "Меньше = ниже задержка, выше нагрузка.",
       "stereo": "Стерео",
