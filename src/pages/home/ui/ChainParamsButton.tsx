@@ -24,7 +24,15 @@ interface ParamInfo {
   value: number
 }
 
-export function ChainParamsButton({ pluginId, name }: { pluginId: string, name: string }) {
+export function ChainParamsButton({
+  pluginId,
+  name,
+  disabled,
+}: {
+  pluginId: string
+  name: string
+  disabled?: boolean
+}) {
   const { t } = useTranslation()
   const [open, setOpen] = useState(false)
   const [params, setParams] = useState<ParamInfo[]>([])
@@ -67,6 +75,7 @@ export function ChainParamsButton({ pluginId, name }: { pluginId: string, name: 
               variant="outline"
               size="icon"
               aria-label={t('home.parameters')}
+              disabled={disabled}
               onClick={() => {
                 setOpen(true)
                 loadParams()

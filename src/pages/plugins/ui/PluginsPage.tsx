@@ -1,7 +1,7 @@
 import type { ScannedPlugin } from '@/shared/model/plugin-store'
 import { Link } from '@tanstack/react-router'
 import { invoke } from '@tauri-apps/api/core'
-import { ArrowRight, FolderOpen, Plus, RefreshCw, RotateCcw, Settings, Trash2 } from 'lucide-react'
+import { ArrowRight, FolderOpen, Loader2, Plus, RefreshCw, RotateCcw, Settings, Trash2 } from 'lucide-react'
 import { useEffect, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { useChainStore } from '@/shared/model/chain-store'
@@ -29,11 +29,15 @@ export function PluginsPage() {
   } = usePluginStore()
 
   const chain = useChainStore(s => s.chain)
+  const chainError = useChainStore(s => s.error)
   const refreshChain = useChainStore(s => s.refresh)
-  const setLoading = useChainStore(s => s.setLoading)
+  const addPluginAsync = useChainStore(s => s.addPluginAsync)
+  const checkInitializing = useChainStore(s => s.isInitializing)
   const [scanning, setScanning] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [settingsOpen, setSettingsOpen] = useState(false)
+
+  const displayError = error || chainError
 
   useEffect(() => {
     refreshChain()
@@ -42,6 +46,7 @@ export function PluginsPage() {
   async function scan() {
     setScanning(true)
     setError(null)
+    useChainStore.getState().setError(null)
     try {
       const result = await invoke<ScannedPlugin[]>('scan_plugins', {
         vst2Paths,
@@ -63,20 +68,6 @@ export function PluginsPage() {
     }
     catch (e) {
       setError(String(e))
-    }
-  }
-
-  async function addToChain(pluginId: string) {
-    setLoading(true, t('plugins.loading'))
-    try {
-      await invoke('add_to_chain', { pluginId })
-      await refreshChain()
-    }
-    catch (e) {
-      setError(String(e))
-    }
-    finally {
-      setLoading(false)
     }
   }
 
@@ -124,15 +115,16 @@ export function PluginsPage() {
         </div>
       </div>
 
-      {error && (
-        <p className="mt-2 text-sm text-destructive">{error}</p>
+      {displayError && (
+        <p className="mt-2 text-sm text-destructive">{displayError}</p>
       )}
 
       <div className="mt-3 flex flex-1 flex-col gap-2">
         {plugins.length > 0
           ? (
               plugins.map((p) => {
-                const inChain = chain.some(c => c.unique_id === p.unique_id || c.name === p.name)
+                const isInitializing = checkInitializing(p.unique_id)
+                const inChain = chain.some(c => c.unique_id === p.unique_id)
                 return (
                   <Card key={p.unique_id} size="sm">
                     <CardHeader className="gap-0.5">
@@ -141,16 +133,25 @@ export function PluginsPage() {
                         <Badge variant="purple" className="shrink-0">
                           {p.format.toUpperCase()}
                         </Badge>
-                        {inChain && (
-                          <Badge variant="green" className="shrink-0">
-                            {t('plugins.inChain')}
-                          </Badge>
-                        )}
+                        {isInitializing
+                          ? (
+                              <Badge variant="outline" className="gap-1.5 shrink-0 border-amber-500/40 text-amber-400 bg-amber-500/10">
+                                <Loader2 className="size-3 animate-spin text-amber-400" />
+                                {t('plugins.initializing')}
+                              </Badge>
+                            )
+                          : inChain
+                            ? (
+                                <Badge variant="green" className="shrink-0">
+                                  {t('plugins.inChain')}
+                                </Badge>
+                              )
+                            : null}
                       </div>
                       {p.vendor && <CardDescription>{p.vendor}</CardDescription>}
                       <CardAction className="self-center">
                         <div className="flex gap-1">
-                          {inChain
+                          {inChain || isInitializing
                             ? (
                                 <Link to="/">
                                   <Button variant="default">
@@ -166,7 +167,8 @@ export function PluginsPage() {
                                       <Button
                                         variant="outline"
                                         size="icon"
-                                        onClick={() => addToChain(p.unique_id)}
+                                        onClick={() => addPluginAsync(p)}
+                                        disabled={scanning}
                                       >
                                         <Plus className="size-4" />
                                       </Button>

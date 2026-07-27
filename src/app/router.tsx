@@ -12,7 +12,6 @@ import { HomePage } from '@/pages/home'
 import { PluginsPage } from '@/pages/plugins'
 import { SettingsPage } from '@/pages/settings'
 import { updateService } from '@/shared/lib/updater'
-import { useChainStore } from '@/shared/model/chain-store'
 import { useUIStore } from '@/shared/model/ui-store'
 import { useUpdateStore } from '@/shared/model/update-store'
 import { ScrollArea } from '@/shared/ui/scroll-area'
@@ -26,8 +25,6 @@ import './styles.css'
 function RootLayout() {
   const collapsed = useUIStore(s => s.sidebarCollapsed)
   const toggle = useUIStore(s => s.toggleSidebar)
-  const loading = useChainStore(s => s.loading)
-  const loadingMessage = useChainStore(s => s.loadingMessage)
   const location = useLocation()
 
   return (
@@ -39,26 +36,11 @@ function RootLayout() {
           <main className="relative min-w-0 flex-1 overflow-hidden rounded-tl-[8px] bg-background">
             <ScrollArea className="h-full">
               <div className="flex min-h-full flex-col p-4">
-                <div key={location.pathname} className="animate-in fade-in slide-in-from-bottom-2 duration-200 ease-out">
+                <div key={location.pathname} className="transition-opacity transition-transform duration-200 ease-out animate-in fade-in slide-in-from-bottom-2">
                   <Outlet />
                 </div>
               </div>
             </ScrollArea>
-            {loading && (
-              <div className="absolute inset-0 z-50 flex flex-col items-center justify-center bg-background/60 backdrop-blur-md transition-all duration-300">
-                <div className="flex flex-col items-center gap-4 rounded-xl border border-border bg-card p-6 shadow-2xl animate-in fade-in zoom-in-95 duration-200">
-                  <div className="relative flex h-12 w-12 items-center justify-center">
-                    <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-primary/20 opacity-75"></span>
-                    <div className="h-8 w-8 animate-spin rounded-full border-4 border-primary border-t-transparent"></div>
-                  </div>
-                  {loadingMessage && (
-                    <p className="text-sm font-medium text-foreground tracking-wide animate-pulse">
-                      {loadingMessage}
-                    </p>
-                  )}
-                </div>
-              </div>
-            )}
           </main>
         </div>
       </div>

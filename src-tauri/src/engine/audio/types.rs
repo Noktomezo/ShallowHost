@@ -5,9 +5,10 @@ pub struct AudioConfig {
     pub output_device: Option<String>,
     pub sample_rate: u32,
     pub buffer_size: u32,
-    pub mono: bool,
     pub active_inputs: Option<Vec<i32>>,
     pub active_outputs: Option<Vec<i32>>,
+    #[serde(alias = "mono")]
+    pub is_mono: Option<bool>,
 }
 
 impl Default for AudioConfig {
@@ -18,9 +19,9 @@ impl Default for AudioConfig {
             output_device: None,
             sample_rate: 48000,
             buffer_size: 512,
-            mono: false,
             active_inputs: None,
             active_outputs: None,
+            is_mono: Some(false),
         }
     }
 }

@@ -81,21 +81,14 @@ pub fn run() {
                 eprintln!("[shallow-host] audio failed to start on launch: {e}");
             }
 
-            if app.path().app_data_dir().is_ok() {
-                let handle = app.handle().clone();
-                tauri::async_runtime::spawn(async move {
-                    let engine = handle.state::<AudioEngine>();
-                    engine.restore_from_disk();
-                });
-            }
-
             // ponytail: hotplug polling — every 500ms enumerate devices on a
             // background thread (FFI lock serializes; UI never blocks). On
             // disconnect, fallback config to __none + restart. Emits events
             // so the frontend refreshes dropdowns and syncs config.
+            type DeviceSnapshot = (Vec<String>, Vec<String>, Vec<String>, Vec<String>);
             let poll_handle = app.handle().clone();
             std::thread::spawn(move || {
-                let mut last_snapshot: Option<(Vec<String>, Vec<String>)> = None;
+                let mut last_snapshot: Option<DeviceSnapshot> = None;
                 loop {
                     std::thread::sleep(std::time::Duration::from_millis(500));
                     let engine = poll_handle.state::<AudioEngine>();
@@ -111,6 +104,8 @@ pub fn run() {
                                 .iter()
                                 .map(|d| d.name.clone())
                                 .collect::<Vec<_>>(),
+                            devices.input_channels.clone(),
+                            devices.output_channels.clone(),
                         );
                         let devices_changed = last_snapshot.as_ref() != Some(&snap);
                         if devices_changed || config_changed {
@@ -173,6 +168,7 @@ pub fn run() {
             Ok(())
         })
         .invoke_handler(tauri::generate_handler![
+            commands::audio::app_ready,
             commands::audio::start_audio,
             commands::audio::stop_audio,
             commands::audio::get_audio_devices,
@@ -180,6 +176,7 @@ pub fn run() {
             commands::audio::get_audio_config,
             commands::audio::set_audio_config,
             commands::audio::restart_audio,
+            commands::audio::get_audio_levels,
             commands::scanner::scan_plugins,
             commands::scanner::reveal_plugin,
             commands::scanner::select_directory,
@@ -189,6 +186,7 @@ pub fn run() {
             commands::chain::reorder_chain,
             commands::chain::bypass_plugin,
             commands::chain::get_chain,
+            commands::chain::get_saved_chain_placeholders,
             commands::params::get_plugin_parameters,
             commands::params::set_plugin_parameter,
             commands::window::open_plugin_gui,

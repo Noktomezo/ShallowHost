@@ -389,24 +389,22 @@ fn start_streams(
 
     let sample_rate = out_rate as f64;
     let chain_for_cb = chain_handle.clone();
-    let mono = config.mono;
 
     let mut scratch = ScratchBuffers::new(MAX_BLOCK_SIZE, out_ch);
 
     let input_stream = input_dev.build_input_stream(
         input_config,
         move |data: &[f32], _| {
-            if mono && in_ch >= 2 && out_ch >= 2 {
-                let frames = data.len() / in_ch;
-                for i in 0..frames {
-                    let left = data[i * in_ch];
-                    let _ = producer.push_slice(&[left, left]);
-                }
-            } else if in_ch == out_ch {
+            if in_ch == out_ch {
                 let _ = producer.push_slice(data);
             } else if in_ch == 1 && out_ch == 2 {
                 for &s in data {
                     let _ = producer.push_slice(&[s, s]);
+                }
+            } else if in_ch == 2 && out_ch == 1 {
+                for frame in data.chunks_exact(2) {
+                    let mixed = (frame[0] + frame[1]) * 0.5;
+                    let _ = producer.push_slice(&[mixed]);
                 }
             } else {
                 let _ = producer.push_slice(data);

@@ -30,6 +30,7 @@ import {
   CardHeader,
   CardTitle,
 } from '@/shared/ui/card'
+import { Separator } from '@/shared/ui/separator'
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/shared/ui/tooltip'
 import { AudioConfigCard } from './AudioConfigCard'
 import { SortableChainCard } from './SortableChainCard'
@@ -68,6 +69,7 @@ export function HomePage() {
     async function init() {
       refreshChain()
       await loadFromBackend()
+      invoke('app_ready').catch(console.error)
       const devs = await invoke<AudioDevices>('get_audio_devices')
       setDevices(devs)
 
@@ -110,6 +112,21 @@ export function HomePage() {
       }
     }
     init().catch(() => {})
+
+    let active = true
+    const timerId = setTimeout(async () => {
+      try {
+        const fresh = await invoke<AudioDevices>('get_audio_devices')
+        if (active)
+          setDevices(fresh)
+      }
+      catch {}
+    }, 300)
+
+    return () => {
+      active = false
+      clearTimeout(timerId)
+    }
   }, [refreshChain, loadFromBackend, updateConfigStore])
 
   // ponytail: backend polls devices every 500ms for hotplug; react to events
@@ -273,6 +290,7 @@ export function HomePage() {
             </Tooltip>
           </CardAction>
         </CardHeader>
+        <Separator />
         <CardContent>
           {chain.length > 0
             ? (

@@ -8,18 +8,19 @@ use crate::engine::chain::ChainItem;
 use crate::engine::chain::ParamInfo;
 use crate::ffi;
 
+#[derive(Clone)]
 pub struct AudioEngine {
-    pub running: Mutex<bool>,
+    pub running: Arc<Mutex<bool>>,
     pub data_dir: Arc<Mutex<Option<PathBuf>>>,
-    pub config: Mutex<AudioConfig>,
+    pub config: Arc<Mutex<AudioConfig>>,
 }
 
 impl AudioEngine {
     pub fn new() -> Self {
         Self {
-            running: Mutex::new(false),
+            running: Arc::new(Mutex::new(false)),
             data_dir: Arc::new(Mutex::new(None)),
-            config: Mutex::new(AudioConfig::default()),
+            config: Arc::new(Mutex::new(AudioConfig::default())),
         }
     }
 
@@ -93,6 +94,7 @@ impl AudioEngine {
         if config.sample_rate == 0 {
             config.sample_rate = 48000;
         }
+        ffi::set_mono_mode(config.is_mono.unwrap_or(false));
         *self.config.lock().unwrap() = config;
         self.save_audio_config();
     }
@@ -136,11 +138,11 @@ impl AudioEngine {
             config.output_device.as_deref(),
             config.sample_rate as i32,
             config.buffer_size as i32,
-            config.mono,
             input_mask,
             output_mask,
         );
         if success {
+            ffi::set_mono_mode(config.is_mono.unwrap_or(false));
             *self.running.lock().unwrap() = true;
             Ok(())
         } else {
@@ -155,6 +157,13 @@ impl AudioEngine {
         } else {
             Err("Failed to stop audio in JUCE".to_string())
         }
+    }
+
+    pub fn get_audio_levels(&self) -> (f32, f32) {
+        if !*self.running.lock().unwrap() {
+            return (0.0, 0.0);
+        }
+        ffi::get_audio_levels()
     }
 
     pub fn devices(&self) -> Result<AudioDevices, String> {
@@ -302,8 +311,12 @@ impl AudioEngine {
         }
     }
 
-    pub fn open_plugin_gui(&self, node_id: String) -> Result<(), String> {
-        if ffi::open_plugin_gui(&node_id) {
+    pub fn open_plugin_gui(
+        &self,
+        node_id: String,
+        title_prefix: Option<String>,
+    ) -> Result<(), String> {
+        if ffi::open_plugin_gui(&node_id, title_prefix.as_deref()) {
             Ok(())
         } else {
             Err("Failed to open plugin GUI".to_string())
@@ -331,15 +344,93 @@ impl AudioEngine {
         }
     }
 
-    pub fn restore_from_disk(&self) {
+    pub async fn restore_from_disk(&self, app: &tauri::AppHandle) {
         let Some(path) = self.chain_state_file() else {
             return;
         };
         if !path.exists() {
             return;
         }
-        if let Ok(state) = std::fs::read_to_string(&path) {
-            ffi::load_state(&state);
+        let Ok(state) = std::fs::read_to_string(&path) else {
+            return;
+        };
+
+        #[derive(serde::Deserialize)]
+        struct SavedItem {
+            unique_id: Option<String>,
+            state: Option<String>,
+            bypassed: Option<bool>,
         }
+
+        let Ok(items) = serde_json::from_str::<Vec<SavedItem>>(&state) else {
+            return;
+        };
+
+        tauri::async_runtime::spawn_blocking(ffi::clear_chain)
+            .await
+            .ok();
+
+        for item in items {
+            if let Some(unique_id) = item.unique_id {
+                let state_base64 = item.state.unwrap_or_default();
+                let bypassed = item.bypassed.unwrap_or(false);
+
+                let uid = unique_id.clone();
+                let sb = state_base64.clone();
+                let res = tauri::async_runtime::spawn_blocking(move || {
+                    let r = ffi::add_to_chain_with_state(&uid, &sb, bypassed);
+                    std::thread::sleep(std::time::Duration::from_millis(50));
+                    r
+                })
+                .await;
+
+                if let Ok(node_id) = res {
+                    if node_id.is_empty() {
+                        eprintln!("[shallow-host] plugin restoration returned empty node id for: {unique_id}");
+                    }
+                }
+
+                use tauri::Emitter;
+                let _ = app.emit("chain_updated", ());
+            }
+        }
+    }
+
+    pub fn get_saved_chain_placeholders(&self) -> Vec<ChainItem> {
+        let Some(path) = self.chain_state_file() else {
+            return Vec::new();
+        };
+        if !path.exists() {
+            return Vec::new();
+        }
+        let Ok(state) = std::fs::read_to_string(&path) else {
+            return Vec::new();
+        };
+
+        #[derive(serde::Deserialize)]
+        struct SavedItem {
+            unique_id: Option<String>,
+            name: Option<String>,
+            vendor: Option<String>,
+            format: Option<String>,
+            bypassed: Option<bool>,
+        }
+
+        let Ok(items) = serde_json::from_str::<Vec<SavedItem>>(&state) else {
+            return Vec::new();
+        };
+
+        items
+            .into_iter()
+            .enumerate()
+            .map(|(idx, item)| ChainItem {
+                id: format!("saved-{}", idx),
+                name: item.name.unwrap_or_else(|| "Plugin".to_string()),
+                vendor: item.vendor.unwrap_or_default(),
+                format: item.format.unwrap_or_else(|| "vst3".to_string()),
+                bypassed: item.bypassed.unwrap_or(false),
+                unique_id: item.unique_id,
+            })
+            .collect()
     }
 }

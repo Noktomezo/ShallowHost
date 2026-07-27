@@ -9,9 +9,9 @@ export interface AudioConfig {
   output_device: string | null
   sample_rate: number
   buffer_size: number
-  mono: boolean
   active_inputs?: number[] | null
   active_outputs?: number[] | null
+  is_mono?: boolean | null
 }
 
 interface AudioConfigState {
@@ -32,9 +32,9 @@ const DEFAULT_CONFIG: AudioConfig = {
   output_device: null,
   sample_rate: 48000,
   buffer_size: 512,
-  mono: false,
   active_inputs: null,
   active_outputs: null,
+  is_mono: false,
 }
 
 export const useAudioConfigStore = create<AudioConfigState>()(
@@ -63,7 +63,19 @@ export const useAudioConfigStore = create<AudioConfigState>()(
     }),
     {
       name: 'audio-config',
+      version: 1,
       storage: createJSONStorage(() => tauriStorage),
+      migrate: (persistedState: any, _version: number) => {
+        if (persistedState && persistedState.config) {
+          if ('mono' in persistedState.config && !('is_mono' in persistedState.config)) {
+            persistedState.config.is_mono = Boolean(persistedState.config.mono)
+          }
+        }
+        return persistedState
+      },
+      onRehydrateStorage: () => (state) => {
+        state?.loadFromBackend()
+      },
     },
   ),
 )

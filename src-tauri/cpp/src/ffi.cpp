@@ -26,7 +26,7 @@ SH_EXPORT void sh_set_data_dir(const char* path)
     }
 }
 
-SH_EXPORT bool sh_audio_start(const char* driver, const char* input, const char* output, int sample_rate, int buffer_size, bool mono, int input_mask, int output_mask)
+SH_EXPORT bool sh_audio_start(const char* driver, const char* input, const char* output, int sample_rate, int buffer_size, int input_mask, int output_mask)
 {
     return ShallowHost::getInstance().audioStart(
         driver ? driver : "",
@@ -34,7 +34,6 @@ SH_EXPORT bool sh_audio_start(const char* driver, const char* input, const char*
         output ? output : "",
         sample_rate,
         buffer_size,
-        mono,
         input_mask,
         output_mask
     );
@@ -43,6 +42,14 @@ SH_EXPORT bool sh_audio_start(const char* driver, const char* input, const char*
 SH_EXPORT bool sh_audio_stop()
 {
     return ShallowHost::getInstance().audioStop();
+}
+
+SH_EXPORT void sh_get_audio_levels(float* in_peak, float* out_peak)
+{
+    if (in_peak && out_peak)
+    {
+        ShallowHost::getInstance().getAudioLevels(*in_peak, *out_peak);
+    }
 }
 
 SH_EXPORT char* sh_get_audio_devices(const char* driver, const char* device_name)
@@ -62,6 +69,21 @@ SH_EXPORT char* sh_add_to_chain(const char* unique_id)
 {
     if (!unique_id) return nullptr;
     return copyToC(ShallowHost::getInstance().addToChain(std::string(unique_id)));
+}
+
+SH_EXPORT char* sh_add_to_chain_with_state(const char* unique_id, const char* state_base64, bool bypassed)
+{
+    if (!unique_id) return nullptr;
+    return copyToC(ShallowHost::getInstance().addToChainWithState(
+        std::string(unique_id),
+        state_base64 ? std::string(state_base64) : "",
+        bypassed
+    ));
+}
+
+SH_EXPORT void sh_clear_chain()
+{
+    ShallowHost::getInstance().clearChain();
 }
 
 SH_EXPORT bool sh_remove_from_chain(const char* node_id)
@@ -105,10 +127,13 @@ SH_EXPORT bool sh_set_plugin_parameter(const char* node_id, int param_index, flo
     return ShallowHost::getInstance().setPluginParameter(std::string(node_id), param_index, value);
 }
 
-SH_EXPORT bool sh_open_plugin_gui(const char* node_id)
+SH_EXPORT bool sh_open_plugin_gui(const char* node_id, const char* title_prefix)
 {
     if (!node_id) return false;
-    return ShallowHost::getInstance().openPluginGui(std::string(node_id));
+    return ShallowHost::getInstance().openPluginGui(
+        std::string(node_id),
+        title_prefix ? std::string(title_prefix) : ""
+    );
 }
 
 SH_EXPORT bool sh_close_plugin_gui(const char* node_id)
@@ -126,6 +151,11 @@ SH_EXPORT bool sh_load_state(const char* state)
 {
     if (!state) return false;
     return ShallowHost::getInstance().loadStateJson(std::string(state));
+}
+
+SH_EXPORT void sh_set_mono_mode(bool mono)
+{
+    ShallowHost::getInstance().setMonoMode(mono);
 }
 
 SH_EXPORT void sh_free_string(char* ptr)

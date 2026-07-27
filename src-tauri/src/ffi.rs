@@ -11,16 +11,22 @@ extern "C" {
         output: *const c_char,
         sample_rate: i32,
         buffer_size: i32,
-        mono: bool,
         input_mask: i32,
         output_mask: i32,
     ) -> bool;
     fn sh_audio_stop() -> bool;
+    fn sh_get_audio_levels(in_peak: *mut f32, out_peak: *mut f32);
 
     fn sh_get_audio_devices(driver: *const c_char, device_name: *const c_char) -> *mut c_char;
     fn sh_scan_plugins(vst2_paths: *const c_char, vst3_paths: *const c_char) -> *mut c_char;
 
     fn sh_add_to_chain(unique_id: *const c_char) -> *mut c_char;
+    fn sh_add_to_chain_with_state(
+        unique_id: *const c_char,
+        state_base64: *const c_char,
+        bypassed: bool,
+    ) -> *mut c_char;
+    fn sh_clear_chain();
     fn sh_remove_from_chain(node_id: *const c_char) -> bool;
     fn sh_move_plugin(node_id: *const c_char, up: bool) -> bool;
     fn sh_reorder_chain(node_id: *const c_char, to_index: i32) -> bool;
@@ -30,11 +36,13 @@ extern "C" {
     fn sh_get_plugin_parameters(node_id: *const c_char) -> *mut c_char;
     fn sh_set_plugin_parameter(node_id: *const c_char, param_index: i32, value: f32) -> bool;
 
-    fn sh_open_plugin_gui(node_id: *const c_char) -> bool;
+    fn sh_open_plugin_gui(node_id: *const c_char, title_prefix: *const c_char) -> bool;
     fn sh_close_plugin_gui(node_id: *const c_char) -> bool;
 
     fn sh_save_state() -> *mut c_char;
+    #[allow(dead_code)]
     fn sh_load_state(state: *const c_char) -> bool;
+    fn sh_set_mono_mode(mono: bool);
 
     fn sh_free_string(ptr: *mut c_char);
 }
@@ -89,7 +97,6 @@ pub fn audio_start(
     output: Option<&str>,
     sample_rate: i32,
     buffer_size: i32,
-    mono: bool,
     input_mask: i32,
     output_mask: i32,
 ) -> bool {
@@ -104,7 +111,6 @@ pub fn audio_start(
             output_c.as_ptr(),
             sample_rate,
             buffer_size,
-            mono,
             input_mask,
             output_mask,
         )
@@ -114,6 +120,16 @@ pub fn audio_start(
 pub fn audio_stop() -> bool {
     let _lock = get_lock();
     unsafe { sh_audio_stop() }
+}
+
+pub fn get_audio_levels() -> (f32, f32) {
+    let _lock = get_lock();
+    let mut in_peak = 0.0f32;
+    let mut out_peak = 0.0f32;
+    unsafe {
+        sh_get_audio_levels(&mut in_peak as *mut f32, &mut out_peak as *mut f32);
+    }
+    (in_peak, out_peak)
 }
 
 pub fn get_audio_devices(driver: &str, device: &str) -> String {
@@ -134,6 +150,24 @@ pub fn add_to_chain(unique_id: &str) -> String {
     let _lock = get_lock();
     let id_c = to_c_string(unique_id);
     unsafe { to_rust_string(sh_add_to_chain(id_c.as_ptr())) }
+}
+
+pub fn add_to_chain_with_state(unique_id: &str, state_base64: &str, bypassed: bool) -> String {
+    let _lock = get_lock();
+    let id_c = to_c_string(unique_id);
+    let state_c = to_c_string(state_base64);
+    unsafe {
+        to_rust_string(sh_add_to_chain_with_state(
+            id_c.as_ptr(),
+            state_c.as_ptr(),
+            bypassed,
+        ))
+    }
+}
+
+pub fn clear_chain() {
+    let _lock = get_lock();
+    unsafe { sh_clear_chain() }
 }
 
 pub fn remove_from_chain(node_id: &str) -> bool {
@@ -177,10 +211,11 @@ pub fn set_plugin_parameter(node_id: &str, param_index: i32, value: f32) -> bool
     unsafe { sh_set_plugin_parameter(id_c.as_ptr(), param_index, value) }
 }
 
-pub fn open_plugin_gui(node_id: &str) -> bool {
+pub fn open_plugin_gui(node_id: &str, title_prefix: Option<&str>) -> bool {
     let _lock = get_lock();
     let id_c = to_c_string(node_id);
-    unsafe { sh_open_plugin_gui(id_c.as_ptr()) }
+    let prefix_c = to_c_string(title_prefix.unwrap_or(""));
+    unsafe { sh_open_plugin_gui(id_c.as_ptr(), prefix_c.as_ptr()) }
 }
 
 pub fn close_plugin_gui(node_id: &str) -> bool {
@@ -194,8 +229,14 @@ pub fn save_state() -> String {
     unsafe { to_rust_string(sh_save_state()) }
 }
 
+#[allow(dead_code)]
 pub fn load_state(state: &str) -> bool {
     let _lock = get_lock();
     let state_c = to_c_string(state);
     unsafe { sh_load_state(state_c.as_ptr()) }
+}
+
+pub fn set_mono_mode(mono: bool) {
+    let _lock = get_lock();
+    unsafe { sh_set_mono_mode(mono) }
 }

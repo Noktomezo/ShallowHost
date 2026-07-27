@@ -8,9 +8,9 @@ import { CardAction } from '@/shared/ui/card'
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/shared/ui/tooltip'
 import { ChainParamsButton } from './ChainParamsButton'
 
-async function openGui(id: string) {
+async function openGui(id: string, titlePrefix: string) {
   try {
-    await invoke('open_plugin_gui', { pluginId: id })
+    await invoke('open_plugin_gui', { pluginId: id, titlePrefix })
   }
   catch (e) {
     console.error(e)
@@ -20,10 +20,7 @@ async function openGui(id: string) {
 function bypassPlugin(id: string, bypassed: boolean) {
   invoke('bypass_plugin', { pluginId: id, bypassed: !bypassed })
     .then(() => {
-      const cur = useChainStore.getState().chain
-      useChainStore.setState({
-        chain: cur.map(p => (p.id === id ? { ...p, bypassed: !bypassed } : p)),
-      })
+      useChainStore.getState().updateChainItem(id, { bypassed: !bypassed })
     })
     .catch(console.error)
 }
@@ -36,6 +33,7 @@ function removeFromChain(id: string) {
 
 export function ChainCardActions({ plugin: p }: { plugin: ChainItem }) {
   const { t } = useTranslation()
+  const titlePrefix = `ShallowHost → ${t('sidebar.plugins')}`
   return (
     <CardAction className="self-center">
       <div className="flex gap-1">
@@ -46,7 +44,8 @@ export function ChainCardActions({ plugin: p }: { plugin: ChainItem }) {
                 variant="outline"
                 size="icon"
                 aria-label={t('home.openGui')}
-                onClick={() => openGui(p.id)}
+                onClick={() => openGui(p.id, titlePrefix)}
+                disabled={p.initializing}
               >
                 <AppWindow className="size-4" />
               </Button>
@@ -54,7 +53,7 @@ export function ChainCardActions({ plugin: p }: { plugin: ChainItem }) {
           />
           <TooltipContent>{t('home.openGui')}</TooltipContent>
         </Tooltip>
-        <ChainParamsButton pluginId={p.id} name={p.name} />
+        <ChainParamsButton pluginId={p.id} name={p.name} disabled={p.initializing} />
         <Tooltip>
           <TooltipTrigger
             render={(
@@ -67,6 +66,7 @@ export function ChainCardActions({ plugin: p }: { plugin: ChainItem }) {
                     : ''
                 }
                 onClick={() => bypassPlugin(p.id, p.bypassed)}
+                disabled={p.initializing}
               >
                 {p.bypassed
                   ? (
@@ -88,6 +88,7 @@ export function ChainCardActions({ plugin: p }: { plugin: ChainItem }) {
                 size="icon"
                 className="hover:bg-destructive/15 hover:text-destructive hover:border-destructive/30"
                 onClick={() => removeFromChain(p.id)}
+                disabled={p.initializing}
               >
                 <Trash2 className="size-4" />
               </Button>
