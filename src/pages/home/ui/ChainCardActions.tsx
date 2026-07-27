@@ -26,15 +26,15 @@ function bypassPlugin(id: string, bypassed: boolean) {
     .catch(console.error)
 }
 
-function removeFromChain(p: ChainItem) {
+function removeFromChain(p: ChainItem, t: (key: string) => string) {
   invoke('remove_from_chain', { pluginId: p.id })
     .then(() => {
       useChainStore.getState().remove(p.id)
       toast(p.name, {
-        description: 'Plugin removed from chain',
+        description: t('home.pluginRemoved'),
         action: p.unique_id
           ? {
-              label: 'Undo',
+              label: t('home.undo'),
               onClick: () => {
                 useChainStore.getState().addPluginAsync({
                   unique_id: p.unique_id!,
@@ -108,7 +108,7 @@ export function ChainCardActions({ plugin: p }: { plugin: ChainItem }) {
                 size="icon"
                 aria-label={t('home.removeFromChain')}
                 className="hover:bg-destructive/15 hover:text-destructive hover:border-destructive/30"
-                onClick={() => removeFromChain(p)}
+                onClick={() => removeFromChain(p, t)}
                 disabled={p.initializing}
               >
                 <Trash2 className="size-4" />

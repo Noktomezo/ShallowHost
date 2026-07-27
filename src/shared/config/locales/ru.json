@@ -50,6 +50,14 @@
       "openGui": "Открыть интерфейс",
       "dragHandle": "Перетащите для перемещения",
       "clearChain": "Очистить всё",
+      "clearChainTitle": "Очистить цепочку плагинов",
+      "clearChainDescription": "Вы уверены, что хотите удалить все плагины из цепочки обработки?",
+      "clearAll": "Очистить всё",
+      "cancel": "Отмена",
+      "chainCleared": "Цепочка очищена",
+      "pluginsRemoved": "плагинов удалено",
+      "pluginRemoved": "Плагин удален из цепочки",
+      "undo": "Отменить",
       "goToPlugins": "Добавить плагины"
     },
     "plugins": {

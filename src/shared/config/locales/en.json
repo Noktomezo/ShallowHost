@@ -50,6 +50,14 @@
       "openGui": "Open interface",
       "dragHandle": "Drag to reorder",
       "clearChain": "Clear all",
+      "clearChainTitle": "Clear plugin chain",
+      "clearChainDescription": "Are you sure you want to remove all plugins from the processing chain?",
+      "clearAll": "Clear all",
+      "cancel": "Cancel",
+      "chainCleared": "Chain cleared",
+      "pluginsRemoved": "plugins removed",
+      "pluginRemoved": "Plugin removed from chain",
+      "undo": "Undo",
       "goToPlugins": "Add plugins"
     },
     "plugins": {

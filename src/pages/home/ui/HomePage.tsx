@@ -63,10 +63,10 @@ export function HomePage() {
     try {
       await Promise.all(chain.map(p => invoke('remove_from_chain', { pluginId: p.id })))
       await refreshChain()
-      toast('Chain cleared', {
-        description: `${previousChain.length} plugins removed`,
+      toast(t('home.chainCleared'), {
+        description: `${previousChain.length} ${t('home.pluginsRemoved')}`,
         action: {
-          label: 'Undo',
+          label: t('home.undo'),
           onClick: async () => {
             for (const item of previousChain) {
               if (item.unique_id) {
@@ -262,9 +262,9 @@ export function HomePage() {
 
       <Dialog open={confirmClearOpen} onOpenChange={setConfirmClearOpen}>
         <DialogContent className="sm:max-w-md">
-          <DialogTitle>{t('home.clearChain')}</DialogTitle>
+          <DialogTitle>{t('home.clearChainTitle')}</DialogTitle>
           <DialogDescription>
-            Are you sure you want to clear all plugins from the chain?
+            {t('home.clearChainDescription')}
           </DialogDescription>
           <div className="flex justify-end gap-2 pt-4">
             <Button
@@ -272,14 +272,14 @@ export function HomePage() {
               size="sm"
               onClick={() => setConfirmClearOpen(false)}
             >
-              Cancel
+              {t('home.cancel')}
             </Button>
             <Button
               variant="destructive"
               size="sm"
               onClick={clearChain}
             >
-              Clear All
+              {t('home.clearAll')}
             </Button>
           </div>
         </DialogContent>
