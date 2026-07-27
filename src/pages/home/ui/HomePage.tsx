@@ -18,6 +18,7 @@ import { listen } from '@tauri-apps/api/event'
 import { ArrowRight, Plus, Trash2 } from 'lucide-react'
 import { useEffect, useState } from 'react'
 import { useTranslation } from 'react-i18next'
+import { toast } from 'sonner'
 import { cn } from '@/shared/lib/utils'
 import { useAudioConfigStore } from '@/shared/model/audio-config-store'
 import { useChainStore } from '@/shared/model/chain-store'
@@ -31,6 +32,7 @@ import {
   CardHeader,
   CardTitle,
 } from '@/shared/ui/card'
+import { Dialog, DialogContent, DialogDescription, DialogTitle } from '@/shared/ui/dialog'
 import { Separator } from '@/shared/ui/separator'
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/shared/ui/tooltip'
 import { handleAudioConfigUpdate } from '../lib/audio-config-actions'
@@ -42,6 +44,7 @@ let devicesCache: AudioDevices = { inputs: [], outputs: [] }
 export function HomePage() {
   const { t } = useTranslation()
   const [error, setError] = useState<string | null>(null)
+  const [confirmClearOpen, setConfirmClearOpen] = useState(false)
   const chain = useChainStore(s => s.chain)
   const refreshChain = useChainStore(s => s.refresh)
   const config = useAudioConfigStore(s => s.config)
@@ -55,9 +58,29 @@ export function HomePage() {
   }
 
   const clearChain = async () => {
+    const previousChain = [...chain]
+    setConfirmClearOpen(false)
     try {
       await Promise.all(chain.map(p => invoke('remove_from_chain', { pluginId: p.id })))
       await refreshChain()
+      toast('Chain cleared', {
+        description: `${previousChain.length} plugins removed`,
+        action: {
+          label: 'Undo',
+          onClick: async () => {
+            for (const item of previousChain) {
+              if (item.unique_id) {
+                useChainStore.getState().addPluginAsync({
+                  unique_id: item.unique_id,
+                  name: item.name,
+                  vendor: item.vendor,
+                  format: item.format,
+                })
+              }
+            }
+          },
+        },
+      })
     }
     catch (e) {
       console.error(e)
@@ -198,7 +221,7 @@ export function HomePage() {
                   variant="outline"
                   size="icon"
                   disabled={chain.length === 0}
-                  onClick={clearChain}
+                  onClick={() => setConfirmClearOpen(true)}
                   className="cursor-pointer hover:!bg-red/10 hover:!text-red hover:!border-red/20 disabled:pointer-events-none disabled:opacity-50"
                   aria-label={t('home.clearChain')}
                 >
@@ -236,6 +259,31 @@ export function HomePage() {
               )}
         </CardContent>
       </Card>
+
+      <Dialog open={confirmClearOpen} onOpenChange={setConfirmClearOpen}>
+        <DialogContent className="sm:max-w-md">
+          <DialogTitle>{t('home.clearChain')}</DialogTitle>
+          <DialogDescription>
+            Are you sure you want to clear all plugins from the chain?
+          </DialogDescription>
+          <div className="flex justify-end gap-2 pt-4">
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => setConfirmClearOpen(false)}
+            >
+              Cancel
+            </Button>
+            <Button
+              variant="destructive"
+              size="sm"
+              onClick={clearChain}
+            >
+              Clear All
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   )
 }
