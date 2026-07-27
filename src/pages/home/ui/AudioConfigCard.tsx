@@ -258,7 +258,7 @@ export function AudioConfigCard({
 
   return (
     <Card className="w-full">
-      <CardHeader className="flex flex-row items-center justify-between gap-4 space-y-0 pb-5">
+      <CardHeader className="flex flex-row items-center justify-between gap-4 space-y-0 pb-2">
         <div className="flex flex-col gap-0.5">
           <CardTitle>{t('home.audio')}</CardTitle>
           <CardDescription>{t('home.audioDescription')}</CardDescription>
