@@ -366,7 +366,11 @@ export function AudioConfigCard({
                                 outputPairs.map((p) => {
                                   const isChecked = p.indices.every(i => activeOutputsSet.has(i))
                                   return (
-                                    <label key={p.label} className="flex items-center justify-between gap-2 text-sm select-none cursor-pointer p-0.5 rounded hover:bg-muted/40 overflow-hidden">
+                                    <div
+                                      key={p.label}
+                                      className="flex items-center justify-between gap-2 text-sm select-none cursor-pointer p-0.5 rounded hover:bg-muted/40 overflow-hidden"
+                                      onClick={() => handleOutputToggle(p.indices, !isChecked)}
+                                    >
                                       <div className="flex items-center gap-2 min-w-0 flex-1">
                                         <Checkbox
                                           checked={isChecked}
@@ -374,7 +378,7 @@ export function AudioConfigCard({
                                         />
                                         <span className="truncate">{p.label}</span>
                                       </div>
-                                    </label>
+                                    </div>
                                   )
                                 })
                               )}
@@ -398,7 +402,11 @@ export function AudioConfigCard({
                                 inputPairs.map((p) => {
                                   const isChecked = p.indices.every(i => activeInputsSet.has(i))
                                   return (
-                                    <label key={p.label} className="flex items-center justify-between gap-2 text-sm select-none cursor-pointer p-0.5 rounded hover:bg-muted/40 overflow-hidden">
+                                    <div
+                                      key={p.label}
+                                      className="flex items-center justify-between gap-2 text-sm select-none cursor-pointer p-0.5 rounded hover:bg-muted/40 overflow-hidden"
+                                      onClick={() => handleInputToggle(p.indices, !isChecked)}
+                                    >
                                       <div className="flex items-center gap-2 min-w-0 flex-1">
                                         <Checkbox
                                           checked={isChecked}
@@ -406,7 +414,7 @@ export function AudioConfigCard({
                                         />
                                         <span className="truncate">{p.label}</span>
                                       </div>
-                                    </label>
+                                    </div>
                                   )
                                 })
                               )}
