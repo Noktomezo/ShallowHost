@@ -138,17 +138,16 @@ export function ScanPathsDialog({
         <div className="flex justify-between items-center pt-2 border-t border-border">
           <Button
             variant="ghost"
-            size="sm"
             onClick={() => {
               resetVst2Paths()
               resetVst3Paths()
             }}
-            className="text-xs text-muted-foreground hover:text-foreground gap-1"
+            className="text-sm text-muted-foreground hover:text-foreground gap-1"
           >
-            <RotateCcw className="size-3" data-icon="inline-start" />
+            <RotateCcw className="size-4" data-icon="inline-start" />
             Reset to Defaults
           </Button>
-          <Button size="sm" onClick={() => onOpenChange(false)}>
+          <Button onClick={() => onOpenChange(false)}>
             Done
           </Button>
         </div>

@@ -269,14 +269,12 @@ export function HomePage() {
           <div className="flex justify-end gap-2 pt-4">
             <Button
               variant="outline"
-              size="sm"
               onClick={() => setConfirmClearOpen(false)}
             >
               {t('home.cancel')}
             </Button>
             <Button
               variant="destructive"
-              size="sm"
               onClick={clearChain}
             >
               {t('home.clearAll')}
