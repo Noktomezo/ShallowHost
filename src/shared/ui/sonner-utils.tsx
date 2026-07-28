@@ -82,6 +82,8 @@ function UpdateToastView({ info }: { info: UpdateInfo }) {
     )
   }
 
+  const releaseUrl = info.releaseUrl || `https://github.com/Noktomezo/ShallowHost/releases/tag/v${info.version}`
+
   return (
     <div className="flex w-80 flex-col gap-2 p-4">
       <div className="text-sm font-medium text-foreground">
@@ -90,16 +92,16 @@ function UpdateToastView({ info }: { info: UpdateInfo }) {
         v
         {info.version}
       </div>
-      {info.releaseUrl && (
-        <button
-          type="button"
-          onClick={() => openUrl(info.releaseUrl!)}
-          className="inline-flex w-fit items-center gap-1 text-xs text-primary hover:underline cursor-pointer"
-        >
-          {t('update.viewRelease')}
-          <ExternalLink className="size-3" />
-        </button>
-      )}
+      <button
+        type="button"
+        onClick={() => {
+          openUrl(releaseUrl).catch(console.error)
+        }}
+        className="inline-flex w-fit items-center gap-1 text-xs text-primary hover:underline cursor-pointer"
+      >
+        {t('update.viewRelease')}
+        <ExternalLink className="size-3" />
+      </button>
       <div className="flex gap-2 pt-1">
         <Button variant="default" size="sm" className="flex-1 cursor-pointer" onClick={handleUpdate}>
           <Download className="size-3.5" />

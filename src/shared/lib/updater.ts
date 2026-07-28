@@ -29,8 +29,10 @@ export const updateService = {
       version: update.version,
       date: update.date,
       body: update.body,
-      releaseUrl: (update.rawJson.releaseUrl as string | undefined)
-        ?? (update.rawJson.url as string | undefined),
+      releaseUrl: (update.rawJson?.releaseUrl as string | undefined)
+        ?? (update.rawJson?.url as string | undefined)
+        ?? (update.rawJson?.html_url as string | undefined)
+        ?? `https://github.com/Noktomezo/ShallowHost/releases/tag/v${update.version}`,
     }
   },
   async downloadAndInstall(onProgress: (p: DownloadProgress) => void) {
