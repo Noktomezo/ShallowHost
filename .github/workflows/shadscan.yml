@@ -32,6 +32,6 @@ jobs:
         with:
           persist-credentials: false
 
-      - uses: TheOrcDev/shadscan@d7a315357876a4df146d9c6e3b5e408ecbbef8f2
+      - uses: TheOrcDev/shadscan@3215eec857c1da63fd319d7048bfd50cf15f786a
         with:
           fail-under: '90'
