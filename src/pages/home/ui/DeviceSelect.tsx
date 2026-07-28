@@ -1,4 +1,5 @@
 import type React from 'react'
+import { useTranslation } from 'react-i18next'
 import {
   Select,
   SelectContent,
@@ -34,6 +35,8 @@ export function DeviceSelect({
   hideDefault?: boolean
   meter?: React.ReactNode
 }) {
+  const { t } = useTranslation()
+
   return (
     <div className="flex items-center justify-between gap-2">
       <div className="flex flex-col gap-0">
@@ -48,7 +51,7 @@ export function DeviceSelect({
           items={items}
         >
           <SelectTrigger className="w-40" aria-label={label}>
-            <SelectValue placeholder={hideDefault ? 'Select...' : undefined} />
+            <SelectValue placeholder={hideDefault ? t('home.selectPlaceholder') : undefined} />
           </SelectTrigger>
           <SelectContent>
             <SelectGroup>

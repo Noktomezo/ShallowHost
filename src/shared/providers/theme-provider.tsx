@@ -16,8 +16,17 @@ const ThemeContext = createContext<ThemeContextType>({
   setTheme: () => {},
 })
 
-export function ThemeProvider({ children }: ThemeProviderProps) {
+export function ThemeProvider({ children, defaultTheme }: ThemeProviderProps) {
   const { theme, setTheme } = useThemeStore()
+
+  useEffect(() => {
+    if (defaultTheme && typeof window !== 'undefined') {
+      const persisted = localStorage.getItem('shallowhost-theme')
+      if (!persisted) {
+        setTheme(defaultTheme)
+      }
+    }
+  }, [defaultTheme, setTheme])
 
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {

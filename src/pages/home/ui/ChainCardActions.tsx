@@ -27,6 +27,10 @@ function bypassPlugin(id: string, bypassed: boolean) {
 }
 
 function removeFromChain(p: ChainItem, t: (key: string) => string) {
+  const currentChain = useChainStore.getState().chain
+  const originalIndex = currentChain.findIndex(item => item.id === p.id)
+  const wasBypassed = p.bypassed
+
   invoke('remove_from_chain', { pluginId: p.id })
     .then(() => {
       useChainStore.getState().remove(p.id)
@@ -35,13 +39,30 @@ function removeFromChain(p: ChainItem, t: (key: string) => string) {
         action: p.unique_id
           ? {
               label: t('home.undo'),
-              onClick: () => {
-                useChainStore.getState().addPluginAsync({
-                  unique_id: p.unique_id!,
-                  name: p.name,
-                  vendor: p.vendor,
-                  format: p.format,
-                })
+              onClick: async () => {
+                try {
+                  const restored = await useChainStore.getState().addPluginAsync({
+                    unique_id: p.unique_id!,
+                    name: p.name,
+                    vendor: p.vendor,
+                    format: p.format,
+                  })
+                  if (restored) {
+                    if (wasBypassed && !restored.bypassed) {
+                      await invoke('bypass_plugin', { pluginId: restored.id, bypassed: true })
+                      useChainStore.getState().updateChainItem(restored.id, { bypassed: true })
+                    }
+                    const freshChain = useChainStore.getState().rawChain
+                    if (originalIndex >= 0 && originalIndex < freshChain.length - 1) {
+                      await invoke('reorder_chain', { node_id: restored.id, to_index: originalIndex })
+                      await useChainStore.getState().refresh()
+                    }
+                  }
+                }
+                catch (e) {
+                  console.error(e)
+                  toast.error(t('home.undoFailed'))
+                }
               },
             }
           : undefined,
@@ -79,7 +100,8 @@ export function ChainCardActions({ plugin: p }: { plugin: ChainItem }) {
               <Button
                 variant="outline"
                 size="icon"
-                aria-label={t('home.bypass')}
+                aria-label={p.bypassed ? t('home.unbypass') : t('home.bypass')}
+                aria-pressed={p.bypassed}
                 className={
                   p.bypassed
                     ? 'border-amber-600/30 bg-amber-600/15 text-amber-600 hover:bg-amber-600/25 dark:text-amber-500'
@@ -98,7 +120,7 @@ export function ChainCardActions({ plugin: p }: { plugin: ChainItem }) {
               </Button>
             )}
           />
-          <TooltipContent>{t('home.bypass')}</TooltipContent>
+          <TooltipContent>{p.bypassed ? t('home.unbypass') : t('home.bypass')}</TooltipContent>
         </Tooltip>
         <Tooltip>
           <TooltipTrigger

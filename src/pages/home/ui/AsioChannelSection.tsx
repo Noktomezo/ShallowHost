@@ -45,7 +45,7 @@ export function AsioChannelSection({
         <div className="flex flex-col gap-1.5 rounded-md border border-input p-3 bg-muted/20 max-h-40 overflow-y-auto">
           {outputPairs.length === 0
             ? (
-                <span className="text-xs text-muted-foreground">No channels available</span>
+                <span className="text-xs text-muted-foreground">{t('home.noChannelsAvailable')}</span>
               )
             : (
                 outputPairs.map((p) => {
@@ -67,9 +67,10 @@ export function AsioChannelSection({
                     >
                       <div className="flex items-center gap-2 min-w-0 flex-1">
                         <Checkbox
-                          aria-label={p.label}
                           checked={isChecked}
-                          onCheckedChange={checked => handleOutputToggle(p.indices, !!checked)}
+                          tabIndex={-1}
+                          aria-hidden="true"
+                          className="pointer-events-none"
                         />
                         <span className="truncate">{p.label}</span>
                       </div>
@@ -91,7 +92,7 @@ export function AsioChannelSection({
         <div className="flex flex-col gap-1.5 rounded-md border border-input p-3 bg-muted/20 max-h-40 overflow-y-auto">
           {inputPairs.length === 0
             ? (
-                <span className="text-xs text-muted-foreground">No channels available</span>
+                <span className="text-xs text-muted-foreground">{t('home.noChannelsAvailable')}</span>
               )
             : (
                 inputPairs.map((p) => {
@@ -113,9 +114,10 @@ export function AsioChannelSection({
                     >
                       <div className="flex items-center gap-2 min-w-0 flex-1">
                         <Checkbox
-                          aria-label={p.label}
                           checked={isChecked}
-                          onCheckedChange={checked => handleInputToggle(p.indices, !!checked)}
+                          tabIndex={-1}
+                          aria-hidden="true"
+                          className="pointer-events-none"
                         />
                         <span className="truncate">{p.label}</span>
                       </div>

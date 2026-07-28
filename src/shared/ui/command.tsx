@@ -1,4 +1,5 @@
 import * as React from 'react'
+import { useTranslation } from 'react-i18next'
 import { Dialog, DialogContent, DialogDescription, DialogTitle } from '@/shared/ui/dialog'
 
 export function CommandDialog({
@@ -10,11 +11,12 @@ export function CommandDialog({
   onOpenChange: (open: boolean) => void
   children: React.ReactNode
 }) {
+  const { t } = useTranslation()
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="p-0 sm:max-w-md overflow-hidden">
-        <DialogTitle className="sr-only">Command Palette</DialogTitle>
-        <DialogDescription className="sr-only">Search app commands</DialogDescription>
+        <DialogTitle className="sr-only">{t('command.title')}</DialogTitle>
+        <DialogDescription className="sr-only">{t('command.description')}</DialogDescription>
         {children}
       </DialogContent>
     </Dialog>
@@ -24,19 +26,20 @@ export function CommandDialog({
 export function CommandInput({
   value,
   onValueChange,
-  placeholder = 'Type a command or search...',
+  placeholder,
 }: {
   value?: string
   onValueChange?: (value: string) => void
   placeholder?: string
 }) {
+  const { t } = useTranslation()
   return (
     <div className="flex flex-col border-b border-border px-3 py-2.5">
       <input
         type="text"
-        aria-label="Search commands"
+        aria-label={t('command.inputAria')}
         className="w-full bg-transparent text-sm focus:outline-hidden focus-visible:ring-1 focus-visible:ring-ring rounded px-1 placeholder:text-muted-foreground"
-        placeholder={placeholder}
+        placeholder={placeholder ?? t('command.searchPlaceholder')}
         value={value}
         onChange={e => onValueChange?.(e.target.value)}
       />

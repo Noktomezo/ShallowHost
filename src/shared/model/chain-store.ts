@@ -22,7 +22,7 @@ interface ChainStore {
   updateChainItem: (id: string, patch: Partial<ChainItem>) => void
   refresh: () => Promise<void>
   loadPlaceholders: () => Promise<void>
-  addPluginAsync: (plugin: { unique_id: string, name: string, vendor: string, format: string }) => void
+  addPluginAsync: (plugin: { unique_id: string, name: string, vendor: string, format: string }) => Promise<ChainItem | undefined>
   remove: (id: string) => void
   isInitializing: (uniqueId: string) => boolean
 }
@@ -108,9 +108,9 @@ export const useChainStore = create<ChainStore>((set, get) => ({
       // backend not ready
     }
   },
-  addPluginAsync: (plugin) => {
+  addPluginAsync: async (plugin) => {
     if (get().initializingMap[plugin.unique_id]) {
-      return
+      return undefined
     }
 
     const tempItem: ChainItem = {
@@ -139,40 +139,40 @@ export const useChainStore = create<ChainStore>((set, get) => ({
       }, 15000)
     })
 
-    Promise.race([
-      invoke('add_to_chain', { pluginId: plugin.unique_id }),
-      timeoutPromise,
-    ])
-      .then(async () => {
-        try {
-          await get().refresh()
-        }
-        finally {
-          clearTimeout(timer)
-          if (get().initializingMap[plugin.unique_id]) {
-            set((s) => {
-              const nextMap = { ...s.initializingMap }
-              delete nextMap[plugin.unique_id]
-              return {
-                initializingMap: nextMap,
-                chain: computeChain(s.rawChain, nextMap),
-              }
-            })
-          }
+    try {
+      await Promise.race([
+        invoke('add_to_chain', { pluginId: plugin.unique_id }),
+        timeoutPromise,
+      ])
+      clearTimeout(timer!)
+      await get().refresh()
+      return get().rawChain.find(p => p.unique_id === plugin.unique_id)
+    }
+    catch (e) {
+      clearTimeout(timer!)
+      set((s) => {
+        const nextMap = { ...s.initializingMap }
+        delete nextMap[plugin.unique_id]
+        return {
+          initializingMap: nextMap,
+          chain: computeChain(s.rawChain, nextMap),
+          error: String(e),
         }
       })
-      .catch((e) => {
-        clearTimeout(timer)
+      throw e
+    }
+    finally {
+      if (get().initializingMap[plugin.unique_id]) {
         set((s) => {
           const nextMap = { ...s.initializingMap }
           delete nextMap[plugin.unique_id]
           return {
             initializingMap: nextMap,
             chain: computeChain(s.rawChain, nextMap),
-            error: String(e),
           }
         })
-      })
+      }
+    }
   },
   remove: (id) => {
     set((s) => {

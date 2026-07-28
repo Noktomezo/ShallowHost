@@ -10,6 +10,13 @@ interface AudioDevices {
   output_channels?: string[] | null
 }
 
+export function resolveDevice(saved: string | null, list: DeviceInfo[]): string {
+  if (saved && saved !== '__default' && (saved === '__none' || list.some(d => d.name === saved))) {
+    return saved
+  }
+  return '__none'
+}
+
 async function prepareDriverSwitch(
   currentConfig: AudioConfig,
   nextPatch: Partial<AudioConfig>,
@@ -64,14 +71,8 @@ async function handleWasapiSwitch(
   }
   const freshDevs = await prepareDriverSwitch(currentConfig, nextPatch, updateConfigStore, setDevices)
   const wasapiState = useAudioConfigStore.getState()
-  const restoreIn = wasapiState.lastWasapiInput && (wasapiState.lastWasapiInput === '__none' || freshDevs.inputs.some((d: DeviceInfo) => d.name === wasapiState.lastWasapiInput))
-    ? wasapiState.lastWasapiInput
-    : '__none'
-  const restoreOut = wasapiState.lastWasapiOutput && (wasapiState.lastWasapiOutput === '__none' || freshDevs.outputs.some((d: DeviceInfo) => d.name === wasapiState.lastWasapiOutput))
-    ? wasapiState.lastWasapiOutput
-    : '__none'
-  nextPatch.input_device = restoreIn
-  nextPatch.output_device = restoreOut
+  nextPatch.input_device = resolveDevice(wasapiState.lastWasapiInput, freshDevs.inputs)
+  nextPatch.output_device = resolveDevice(wasapiState.lastWasapiOutput, freshDevs.outputs)
 }
 
 export async function handleAudioConfigUpdate(
@@ -83,18 +84,18 @@ export async function handleAudioConfigUpdate(
 ) {
   const nextPatch = { ...patch }
 
-  if (patch.driver && patch.driver !== currentConfig.driver) {
-    if (patch.driver === 'asio') {
-      await handleAsioSwitch(currentConfig, nextPatch, updateConfigStore, setDevices)
-    }
-    else {
-      await handleWasapiSwitch(currentConfig, nextPatch, updateConfigStore, setDevices)
-    }
-  }
-
-  updateConfigStore(nextPatch)
-  const next = { ...currentConfig, ...nextPatch }
   try {
+    if (patch.driver && patch.driver !== currentConfig.driver) {
+      if (patch.driver === 'asio') {
+        await handleAsioSwitch(currentConfig, nextPatch, updateConfigStore, setDevices)
+      }
+      else {
+        await handleWasapiSwitch(currentConfig, nextPatch, updateConfigStore, setDevices)
+      }
+    }
+
+    updateConfigStore(nextPatch)
+    const next = { ...currentConfig, ...nextPatch }
     await invoke('set_audio_config', { config: next })
     await invoke('restart_audio')
     const devs = await invoke<AudioDevices>('get_audio_devices')

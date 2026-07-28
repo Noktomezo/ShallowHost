@@ -1,9 +1,8 @@
 import { useNavigate } from '@tanstack/react-router'
-import { invoke } from '@tauri-apps/api/core'
 import { Home, Moon, Package, Settings, Sun, Trash2 } from 'lucide-react'
 import { useEffect, useState } from 'react'
 import { useTranslation } from 'react-i18next'
-import { useChainStore } from '@/shared/model/chain-store'
+import { clearChainWithUndo } from '@/pages/home/lib/clear-chain-action'
 import { useThemeStore } from '@/shared/model/theme-store'
 import {
   CommandDialog,
@@ -62,7 +61,7 @@ export function CommandMenu() {
     {
       id: 'theme',
       icon: theme === 'dark' ? Sun : Moon,
-      label: theme === 'dark' ? 'Switch to Light Theme' : 'Switch to Dark Theme',
+      label: theme === 'dark' ? t('command.switchToLight') : t('command.switchToDark'),
       perform: () => {
         setTheme(theme === 'dark' ? 'light' : 'dark')
         setOpen(false)
@@ -73,9 +72,7 @@ export function CommandMenu() {
       icon: Trash2,
       label: t('home.clearChain'),
       perform: () => {
-        invoke('clear_chain')
-          .then(() => useChainStore.getState().setChain([]))
-          .catch(console.error)
+        clearChainWithUndo(t)
         setOpen(false)
       },
     },
@@ -90,12 +87,12 @@ export function CommandMenu() {
       <CommandInput
         value={search}
         onValueChange={setSearch}
-        placeholder="Type a command or search... (Ctrl+K)"
+        placeholder={t('command.searchPlaceholder')}
       />
       <CommandList>
         {filtered.length === 0
           ? (
-              <CommandEmpty>No commands found.</CommandEmpty>
+              <CommandEmpty>{t('command.noResults')}</CommandEmpty>
             )
           : (
               filtered.map((action) => {

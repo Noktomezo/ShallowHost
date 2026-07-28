@@ -18,7 +18,6 @@ import { listen } from '@tauri-apps/api/event'
 import { ArrowRight, Plus, Trash2 } from 'lucide-react'
 import { useEffect, useState } from 'react'
 import { useTranslation } from 'react-i18next'
-import { toast } from 'sonner'
 import { cn } from '@/shared/lib/utils'
 import { useAudioConfigStore } from '@/shared/model/audio-config-store'
 import { useChainStore } from '@/shared/model/chain-store'
@@ -35,7 +34,8 @@ import {
 import { Dialog, DialogContent, DialogDescription, DialogTitle } from '@/shared/ui/dialog'
 import { Separator } from '@/shared/ui/separator'
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/shared/ui/tooltip'
-import { handleAudioConfigUpdate } from '../lib/audio-config-actions'
+import { handleAudioConfigUpdate, resolveDevice } from '../lib/audio-config-actions'
+import { clearChainWithUndo } from '../lib/clear-chain-action'
 import { AudioConfigCard } from './AudioConfigCard'
 import { SortableChainCard } from './SortableChainCard'
 
@@ -58,33 +58,8 @@ export function HomePage() {
   }
 
   const clearChain = async () => {
-    const previousChain = [...chain]
     setConfirmClearOpen(false)
-    try {
-      await Promise.all(chain.map(p => invoke('remove_from_chain', { pluginId: p.id })))
-      await refreshChain()
-      toast(t('home.chainCleared'), {
-        description: `${previousChain.length} ${t('home.pluginsRemoved')}`,
-        action: {
-          label: t('home.undo'),
-          onClick: async () => {
-            for (const item of previousChain) {
-              if (item.unique_id) {
-                useChainStore.getState().addPluginAsync({
-                  unique_id: item.unique_id,
-                  name: item.name,
-                  vendor: item.vendor,
-                  format: item.format,
-                })
-              }
-            }
-          },
-        },
-      })
-    }
-    catch (e) {
-      console.error(e)
-    }
+    await clearChainWithUndo(t)
   }
 
   useEffect(() => {
@@ -100,21 +75,17 @@ export function HomePage() {
       if (currentConfig.driver === 'wasapi') {
         const patch: Partial<AudioConfig> = {}
         let needsUpdate = false
+        const store = useAudioConfigStore.getState()
         const isStaleOrEmpty = (dev: string | null, list: DeviceInfo[]) =>
           !dev
           || dev === '__default'
           || (dev !== '__none' && !list.some(d => d.name === dev))
-        const resolveWasapi = (saved: string | null, list: DeviceInfo[]) =>
-          saved && saved !== '__default' && (saved === '__none' || list.some(d => d.name === saved))
-            ? saved
-            : '__none'
-        const store = useAudioConfigStore.getState()
         if (isStaleOrEmpty(currentConfig.input_device, devs.inputs)) {
-          patch.input_device = resolveWasapi(store.lastWasapiInput, devs.inputs)
+          patch.input_device = resolveDevice(store.lastWasapiInput, devs.inputs)
           needsUpdate = true
         }
         if (isStaleOrEmpty(currentConfig.output_device, devs.outputs)) {
-          patch.output_device = resolveWasapi(store.lastWasapiOutput, devs.outputs)
+          patch.output_device = resolveDevice(store.lastWasapiOutput, devs.outputs)
           needsUpdate = true
         }
         if (needsUpdate) {

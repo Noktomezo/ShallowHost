@@ -1,10 +1,19 @@
 {
   "translation": {
+    "common": {
+      "errorTitle": "Что-то пошло не так",
+      "unexpectedError": "Произошла непредвиденная ошибка.",
+      "tryAgain": "Попробовать снова",
+      "tryAgainAria": "Попробовать снова и восстановить приложение"
+    },
     "titlebar": {
       "toggleSidebar": "Свернуть панель",
       "minimize": "Свернуть",
       "maximize": "Развернуть",
-      "close": "Закрыть"
+      "close": "Закрыть",
+      "toggleMobileNav": "Переключить мобильную навигацию",
+      "navigation": "Навигация",
+      "mobileNav": "Мобильная навигация"
     },
     "sidebar": {
       "home": "Главная",
@@ -22,6 +31,8 @@
       "deviceDescription": "Аудиоустройство ASIO.",
       "activeInputChannels": "Активные входные каналы",
       "activeOutputChannels": "Активные выходные каналы",
+      "noChannelsAvailable": "Нет доступных каналов",
+      "selectPlaceholder": "Выберите...",
       "noneDevice": "Отсутствует",
       "outputDevice": "Устройство вывода",
       "outputDeviceDescription": "Куда направить звук.",
@@ -39,6 +50,7 @@
       "chain": "Цепочка плагинов",
       "chainEmpty": "В цепочке нет плагинов.",
       "bypass": "Обход",
+      "unbypass": "Включить плагин",
       "bypassed": "Обойдён",
       "active": "Активен",
       "moveUp": "Вверх",
@@ -55,9 +67,14 @@
       "clearAll": "Очистить всё",
       "cancel": "Отмена",
       "chainCleared": "Цепочка очищена",
-      "pluginsRemoved": "плагинов удалено",
+      "pluginsRemoved_one": "плагин удален",
+      "pluginsRemoved_few": "плагина удалено",
+      "pluginsRemoved_many": "плагинов удалено",
+      "pluginsRemoved_other": "плагинов удалено",
       "pluginRemoved": "Плагин удален из цепочки",
       "undo": "Отменить",
+      "undoFailed": "Не удалось восстановить плагин",
+      "clearChainError": "Не удалось удалить некоторые плагины",
       "goToPlugins": "Добавить плагины"
     },
     "plugins": {
@@ -77,7 +94,21 @@
       "scanPathsTitle": "Пути сканирования",
       "scanPathsDescription": "Настройте папки для поиска VST2 и VST3 плагинов.",
       "addFolder": "Добавить",
-      "resetDefaults": "Сбросить папки"
+      "resetDefaults": "Сбросить папки",
+      "vst2SearchPaths": "Пути поиска VST2",
+      "vst3SearchPaths": "Пути поиска VST3",
+      "noVst2Paths": "Пути VST2 не настроены",
+      "noVst3Paths": "Пути VST3 не настроены",
+      "done": "Готово"
+    },
+    "command": {
+      "title": "Палитра команд",
+      "description": "Поиск команд приложения",
+      "inputAria": "Поиск команд",
+      "searchPlaceholder": "Введите команду или ищите... (Ctrl+K)",
+      "noResults": "Команды не найдены.",
+      "switchToLight": "Переключить на светлую тему",
+      "switchToDark": "Переключить на тёмную тему"
     },
     "settings": {
       "title": "Настройки",

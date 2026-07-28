@@ -87,7 +87,7 @@ bun run format # eslint --fix (eslint-stylistic replaces Prettier)
 bun run typecheck # tsc --noEmit, zero errors
 bunx fallow # zero issues
 bunx react-doctor # UI health
-bunx @shadscan/cli --no-interactive # shadcn UI audit
+rtk bunx @shadscan/cli --no-interactive # shadcn UI audit
 ```
 
 ### Backend (fmt → clippy → check)

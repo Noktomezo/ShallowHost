@@ -1,12 +1,12 @@
 import type { DownloadProgress, UpdateInfo } from '@/shared/lib/updater'
 import { openUrl } from '@tauri-apps/plugin-opener'
 import { Download, ExternalLink, X } from 'lucide-react'
-import React, { useState } from 'react'
+import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { toast } from 'sonner'
 import { applyUpdateAndRelaunch } from '@/shared/lib/updater'
 import { cn } from '@/shared/lib/utils'
-import { buttonVariants } from '@/shared/ui/button-variants'
+import { Button } from '@/shared/ui/button'
 
 const TOAST_ID = 'shallow-update'
 let toastVisible = false
@@ -24,23 +24,6 @@ type UpdateState
   = | { kind: 'available' }
     | { kind: 'progress', progress: DownloadProgress }
     | { kind: 'error', message: string }
-
-function UpdateButton({
-  variant = 'default',
-  size = 'sm',
-  className,
-  ...props
-}: React.ButtonHTMLAttributes<HTMLButtonElement> & {
-  variant?: 'default' | 'outline' | 'ghost' | 'secondary' | 'destructive'
-  size?: 'default' | 'sm' | 'xs' | 'lg'
-}) {
-  return React.createElement('button', {
-    'type': 'button',
-    'data-slot': 'button',
-    'className': cn(buttonVariants({ variant, size }), 'cursor-pointer', className),
-    ...props,
-  })
-}
 
 function UpdateToastView({ info }: { info: UpdateInfo }) {
   const { t } = useTranslation()
@@ -90,9 +73,9 @@ function UpdateToastView({ info }: { info: UpdateInfo }) {
         </div>
         {isError && (
           <div className="flex justify-start gap-2 pt-7">
-            <UpdateButton variant="outline" onClick={dismissUpdateToast}>
+            <Button variant="outline" size="sm" onClick={dismissUpdateToast}>
               {t('update.close')}
-            </UpdateButton>
+            </Button>
           </div>
         )}
       </div>
@@ -111,21 +94,21 @@ function UpdateToastView({ info }: { info: UpdateInfo }) {
         <button
           type="button"
           onClick={() => openUrl(info.releaseUrl!)}
-          className="inline-flex w-fit items-center gap-1 text-xs text-primary hover:underline"
+          className="inline-flex w-fit items-center gap-1 text-xs text-primary hover:underline cursor-pointer"
         >
           {t('update.viewRelease')}
           <ExternalLink className="size-3" />
         </button>
       )}
       <div className="flex gap-2 pt-1">
-        <UpdateButton variant="default" className="flex-1" onClick={handleUpdate}>
+        <Button variant="default" size="sm" className="flex-1 cursor-pointer" onClick={handleUpdate}>
           <Download className="size-3.5" />
           {t('update.update')}
-        </UpdateButton>
-        <UpdateButton variant="outline" onClick={dismissUpdateToast}>
+        </Button>
+        <Button variant="outline" size="sm" className="cursor-pointer" onClick={dismissUpdateToast}>
           <X className="size-3.5" />
           {t('update.notNow')}
-        </UpdateButton>
+        </Button>
       </div>
     </div>
   )

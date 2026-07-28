@@ -13,9 +13,75 @@ interface ScanPathsDialogProps {
   removeVst2Path: (p: string) => void
   addVst3Path: (p: string) => void
   removeVst3Path: (p: string) => void
-  resetVst2Paths: () => void
-  resetVst3Paths: () => void
+  onReset: () => void
   setError: (err: string | null) => void
+}
+
+interface PathListSectionProps {
+  title: string
+  emptyText: string
+  paths: string[]
+  onAdd: (path: string) => void
+  onRemove: (path: string) => void
+  setError: (err: string | null) => void
+}
+
+function PathListSection({
+  title,
+  emptyText,
+  paths,
+  onAdd,
+  onRemove,
+  setError,
+}: PathListSectionProps) {
+  const { t } = useTranslation()
+  return (
+    <div className="flex flex-col gap-2">
+      <div className="flex items-center justify-between">
+        <span className="text-sm font-semibold">{title}</span>
+        <Button
+          variant="outline"
+          size="sm"
+          onClick={async () => {
+            try {
+              const path = await invoke<string | null>('select_directory')
+              if (path)
+                onAdd(path)
+            }
+            catch (e) {
+              setError(String(e))
+            }
+          }}
+          className="h-8 gap-1"
+        >
+          <Plus className="size-3.5" data-icon="inline-start" />
+          {t('plugins.addFolder')}
+        </Button>
+      </div>
+      <div className="rounded-md border border-border bg-muted/20 p-2 flex flex-col gap-1.5 max-h-[140px] overflow-y-auto">
+        {paths.length === 0
+          ? (
+              <p className="text-xs text-muted-foreground py-1 text-center">{emptyText}</p>
+            )
+          : (
+              paths.map(p => (
+                <div key={p} className="flex items-center justify-between gap-2 bg-muted/40 p-1.5 rounded text-xs select-text">
+                  <span className="truncate flex-1 font-mono">{p}</span>
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    aria-label={t('plugins.remove')}
+                    onClick={() => onRemove(p)}
+                    className="size-6 text-muted-foreground hover:text-destructive hover:bg-destructive/10"
+                  >
+                    <Trash2 className="size-3.5" />
+                  </Button>
+                </div>
+              ))
+            )}
+      </div>
+    </div>
+  )
 }
 
 export function ScanPathsDialog({
@@ -27,8 +93,7 @@ export function ScanPathsDialog({
   removeVst2Path,
   addVst3Path,
   removeVst3Path,
-  resetVst2Paths,
-  resetVst3Paths,
+  onReset,
   setError,
 }: ScanPathsDialogProps) {
   const { t } = useTranslation()
@@ -40,115 +105,35 @@ export function ScanPathsDialog({
         <DialogDescription>{t('plugins.scanPathsDescription')}</DialogDescription>
 
         <div className="flex flex-col gap-4 py-2">
-          {/* VST2 Section */}
-          <div className="flex flex-col gap-2">
-            <div className="flex items-center justify-between">
-              <span className="text-sm font-semibold">VST2 Search Paths</span>
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={async () => {
-                  try {
-                    const path = await invoke<string | null>('select_directory')
-                    if (path)
-                      addVst2Path(path)
-                  }
-                  catch (e) {
-                    setError(String(e))
-                  }
-                }}
-                className="h-8 gap-1"
-              >
-                <Plus className="size-3.5" data-icon="inline-start" />
-                {t('plugins.addFolder')}
-              </Button>
-            </div>
-            <div className="rounded-md border border-border bg-muted/20 p-2 flex flex-col gap-1.5 max-h-[140px] overflow-y-auto">
-              {vst2Paths.length === 0
-                ? (
-                    <p className="text-xs text-muted-foreground py-1 text-center">No VST2 paths configured</p>
-                  )
-                : (
-                    vst2Paths.map(p => (
-                      <div key={p} className="flex items-center justify-between gap-2 bg-muted/40 p-1.5 rounded text-xs select-text">
-                        <span className="truncate flex-1 font-mono">{p}</span>
-                        <Button
-                          variant="ghost"
-                          size="icon"
-                          aria-label={t('plugins.remove')}
-                          onClick={() => removeVst2Path(p)}
-                          className="size-6 text-muted-foreground hover:text-destructive hover:bg-destructive/10"
-                        >
-                          <Trash2 className="size-3.5" />
-                        </Button>
-                      </div>
-                    ))
-                  )}
-            </div>
-          </div>
-
-          {/* VST3 Section */}
-          <div className="flex flex-col gap-2">
-            <div className="flex items-center justify-between">
-              <span className="text-sm font-semibold">VST3 Search Paths</span>
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={async () => {
-                  try {
-                    const path = await invoke<string | null>('select_directory')
-                    if (path)
-                      addVst3Path(path)
-                  }
-                  catch (e) {
-                    setError(String(e))
-                  }
-                }}
-                className="h-8 gap-1"
-              >
-                <Plus className="size-3.5" data-icon="inline-start" />
-                {t('plugins.addFolder')}
-              </Button>
-            </div>
-            <div className="rounded-md border border-border bg-muted/20 p-2 flex flex-col gap-1.5 max-h-[140px] overflow-y-auto">
-              {vst3Paths.length === 0
-                ? (
-                    <p className="text-xs text-muted-foreground py-1 text-center">No VST3 paths configured</p>
-                  )
-                : (
-                    vst3Paths.map(p => (
-                      <div key={p} className="flex items-center justify-between gap-2 bg-muted/40 p-1.5 rounded text-xs select-text">
-                        <span className="truncate flex-1 font-mono">{p}</span>
-                        <Button
-                          variant="ghost"
-                          size="icon"
-                          aria-label={t('plugins.remove')}
-                          onClick={() => removeVst3Path(p)}
-                          className="size-6 text-muted-foreground hover:text-destructive hover:bg-destructive/10"
-                        >
-                          <Trash2 className="size-3.5" />
-                        </Button>
-                      </div>
-                    ))
-                  )}
-            </div>
-          </div>
+          <PathListSection
+            title={t('plugins.vst2SearchPaths')}
+            emptyText={t('plugins.noVst2Paths')}
+            paths={vst2Paths}
+            onAdd={addVst2Path}
+            onRemove={removeVst2Path}
+            setError={setError}
+          />
+          <PathListSection
+            title={t('plugins.vst3SearchPaths')}
+            emptyText={t('plugins.noVst3Paths')}
+            paths={vst3Paths}
+            onAdd={addVst3Path}
+            onRemove={removeVst3Path}
+            setError={setError}
+          />
         </div>
 
         <div className="flex justify-between items-center pt-2 border-t border-border">
           <Button
             variant="ghost"
-            onClick={() => {
-              resetVst2Paths()
-              resetVst3Paths()
-            }}
+            onClick={onReset}
             className="text-sm text-muted-foreground hover:text-foreground gap-1"
           >
             <RotateCcw className="size-4" data-icon="inline-start" />
-            Reset to Defaults
+            {t('plugins.resetDefaults')}
           </Button>
           <Button onClick={() => onOpenChange(false)}>
-            Done
+            {t('plugins.done')}
           </Button>
         </div>
       </DialogContent>

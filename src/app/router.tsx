@@ -43,14 +43,14 @@ function RootLayout() {
             <div className="md:hidden flex items-center justify-between border-b border-border p-2 bg-sidebar">
               <button
                 type="button"
-                aria-label="Toggle mobile navigation"
+                aria-label={t('titlebar.toggleMobileNav')}
                 aria-expanded={mobileNavOpen}
                 aria-controls="mobile-navigation-panel"
                 className="flex items-center gap-2 rounded-md px-3 py-1.5 text-xs font-medium bg-muted hover:bg-muted/80 cursor-pointer"
                 onClick={() => setMobileNavOpen(!mobileNavOpen)}
               >
                 {mobileNavOpen ? <X className="size-4" /> : <Menu className="size-4" />}
-                <span>Navigation</span>
+                <span>{t('titlebar.navigation')}</span>
               </button>
             </div>
             {mobileNavOpen && (
@@ -58,7 +58,7 @@ function RootLayout() {
                 id="mobile-navigation-panel"
                 className="md:hidden absolute inset-0 z-50 bg-background/95 backdrop-blur-sm p-4 flex flex-col gap-4 animate-in fade-in"
               >
-                <nav aria-label="Mobile navigation" className="flex flex-col gap-2">
+                <nav aria-label={t('titlebar.mobileNav')} className="flex flex-col gap-2">
                   <Link
                     to="/"
                     onClick={() => setMobileNavOpen(false)}

@@ -158,8 +158,7 @@ export function PluginsPage() {
         removeVst2Path={removeVst2Path}
         addVst3Path={addVst3Path}
         removeVst3Path={removeVst3Path}
-        resetVst2Paths={resetPaths}
-        resetVst3Paths={() => {}}
+        onReset={resetPaths}
         setError={setError}
       />
     </div>

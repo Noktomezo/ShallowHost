@@ -16,7 +16,6 @@ function ScrollArea({
       return
 
     const observer = new ResizeObserver(() => {
-      viewport.dispatchEvent(new CustomEvent('scroll'))
       viewport.dispatchEvent(new Event('scroll'))
     })
 

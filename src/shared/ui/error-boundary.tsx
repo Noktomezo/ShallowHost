@@ -1,3 +1,4 @@
+import i18next from 'i18next'
 import React from 'react'
 
 interface Props {
@@ -36,18 +37,18 @@ export class ErrorBoundary extends React.Component<Props, State> {
       return (
         <div role="alert" className="flex h-screen w-screen flex-col items-center justify-center gap-4 bg-background p-6 text-foreground">
           <div className="flex flex-col items-center gap-2 text-center">
-            <h1 className="text-xl font-bold">Something went wrong</h1>
+            <h1 className="text-xl font-bold">{i18next.t('common.errorTitle')}</h1>
             <p className="text-sm text-muted-foreground">
-              {this.state.error?.message || 'An unexpected error occurred.'}
+              {this.state.error?.message || i18next.t('common.unexpectedError')}
             </p>
           </div>
           <button
             type="button"
-            aria-label="Try again and recover application"
+            aria-label={i18next.t('common.tryAgainAria')}
             className="rounded-md bg-primary px-4 py-2 text-sm font-medium text-primary-foreground hover:bg-primary/90 cursor-pointer"
             onClick={this.reset}
           >
-            Try Again
+            {i18next.t('common.tryAgain')}
           </button>
         </div>
       )

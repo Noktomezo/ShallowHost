@@ -29,7 +29,9 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
 
-      - uses: TheOrcDev/shadscan@main
+      - uses: TheOrcDev/shadscan@d7a315357876a4df146d9c6e3b5e408ecbbef8f2
         with:
           fail-under: '90'
