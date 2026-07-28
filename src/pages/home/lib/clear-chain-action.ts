@@ -24,8 +24,10 @@ export async function clearChainWithUndo(t: (key: string, options?: any) => stri
       action: {
         label: t('home.undo'),
         onClick: async () => {
-          for (const item of previousChain) {
-            if (item.unique_id) {
+          await Promise.all(
+            previousChain.map(async (item) => {
+              if (!item.unique_id)
+                return
               try {
                 const restored = await useChainStore.getState().addPluginAsync({
                   unique_id: item.unique_id,
@@ -41,8 +43,8 @@ export async function clearChainWithUndo(t: (key: string, options?: any) => stri
               catch (e) {
                 console.error(e)
               }
-            }
-          }
+            }),
+          )
         },
       },
     })
