@@ -2,18 +2,41 @@ import { useEffect, useRef, useState } from 'react'
 import { cn } from '@/shared/lib/utils'
 
 interface VolumeMeterProps {
-  level: number // 0.0 to 1.0+
+  level: number // linear peak amplitude (0.0 to 1.0+)
   className?: string
 }
 
-const THRESHOLDS = [0.05, 0.22, 0.38, 0.52, 0.65, 0.80, 0.92]
+// Logarithmic dBFS thresholds mapped to normalized 0..1 scale [-60 dBFS to 0 dBFS]:
+// Dot 1: > -60 dBFS (0.01) -> Green
+// Dot 2: > -48 dBFS (0.20) -> Green
+// Dot 3: > -36 dBFS (0.40) -> Green
+// Dot 4: > -24 dBFS (0.60) -> Green
+// Dot 5: > -18 dBFS (0.70) -> Green
+// Dot 6: > -12 dBFS (0.80) -> Yellow/Amber (-12 dBFS to -6 dBFS)
+// Dot 7: > -6 dBFS  (0.90) -> Red (-6 dBFS to 0 dBFS)
+// Dot 8: >= 0 dBFS Peak Hold -> Red Peak Hold LED (0 dBFS peak / clipping)
+const THRESHOLDS = [0.01, 0.20, 0.40, 0.60, 0.70, 0.80, 0.90]
 const TOTAL_DOTS = 8
 
+function rawToDbFS(rawLevel: number): number {
+  if (rawLevel <= 0.00001)
+    return -100
+  return 20 * Math.log10(rawLevel)
+}
+
 function scaleLevel(rawLevel: number): number {
-  if (rawLevel <= 0.005)
+  if (rawLevel <= 0.001)
     return 0
-  // Power scaling (x^0.35) maps linear peak to perceived VU soundcard scale
-  return Math.min(1, Math.max(0, rawLevel ** 0.35))
+  const db = rawToDbFS(rawLevel)
+  const normalized = (db + 60) / 60
+  return Math.min(1, Math.max(0, normalized))
+}
+
+function formatDbTooltip(rawLevel: number): string {
+  if (rawLevel <= 0.001)
+    return 'Audio level: < -60 dBFS'
+  const db = Math.round(rawToDbFS(rawLevel))
+  return `Audio level: ${db >= 0 ? `+${db}` : db} dBFS`
 }
 
 export function VolumeMeter({ level, className }: VolumeMeterProps) {
@@ -26,7 +49,7 @@ export function VolumeMeter({ level, className }: VolumeMeterProps) {
     const target = scaleLevel(level)
     targetRef.current = target
 
-    if (target >= THRESHOLDS[6]) {
+    if (level >= 0.99 || target >= THRESHOLDS[6]) {
       setPeakHold(true)
       if (peakTimerRef.current) {
         clearTimeout(peakTimerRef.current)
@@ -60,7 +83,7 @@ export function VolumeMeter({ level, className }: VolumeMeterProps) {
   return (
     <div
       className={cn('flex flex-row items-center gap-1 shrink-0 select-none', className)}
-      title={`Audio level: ${Math.round(Math.min(level, 1) * 100)}%`}
+      title={formatDbTooltip(level)}
     >
       {Array.from({ length: TOTAL_DOTS }).map((_, idx) => {
         let isActive = false
@@ -70,7 +93,7 @@ export function VolumeMeter({ level, className }: VolumeMeterProps) {
           isActive = displayLevel >= THRESHOLDS[idx]
         }
         else {
-          // 8th dot: Peak Hold red LED (stays lit for 2s after clipping)
+          // 8th dot: Peak Hold red LED (stays lit for 2s after clipping/peak)
           isActive = peakHold
         }
 
