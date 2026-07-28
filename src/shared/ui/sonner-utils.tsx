@@ -82,7 +82,7 @@ function UpdateToastView({ info }: { info: UpdateInfo }) {
     )
   }
 
-  const releaseUrl = info.releaseUrl || `https://github.com/Noktomezo/ShallowHost/releases/tag/v${info.version}`
+  const releaseUrl = info.releaseUrl || 'https://github.com/Noktomezo/ShallowHost/releases/latest'
 
   return (
     <div className="flex w-80 flex-col gap-2 p-4">
