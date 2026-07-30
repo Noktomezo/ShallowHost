@@ -95,6 +95,14 @@ int ShallowHost::audioStartOnMessageThread(const char* driver, const char* input
         return 1;
     }
 
+    if (typeName == "ASIO")
+    {
+        if (inputName.isNotEmpty() && outputName.isEmpty())
+            outputName = inputName;
+        else if (outputName.isNotEmpty() && inputName.isEmpty())
+            inputName = outputName;
+    }
+
     juce::AudioDeviceManager::AudioDeviceSetup setup;
     setup.inputDeviceName = isNoneInput ? juce::String() : inputName;
     setup.outputDeviceName = isNoneOutput ? juce::String() : outputName;
@@ -302,18 +310,6 @@ std::string ShallowHost::getAudioDevicesJson(const char* driver, const char* dev
                         for (int i = 0; i < outNames.size(); ++i)
                             outputChannelNamesArray.add(outNames[i]);
                     }
-                }
-
-                if (inputChannelNamesArray.size() == 0)
-                {
-                    for (int i = 1; i <= 8; ++i)
-                        inputChannelNamesArray.add("Input " + juce::String(i));
-                }
-
-                if (outputChannelNamesArray.size() == 0)
-                {
-                    for (int i = 1; i <= 8; ++i)
-                        outputChannelNamesArray.add("Output " + juce::String(i));
                 }
             }
         }
