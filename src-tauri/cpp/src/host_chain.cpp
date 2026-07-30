@@ -188,7 +188,28 @@ std::string ShallowHost::addToChain(const std::string& uniqueId)
 std::string ShallowHost::addToChainOnMessageThread(const std::string& uniqueId, const std::string& base64State, bool bypassed)
 {
     pumpMessageLoop();
-    auto desc = knownPluginList.getTypeForIdentifierString(juce::String(uniqueId));
+    juce::String idStr(uniqueId);
+    std::unique_ptr<juce::PluginDescription> customDesc;
+    const juce::PluginDescription* desc = nullptr;
+
+    for (int i = 0; i < knownPluginList.getNumTypes(); ++i)
+    {
+        if (auto* d = knownPluginList.getType(i))
+        {
+            if (d->createIdentifierString() == idStr)
+            {
+                desc = d;
+                break;
+            }
+        }
+    }
+
+    if (desc == nullptr)
+    {
+        customDesc = knownPluginList.getTypeForIdentifierString(idStr);
+        desc = customDesc.get();
+    }
+
     if (desc == nullptr)
     {
         std::cerr << "[sh] plugin desc not found for identifier: " << uniqueId << std::endl;
