@@ -26,7 +26,7 @@ else()
     set(JUCE_MODULES_DIR "${juce_SOURCE_DIR}/modules")
 endif()
 
-add_library(engine SHARED
+add_library(engine STATIC
     src/host.cpp
     src/host_audio.cpp
     src/host_chain.cpp
@@ -35,7 +35,6 @@ add_library(engine SHARED
 )
 
 target_compile_definitions(engine PRIVATE
-    SHALLOW_HOST_DLL_BUILD=1
     JUCE_PLUGINHOST_VST3=1
     JUCE_WASAPI=1
     JUCE_ASIO=1

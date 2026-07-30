@@ -1,4 +1,3 @@
-use std::path::PathBuf;
 use std::process::Command;
 
 fn main() {
@@ -55,8 +54,7 @@ fn main() {
         panic!("CMake build failed");
     }
 
-    // Direct Cargo to search for and link the import library
-    let out_dir = PathBuf::from(std::env::var("OUT_DIR").unwrap());
+    // Direct Cargo to search for and link the static library
     let build_output_dir = std::env::current_dir()
         .unwrap()
         .join("cpp")
@@ -67,38 +65,12 @@ fn main() {
         "cargo:rustc-link-search=native={}",
         build_output_dir.display()
     );
-    println!("cargo:rustc-link-lib=dylib=engine");
+    println!("cargo:rustc-link-lib=static=engine");
 
-    // Copy DLL to OUT_DIR and target dir so it is available at runtime/linking
-    let dll_name = "engine.dll";
-    let src_dll = build_output_dir.join(dll_name);
-
-    // Copy to OUT_DIR
-    if src_dll.exists() {
-        let dest_dll_out = out_dir.join(dll_name);
-        if let Err(e) = std::fs::copy(&src_dll, &dest_dll_out) {
-            println!("cargo:warning=Failed to copy DLL to OUT_DIR: {e}");
-        }
-
-        // Copy to target directory (parent of OUT_DIR target/profile/build/shallow-host-xxxx/out)
-        if let Some(target_dir) = out_dir.ancestors().nth(3) {
-            let dest_dll_target = target_dir.join(dll_name);
-            if let Err(e) = std::fs::copy(&src_dll, &dest_dll_target) {
-                println!("cargo:warning=Failed to copy DLL to target dir: {e}. If the app is running, close it first.");
-            }
-
-            // Also copy to target/profile/deps
-            let dest_dll_deps = target_dir.join("deps").join(dll_name);
-            if let Err(e) = std::fs::copy(&src_dll, &dest_dll_deps) {
-                println!("cargo:warning=Failed to copy DLL to deps: {e}");
-            }
-        }
-
-        // Copy to src-tauri root so the Tauri bundler can find it as a resource
-        let dest_dll_root = std::env::current_dir().unwrap().join(dll_name);
-        if let Err(e) = std::fs::copy(&src_dll, &dest_dll_root) {
-            println!("cargo:warning=Failed to copy DLL to src-tauri root: {e}");
-        }
+    // Remove obsolete engine.dll in src-tauri root if present
+    let root_dll = std::env::current_dir().unwrap().join("engine.dll");
+    if root_dll.exists() {
+        let _ = std::fs::remove_file(root_dll);
     }
 
     tauri_build::build();

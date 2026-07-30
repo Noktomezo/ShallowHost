@@ -45,9 +45,7 @@
       "icons/icon.icns",
       "icons/icon.ico"
     ],
-    "resources": [
-      "engine.dll"
-    ],
+    "resources": [],
     "windows": {
       "nsis": {
         "installerIcon": "icons/icon.ico",
