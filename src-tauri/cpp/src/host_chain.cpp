@@ -187,6 +187,9 @@ std::string ShallowHost::addToChain(const std::string& uniqueId)
 
 std::string ShallowHost::addToChainOnMessageThread(const std::string& uniqueId, const std::string& base64State, bool bypassed)
 {
+#if defined(_WIN32)
+    CoInitializeEx(nullptr, COINIT_MULTITHREADED);
+#endif
     pumpMessageLoop();
     juce::String idStr(uniqueId);
     std::unique_ptr<juce::PluginDescription> customDesc;
@@ -200,6 +203,21 @@ std::string ShallowHost::addToChainOnMessageThread(const std::string& uniqueId, 
             {
                 desc = d;
                 break;
+            }
+        }
+    }
+
+    if (desc == nullptr)
+    {
+        for (int i = 0; i < knownPluginList.getNumTypes(); ++i)
+        {
+            if (auto* d = knownPluginList.getType(i))
+            {
+                if (!d->name.isEmpty() && idStr.containsIgnoreCase(d->name))
+                {
+                    desc = d;
+                    break;
+                }
             }
         }
     }
