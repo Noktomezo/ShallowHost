@@ -1,11 +1,7 @@
 #pragma once
 
-#if defined(_WIN32)
-  #if defined(SHALLOW_HOST_DLL_BUILD)
-    #define SHALLOW_HOST_API __declspec(dllexport)
-  #else
-    #define SHALLOW_HOST_API __declspec(dllimport)
-  #endif
+#if defined(_WIN32) && defined(SHALLOW_HOST_DLL_BUILD)
+  #define SHALLOW_HOST_API __declspec(dllexport)
 #else
   #define SHALLOW_HOST_API
 #endif
