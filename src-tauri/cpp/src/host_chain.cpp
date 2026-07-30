@@ -1,6 +1,10 @@
 #include "host.h"
 #include <algorithm>
+#include <future>
 #include <iostream>
+#include <mutex>
+#include <thread>
+#include <vector>
 
 std::string ShallowHost::scanPluginsJson(const std::string& vst2PathsJson, const std::string& vst3PathsJson)
 {
@@ -38,7 +42,12 @@ std::string ShallowHost::scanPluginsJson(const std::string& vst2PathsJson, const
         }
     }
 
-    juce::KnownPluginList tempKnownList;
+    struct ScanTask {
+        juce::AudioPluginFormat* format;
+        juce::File file;
+    };
+    std::vector<ScanTask> tasks;
+
     for (int fmtIdx = 0; fmtIdx < formatManager.getNumFormats(); ++fmtIdx)
     {
         auto* fmt = formatManager.getFormat(fmtIdx);
@@ -47,16 +56,58 @@ std::string ShallowHost::scanPluginsJson(const std::string& vst2PathsJson, const
         juce::FileSearchPath searchPath = (fmt->getName() == "VST3") ? vst3Path : vst2Path;
         if (searchPath.getNumPaths() == 0) continue;
 
-        juce::PluginDirectoryScanner scanner(
-            tempKnownList,
-            *fmt,
-            searchPath,
-            true,
-            juce::File()
-        );
+        juce::Array<juce::File> foundFiles;
+        searchPath.findChildFiles(foundFiles, juce::File::findFilesAndDirectories, true);
 
-        juce::String name;
-        while (scanner.scanNextFile(true, name)) {}
+        for (const auto& file : foundFiles)
+        {
+            if (fmt->fileMightContainThisPluginType(file.getFullPathName()))
+            {
+                tasks.push_back({ fmt, file });
+            }
+        }
+    }
+
+    juce::KnownPluginList tempKnownList;
+    std::mutex listMutex;
+
+    unsigned int numThreads = std::max(1u, std::thread::hardware_concurrency());
+    size_t totalTasks = tasks.size();
+    size_t chunkSize = (totalTasks + numThreads - 1) / numThreads;
+
+    std::vector<std::future<void>> futures;
+
+    for (unsigned int t = 0; t < numThreads; ++t)
+    {
+        size_t start = t * chunkSize;
+        size_t end = std::min(start + chunkSize, totalTasks);
+        if (start >= totalTasks) break;
+
+        futures.push_back(std::async(std::launch::async, [this, &tasks, start, end, &tempKnownList, &listMutex]() {
+            for (size_t i = start; i < end; ++i)
+            {
+                const auto& task = tasks[i];
+                juce::OwnedArray<juce::PluginDescription> results;
+                task.format->findAllTypesForFile(results, task.file.getFullPathName());
+
+                if (!results.isEmpty())
+                {
+                    std::lock_guard<std::mutex> lock(listMutex);
+                    for (auto* desc : results)
+                    {
+                        if (desc != nullptr)
+                        {
+                            tempKnownList.addType(*desc);
+                        }
+                    }
+                }
+            }
+        }));
+    }
+
+    for (auto& f : futures)
+    {
+        f.get();
     }
 
     struct Params {
