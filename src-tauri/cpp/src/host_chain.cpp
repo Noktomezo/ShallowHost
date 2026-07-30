@@ -131,9 +131,12 @@ std::string ShallowHost::scanPluginsJson(const std::string& vst2PathsJson, const
 
     juce::MessageManager::getInstance()->callFunctionOnMessageThread([](void* p) -> void* {
         auto* ps = static_cast<Params*>(p);
-        for (auto& desc : ps->tempKnownList->getTypes())
+        if (ps->tempKnownList->getNumTypes() > 0)
         {
-            ps->host->knownPluginList.addType(desc);
+            for (auto& desc : ps->tempKnownList->getTypes())
+            {
+                ps->host->knownPluginList.addType(desc);
+            }
         }
         for (int i = ps->host->knownPluginList.getNumTypes() - 1; i >= 0; --i)
         {

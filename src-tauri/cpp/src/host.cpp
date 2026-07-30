@@ -11,6 +11,7 @@
 #define WIN32_LEAN_AND_MEAN
 #endif
 #include <windows.h>
+#include <objbase.h>
 #endif
 
 namespace {
@@ -232,6 +233,35 @@ void ShallowHost::pumpMessageLoop()
 void ShallowHost::setAppDataDirectory(const std::string& path)
 {
     appDataDir = juce::File(juce::String(path));
+    if (!appDataDir.exists())
+    {
+        appDataDir.createDirectory();
+    }
+
+#if defined(_WIN32)
+    juce::File sysWmic("C:\\Windows\\System32\\wbem\\WMIC.exe");
+    if (!sysWmic.exists())
+    {
+        juce::File dummyBat = appDataDir.getChildFile("wmic.bat");
+        if (!dummyBat.exists())
+        {
+            dummyBat.replaceWithText("@echo off\r\necho UUID=00000000-0000-0000-0000-000000000000\r\nexit /b 0\r\n");
+        }
+        juce::File dummyCmd = appDataDir.getChildFile("wmic.cmd");
+        if (!dummyCmd.exists())
+        {
+            dummyBat.copyFileTo(dummyCmd);
+        }
+
+        juce::String currentPath = juce::SystemStats::getEnvironmentVariable("PATH", "");
+        if (!currentPath.containsIgnoreCase(appDataDir.getFullPathName()))
+        {
+            juce::String newPath = appDataDir.getFullPathName() + ";" + currentPath;
+            SetEnvironmentVariableA("PATH", newPath.toRawUTF8());
+        }
+    }
+#endif
+
     loadKnownPlugins();
 }
 
@@ -269,6 +299,9 @@ void ShallowHost::initialize()
     auto initFuture = initPromise.get_future();
 
     g_juceThread = new std::thread([p = std::move(initPromise)]() mutable {
+#if defined(_WIN32)
+        CoInitializeEx(nullptr, COINIT_MULTITHREADED);
+#endif
         juce::ScopedJuceInitialiser_GUI guiInit;
         auto* mm = juce::MessageManager::getInstance();
         p.set_value();
@@ -276,6 +309,9 @@ void ShallowHost::initialize()
         {
             mm->runDispatchLoopUntil(20);
         }
+#if defined(_WIN32)
+        CoUninitialize();
+#endif
     });
 
     initFuture.wait();
