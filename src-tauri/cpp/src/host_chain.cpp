@@ -6,6 +6,13 @@
 #include <thread>
 #include <vector>
 
+#if defined(_WIN32)
+#ifndef NOMINMAX
+#define NOMINMAX
+#endif
+#include <objbase.h>
+#endif
+
 std::string ShallowHost::scanPluginsJson(const std::string& vst2PathsJson, const std::string& vst3PathsJson)
 {
     juce::FileSearchPath vst2Path;
@@ -71,7 +78,7 @@ std::string ShallowHost::scanPluginsJson(const std::string& vst2PathsJson, const
     juce::KnownPluginList tempKnownList;
     std::mutex listMutex;
 
-    unsigned int numThreads = std::max(1u, std::thread::hardware_concurrency());
+    unsigned int numThreads = (std::max)(1u, std::thread::hardware_concurrency());
     size_t totalTasks = tasks.size();
     size_t chunkSize = (totalTasks + numThreads - 1) / numThreads;
 
@@ -80,10 +87,13 @@ std::string ShallowHost::scanPluginsJson(const std::string& vst2PathsJson, const
     for (unsigned int t = 0; t < numThreads; ++t)
     {
         size_t start = t * chunkSize;
-        size_t end = std::min(start + chunkSize, totalTasks);
+        size_t end = (std::min)(start + chunkSize, totalTasks);
         if (start >= totalTasks) break;
 
         futures.push_back(std::async(std::launch::async, [this, &tasks, start, end, &tempKnownList, &listMutex]() {
+#if defined(_WIN32)
+            CoInitializeEx(nullptr, COINIT_MULTITHREADED);
+#endif
             for (size_t i = start; i < end; ++i)
             {
                 const auto& task = tasks[i];
@@ -102,6 +112,9 @@ std::string ShallowHost::scanPluginsJson(const std::string& vst2PathsJson, const
                     }
                 }
             }
+#if defined(_WIN32)
+            CoUninitialize();
+#endif
         }));
     }
 
