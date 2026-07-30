@@ -291,7 +291,7 @@ std::string ShallowHost::getAudioDevicesJson(const char* driver, const char* dev
 
                 if (!gotChannels)
                 {
-                    std::unique_ptr<juce::AudioIODevice> tempDevice (typeObject->createDevice (activeDeviceName, activeDeviceName));
+                    std::unique_ptr<juce::AudioIODevice> tempDevice(typeObject->createDevice(activeDeviceName, activeDeviceName));
                     if (tempDevice != nullptr)
                     {
                         auto inNames = tempDevice->getInputChannelNames();
@@ -302,6 +302,18 @@ std::string ShallowHost::getAudioDevicesJson(const char* driver, const char* dev
                         for (int i = 0; i < outNames.size(); ++i)
                             outputChannelNamesArray.add(outNames[i]);
                     }
+                }
+
+                if (inputChannelNamesArray.size() == 0)
+                {
+                    for (int i = 1; i <= 8; ++i)
+                        inputChannelNamesArray.add("Input " + juce::String(i));
+                }
+
+                if (outputChannelNamesArray.size() == 0)
+                {
+                    for (int i = 1; i <= 8; ++i)
+                        outputChannelNamesArray.add("Output " + juce::String(i));
                 }
             }
         }

@@ -242,15 +242,16 @@ void ShallowHost::setAppDataDirectory(const std::string& path)
     juce::File sysWmic("C:\\Windows\\System32\\wbem\\WMIC.exe");
     if (!sysWmic.exists())
     {
-        juce::File dummyBat = appDataDir.getChildFile("wmic.bat");
-        if (!dummyBat.exists())
+        juce::File dummyExe = appDataDir.getChildFile("wmic.exe");
+        if (!dummyExe.exists())
         {
-            dummyBat.replaceWithText("@echo off\r\necho UUID=00000000-0000-0000-0000-000000000000\r\nexit /b 0\r\n");
-        }
-        juce::File dummyCmd = appDataDir.getChildFile("wmic.cmd");
-        if (!dummyCmd.exists())
-        {
-            dummyBat.copyFileTo(dummyCmd);
+            juce::File sysExe("C:\\Windows\\System32\\whoami.exe");
+            if (!sysExe.exists()) sysExe = juce::File("C:\\Windows\\System32\\where.exe");
+            if (!sysExe.exists()) sysExe = juce::File("C:\\Windows\\System32\\cmd.exe");
+            if (sysExe.exists())
+            {
+                sysExe.copyFileTo(dummyExe);
+            }
         }
 
         juce::String currentPath = juce::SystemStats::getEnvironmentVariable("PATH", "");

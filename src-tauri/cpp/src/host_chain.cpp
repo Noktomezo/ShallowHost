@@ -156,7 +156,7 @@ std::string ShallowHost::scanPluginsJson(const std::string& vst2PathsJson, const
             obj->setProperty("version", desc.version);
             obj->setProperty("category", desc.category);
             obj->setProperty("path", desc.fileOrIdentifier);
-            obj->setProperty("unique_id", desc.createIdentifierString());
+            obj->setProperty("unique_id", desc.createIdentifierString() + "|" + desc.name);
             obj->setProperty("format", desc.pluginFormatName);
             obj->setProperty("has_editor", true);
             obj->setProperty("accepts_midi", desc.isInstrument);
@@ -195,28 +195,20 @@ std::string ShallowHost::addToChainOnMessageThread(const std::string& uniqueId, 
 #endif
     pumpMessageLoop();
     juce::String idStr(uniqueId);
+    juce::String targetName = idStr.contains("|") ? idStr.fromLastOccurrenceOf("|", false, false) : idStr;
+    juce::String baseId = idStr.contains("|") ? idStr.upToLastOccurrenceOf("|", false, false) : idStr;
+
     std::unique_ptr<juce::PluginDescription> customDesc;
     const juce::PluginDescription* desc = nullptr;
 
+    // 1. Exact match by full formatted unique_id (createIdentifierString() + "|" + name)
     for (int i = 0; i < knownPluginList.getNumTypes(); ++i)
     {
         if (auto* d = knownPluginList.getType(i))
         {
-            if (d->createIdentifierString() == idStr)
+            if ((d->createIdentifierString() + "|" + d->name) == idStr || d->createIdentifierString() == baseId)
             {
-                desc = d;
-                break;
-            }
-        }
-    }
-
-    if (desc == nullptr)
-    {
-        for (int i = 0; i < knownPluginList.getNumTypes(); ++i)
-        {
-            if (auto* d = knownPluginList.getType(i))
-            {
-                if (!d->name.isEmpty() && idStr.containsIgnoreCase(d->name))
+                if (targetName.isEmpty() || d->name.equalsIgnoreCase(targetName))
                 {
                     desc = d;
                     break;
@@ -225,9 +217,26 @@ std::string ShallowHost::addToChainOnMessageThread(const std::string& uniqueId, 
         }
     }
 
+    // 2. Exact match by target plugin name
+    if (desc == nullptr && targetName.isNotEmpty())
+    {
+        for (int i = 0; i < knownPluginList.getNumTypes(); ++i)
+        {
+            if (auto* d = knownPluginList.getType(i))
+            {
+                if (d->name.equalsIgnoreCase(targetName))
+                {
+                    desc = d;
+                    break;
+                }
+            }
+        }
+    }
+
+    // 3. Fallback to JUCE default lookup
     if (desc == nullptr)
     {
-        customDesc = knownPluginList.getTypeForIdentifierString(idStr);
+        customDesc = knownPluginList.getTypeForIdentifierString(baseId);
         desc = customDesc.get();
     }
 
