@@ -4,7 +4,7 @@ import { Download, ExternalLink, X } from 'lucide-react'
 import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { toast } from 'sonner'
-import { applyUpdateAndRelaunch } from '@/shared/lib/updater'
+import { applyUpdateAndRelaunch, DEFAULT_RELEASE_URL } from '@/shared/lib/updater'
 import { cn } from '@/shared/lib/utils'
 import { Button } from '@/shared/ui/button'
 
@@ -82,7 +82,7 @@ function UpdateToastView({ info }: { info: UpdateInfo }) {
     )
   }
 
-  const releaseUrl = info.releaseUrl || 'https://github.com/Noktomezo/ShallowHost/releases/latest'
+  const releaseUrl = info.releaseUrl || DEFAULT_RELEASE_URL
 
   return (
     <div className="flex w-80 flex-col gap-2 p-4">

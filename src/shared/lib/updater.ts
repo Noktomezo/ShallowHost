@@ -15,6 +15,8 @@ export interface DownloadProgress {
   percent: number
 }
 
+export const DEFAULT_RELEASE_URL = 'https://github.com/Noktomezo/ShallowHost/releases/latest'
+
 export const updateService = {
   async check() {
     // ponytail: tauri updater has no built-in timeout — flaky network hangs
@@ -32,7 +34,7 @@ export const updateService = {
       releaseUrl: (update.rawJson?.releaseUrl as string | undefined)
         ?? (update.rawJson?.url as string | undefined)
         ?? (update.rawJson?.html_url as string | undefined)
-        ?? 'https://github.com/Noktomezo/ShallowHost/releases/latest',
+        ?? DEFAULT_RELEASE_URL,
     }
   },
   async downloadAndInstall(onProgress: (p: DownloadProgress) => void) {

@@ -86,6 +86,7 @@
       "actions": "Действия",
       "reveal": "Показать в папке",
       "remove": "Удалить",
+      "removePath": "Удалить {{path}}",
       "addToChain": "Добавить в цепочку",
       "goToChain": "Перейти к цепочке",
       "inChain": "В цепочке",

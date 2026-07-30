@@ -70,7 +70,7 @@ function PathListSection({
                   <Button
                     variant="ghost"
                     size="icon"
-                    aria-label={t('plugins.remove')}
+                    aria-label={t('plugins.removePath', { path: p })}
                     onClick={() => onRemove(p)}
                     className="size-6 text-muted-foreground hover:text-destructive hover:bg-destructive/10"
                   >

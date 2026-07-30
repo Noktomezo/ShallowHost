@@ -84,6 +84,7 @@
       "actions": "Actions",
       "reveal": "Reveal in folder",
       "remove": "Remove",
+      "removePath": "Remove {{path}}",
       "addToChain": "Add to chain",
       "goToChain": "Go to chain",
       "inChain": "In chain",

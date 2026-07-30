@@ -20,11 +20,22 @@ export function ThemeProvider({ children, defaultTheme }: ThemeProviderProps) {
   const { theme, setTheme } = useThemeStore()
 
   useEffect(() => {
-    if (defaultTheme && typeof window !== 'undefined') {
-      const persisted = localStorage.getItem('shallowhost-theme')
-      if (!persisted) {
+    if (!defaultTheme)
+      return
+
+    if (useThemeStore.persist.hasHydrated()) {
+      const currentTheme = useThemeStore.getState().theme
+      if (!currentTheme) {
         setTheme(defaultTheme)
       }
+    }
+    else {
+      const unsub = useThemeStore.persist.onFinishHydration((state) => {
+        if (!state?.theme) {
+          setTheme(defaultTheme)
+        }
+      })
+      return () => unsub()
     }
   }, [defaultTheme, setTheme])
 
