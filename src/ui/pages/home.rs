@@ -93,14 +93,24 @@ impl HomePage {
 
     fn audio_card(&self, cx: &App) -> AnyElement {
         let is_asio = self.audio.is_asio(cx);
+        let has_output_device = self.audio.has_output_device(cx);
+        let has_input_device = self.audio.has_input_device(cx);
         let output_control = meter_and_dropdown(
-            self.meter.output_level,
-            self.meter.output_peak,
+            if has_output_device {
+                self.meter.output_level
+            } else {
+                0.0
+            },
+            has_output_device && self.meter.output_peak,
             audio_dropdown("audio-output", &self.audio.output, cx),
         );
         let input_control = meter_and_dropdown(
-            self.meter.input_level,
-            self.meter.input_peak,
+            if has_input_device {
+                self.meter.input_level
+            } else {
+                0.0
+            },
+            has_input_device && self.meter.input_peak,
             audio_dropdown("audio-input", &self.audio.input, cx),
         );
         let mut settings = div().p_4().flex().flex_col().gap_3().child(config_row(
@@ -110,18 +120,19 @@ impl HomePage {
         ));
 
         if is_asio {
-            settings = settings
-                .child(config_row(
-                    "home.device",
-                    "home.deviceDescription",
-                    audio_dropdown("audio-asio-device", &self.audio.output, cx),
-                ))
-                .child(render_asio_channels(
+            settings = settings.child(config_row(
+                "home.device",
+                "home.deviceDescription",
+                audio_dropdown("audio-asio-device", &self.audio.output, cx),
+            ));
+            if has_output_device {
+                settings = settings.child(render_asio_channels(
                     &self.audio,
                     self.meter,
                     self.on_change_audio_routing.clone(),
                     cx,
                 ));
+            }
         } else {
             settings = settings
                 .child(config_row(

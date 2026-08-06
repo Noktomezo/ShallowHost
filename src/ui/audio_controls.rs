@@ -148,6 +148,14 @@ impl AudioControls {
         selected_value(&self.driver, cx).as_deref() == Some("asio")
     }
 
+    pub fn has_output_device(&self, cx: &App) -> bool {
+        selected_device(&self.output, cx).is_some()
+    }
+
+    pub fn has_input_device(&self, cx: &App) -> bool {
+        selected_device(&self.input, cx).is_some()
+    }
+
     pub fn refresh_devices(&self, engine: &Arc<Engine>, cx: &mut App) {
         let driver = selected_value(&self.driver, cx).unwrap_or_else(|| String::from("wasapi"));
         let devices = match engine.audio_devices(&driver, "") {
@@ -177,12 +185,18 @@ impl AudioControls {
 
     pub fn refresh_asio_channels(&self, engine: &Arc<Engine>, cx: &mut App) {
         let Some(device) = selected_device(&self.output, cx) else {
+            self.input.update(cx, |state, cx| {
+                state.select_value("__none");
+                cx.notify();
+            });
+            self.clear_channels(cx);
             return;
         };
         let devices = match engine.audio_devices("asio", &device) {
             Ok(devices) => devices,
             Err(error) => {
                 eprintln!("failed to enumerate ASIO channels for {device}: {error}");
+                self.clear_channels(cx);
                 return;
             }
         };
@@ -269,6 +283,22 @@ impl AudioControls {
             cx.notify();
         });
     }
+
+    fn clear_channels(&self, cx: &mut App) {
+        self.routing.update(cx, |routing, cx| {
+            clear_routing(routing);
+            cx.notify();
+        });
+    }
+}
+
+fn clear_routing(routing: &mut AudioRoutingState) {
+    routing.input_channels.clear();
+    routing.output_channels.clear();
+    routing.active_inputs.clear();
+    routing.active_outputs.clear();
+    routing.input_changed_at.clear();
+    routing.output_changed_at.clear();
 }
 
 fn dropdown_entity(
@@ -370,7 +400,9 @@ fn retain_valid(active: &mut Vec<usize>, channel_count: usize) {
 
 #[cfg(test)]
 mod tests {
-    use super::buffer_size_parts;
+    use std::collections::HashMap;
+
+    use super::{AudioRoutingState, buffer_size_parts, clear_routing};
 
     #[test]
     fn formats_approximate_buffer_latency() {
@@ -382,5 +414,24 @@ mod tests {
             buffer_size_parts(256, 44_100),
             (String::from("256"), Some(String::from("(5.8 ms)")))
         );
+    }
+
+    #[test]
+    fn clears_stale_routing_when_asio_device_is_absent() {
+        let mut routing = AudioRoutingState {
+            input_channels: vec![String::from("Input 1")],
+            output_channels: vec![String::from("Output 1")],
+            active_inputs: vec![0],
+            active_outputs: vec![0],
+            input_changed_at: HashMap::new(),
+            output_changed_at: HashMap::new(),
+        };
+
+        clear_routing(&mut routing);
+
+        assert!(routing.input_channels.is_empty());
+        assert!(routing.output_channels.is_empty());
+        assert!(routing.active_inputs.is_empty());
+        assert!(routing.active_outputs.is_empty());
     }
 }

@@ -95,6 +95,7 @@ impl MainView {
                         }
                         if let Ok((input, output)) = levels {
                             view.update_meter_levels(input, output);
+                            view.reset_inactive_meter_levels(cx);
                             cx.notify();
                         }
                     })
@@ -107,6 +108,7 @@ impl MainView {
     }
 
     pub(super) fn apply_and_persist_audio(&mut self, cx: &mut Context<Self>) {
+        self.reset_inactive_meter_levels(cx);
         self.audio_controls.apply(&self.engine, cx, self.is_mono);
         self.persist_audio(cx);
         cx.notify();
@@ -132,6 +134,17 @@ impl MainView {
         self.output_level = smooth_level(self.output_level, output);
         update_peak_hold(&mut self.input_peak_until, input, now);
         update_peak_hold(&mut self.output_peak_until, output, now);
+    }
+
+    pub(super) fn reset_inactive_meter_levels(&mut self, cx: &App) {
+        if !self.audio_controls.has_input_device(cx) {
+            self.input_level = 0.0;
+            self.input_peak_until = None;
+        }
+        if !self.audio_controls.has_output_device(cx) {
+            self.output_level = 0.0;
+            self.output_peak_until = None;
+        }
     }
 
     pub(super) fn persist_audio(&mut self, cx: &App) {
