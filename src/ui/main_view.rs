@@ -154,6 +154,7 @@ impl MainView {
                 if this.audio_controls.is_asio(cx) {
                     this.audio_controls.refresh_asio_channels(&this.engine, cx);
                 }
+                this.audio_controls.remember_device_selection(cx);
                 this.apply_and_persist_audio(cx);
             },
         ));
@@ -164,6 +165,7 @@ impl MainView {
                 if this.audio_controls.is_asio(cx) {
                     this.audio_controls.refresh_asio_channels(&this.engine, cx);
                 }
+                this.audio_controls.remember_device_selection(cx);
                 this.apply_and_persist_audio(cx);
             },
         ));
@@ -176,14 +178,20 @@ impl MainView {
             },
         ));
 
-        for control in [&audio_controls.input, &audio_controls.buffer_size] {
-            this._subscriptions.push(cx.subscribe(
-                control,
-                |this, _, _: &AudioDropdownEvent, cx| {
-                    this.apply_and_persist_audio(cx);
-                },
-            ));
-        }
+        this._subscriptions.push(cx.subscribe(
+            &audio_controls.input,
+            |this, _, _: &AudioDropdownEvent, cx| {
+                this.audio_controls.remember_device_selection(cx);
+                this.apply_and_persist_audio(cx);
+            },
+        ));
+
+        this._subscriptions.push(cx.subscribe(
+            &audio_controls.buffer_size,
+            |this, _, _: &AudioDropdownEvent, cx| {
+                this.apply_and_persist_audio(cx);
+            },
+        ));
 
         this._subscriptions
             .push(cx.observe(&updater, |_, _, cx| cx.notify()));

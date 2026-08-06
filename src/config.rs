@@ -1,4 +1,5 @@
 use serde::{Deserialize, Serialize};
+use std::collections::BTreeMap;
 use std::fmt;
 use std::fs;
 use std::path::{Path, PathBuf};
@@ -37,6 +38,7 @@ pub struct AudioSettings {
     pub driver: String,
     pub input_device: Option<String>,
     pub output_device: Option<String>,
+    pub devices_by_driver: BTreeMap<String, DriverDeviceSelection>,
     pub sample_rate: i32,
     pub buffer_size: i32,
     pub is_mono: bool,
@@ -50,6 +52,7 @@ impl Default for AudioSettings {
             driver: String::from("wasapi"),
             input_device: None,
             output_device: None,
+            devices_by_driver: BTreeMap::new(),
             sample_rate: 48_000,
             buffer_size: 512,
             is_mono: false,
@@ -57,6 +60,13 @@ impl Default for AudioSettings {
             active_outputs: vec![0, 1],
         }
     }
+}
+
+#[derive(Clone, Debug, Default, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(default)]
+pub struct DriverDeviceSelection {
+    pub input: Option<String>,
+    pub output: Option<String>,
 }
 
 #[derive(Clone, Debug, Serialize, Deserialize)]

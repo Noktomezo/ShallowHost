@@ -3,7 +3,7 @@ use std::collections::HashMap;
 use std::sync::Arc;
 use std::time::Instant;
 
-use crate::config::AudioSettings;
+use crate::config::{AudioSettings, DriverDeviceSelection};
 use crate::engine::{AudioConfig, AudioDevices, DeviceInfo, Engine};
 
 use super::audio_dropdown::{AudioDropdownState, DropdownChoice, reset_audio_dropdown};
@@ -43,6 +43,7 @@ pub struct AudioControls {
     pub sample_rate: Entity<AudioDropdownState>,
     pub buffer_size: Entity<AudioDropdownState>,
     pub routing: Entity<AudioRoutingState>,
+    device_selections: Entity<HashMap<String, DriverDeviceSelection>>,
 }
 
 impl AudioControls {
@@ -52,6 +53,26 @@ impl AudioControls {
         let input_items = device_choices(&devices.inputs);
         let sample_rate_items = sample_rate_choices();
         let buffer_size_items = buffer_size_choices(settings.sample_rate);
+        let output_selected = settings.output_device.as_deref().map_or_else(
+            || preferred_device_index(&devices.outputs),
+            |value| choice_index(&output_items, value),
+        );
+        let input_selected = settings.input_device.as_deref().map_or_else(
+            || preferred_device_index(&devices.inputs),
+            |value| choice_index(&input_items, value),
+        );
+        let mut device_selections: HashMap<_, _> = settings
+            .devices_by_driver
+            .iter()
+            .map(|(driver, selection)| (driver.clone(), selection.clone()))
+            .collect();
+        device_selections.insert(
+            settings.driver.clone(),
+            DriverDeviceSelection {
+                input: selected_choice_device(&input_items, input_selected),
+                output: selected_choice_device(&output_items, output_selected),
+            },
+        );
 
         Self {
             driver: dropdown_entity(cx, |motion| {
@@ -62,24 +83,10 @@ impl AudioControls {
                 )
             }),
             output: dropdown_entity(cx, |motion| {
-                AudioDropdownState::new(
-                    output_items.clone(),
-                    settings.output_device.as_deref().map_or_else(
-                        || preferred_device_index(&devices.outputs),
-                        |value| choice_index(&output_items, value),
-                    ),
-                    motion,
-                )
+                AudioDropdownState::new(output_items.clone(), output_selected, motion)
             }),
             input: dropdown_entity(cx, |motion| {
-                AudioDropdownState::new(
-                    input_items.clone(),
-                    settings.input_device.as_deref().map_or_else(
-                        || preferred_device_index(&devices.inputs),
-                        |value| choice_index(&input_items, value),
-                    ),
-                    motion,
-                )
+                AudioDropdownState::new(input_items.clone(), input_selected, motion)
             }),
             sample_rate: dropdown_entity(cx, |motion| {
                 AudioDropdownState::new(
@@ -103,6 +110,7 @@ impl AudioControls {
                 input_changed_at: HashMap::new(),
                 output_changed_at: HashMap::new(),
             }),
+            device_selections: cx.new(|_| device_selections),
         }
     }
 
@@ -143,6 +151,12 @@ impl AudioControls {
             driver: selected_value(&self.driver, cx).unwrap_or_else(|| String::from("wasapi")),
             input_device: selected_device(&self.input, cx),
             output_device: selected_device(&self.output, cx),
+            devices_by_driver: self
+                .device_selections
+                .read(cx)
+                .iter()
+                .map(|(driver, selection)| (driver.clone(), selection.clone()))
+                .collect(),
             sample_rate: selected_value(&self.sample_rate, cx)
                 .and_then(|value| value.parse().ok())
                 .unwrap_or(48_000),
@@ -176,22 +190,38 @@ impl AudioControls {
                 return;
             }
         };
+        let remembered = self.device_selections.read(cx).get(&driver).cloned();
+        let output_choices = device_choices(&devices.outputs);
+        let output_selected = remembered
+            .as_ref()
+            .and_then(|selection| selection.output.as_deref())
+            .map_or(0, |device| choice_index(&output_choices, device));
+        let input_choices = device_choices(&devices.inputs);
+        let input_selected = remembered
+            .as_ref()
+            .and_then(|selection| selection.input.as_deref())
+            .map_or(0, |device| choice_index(&input_choices, device));
 
         self.output.update(cx, |state, cx| {
-            state.replace_choices(
-                device_choices(&devices.outputs),
-                preferred_device_index(&devices.outputs),
-            );
+            state.replace_choices(output_choices, output_selected);
             cx.notify();
         });
         self.input.update(cx, |state, cx| {
-            state.replace_choices(
-                device_choices(&devices.inputs),
-                preferred_device_index(&devices.inputs),
-            );
+            state.replace_choices(input_choices, input_selected);
             cx.notify();
         });
         self.update_channels(&devices, cx);
+    }
+
+    pub fn remember_device_selection(&self, cx: &mut App) {
+        let driver = selected_value(&self.driver, cx).unwrap_or_else(|| String::from("wasapi"));
+        let selection = DriverDeviceSelection {
+            input: selected_device(&self.input, cx),
+            output: selected_device(&self.output, cx),
+        };
+        self.device_selections.update(cx, |selections, _| {
+            selections.insert(driver, selection);
+        });
     }
 
     pub fn refresh_asio_channels(&self, engine: &Arc<Engine>, cx: &mut App) {
@@ -335,6 +365,14 @@ fn choice_index(choices: &[DropdownChoice], value: &str) -> usize {
         .unwrap_or(0)
 }
 
+fn selected_choice_device(choices: &[DropdownChoice], selected: usize) -> Option<String> {
+    choices
+        .get(selected)
+        .map(|choice| choice.value.as_ref())
+        .filter(|value| *value != "__none")
+        .map(ToOwned::to_owned)
+}
+
 fn preferred_device_index(devices: &[DeviceInfo]) -> usize {
     devices
         .iter()
@@ -417,54 +455,4 @@ fn retain_valid(active: &mut Vec<usize>, channel_count: usize) {
 }
 
 #[cfg(test)]
-mod tests {
-    use std::collections::HashMap;
-
-    use super::{AudioRoutingState, buffer_size_parts, clear_routing, device_channel_mask};
-
-    #[test]
-    fn formats_approximate_buffer_latency() {
-        assert_eq!(
-            buffer_size_parts(512, 48_000),
-            (String::from("512"), Some(String::from("(10.7 ms)")))
-        );
-        assert_eq!(
-            buffer_size_parts(256, 44_100),
-            (String::from("256"), Some(String::from("(5.8 ms)")))
-        );
-    }
-
-    #[test]
-    fn clears_stale_routing_when_asio_device_is_absent() {
-        let mut routing = AudioRoutingState {
-            input_channels: vec![String::from("Input 1")],
-            output_channels: vec![String::from("Output 1")],
-            active_inputs: vec![0],
-            active_outputs: vec![0],
-            input_changed_at: HashMap::new(),
-            output_changed_at: HashMap::new(),
-        };
-
-        clear_routing(&mut routing);
-
-        assert!(routing.input_channels.is_empty());
-        assert!(routing.output_channels.is_empty());
-        assert!(routing.active_inputs.is_empty());
-        assert!(routing.active_outputs.is_empty());
-    }
-
-    #[test]
-    fn uses_default_channels_for_selected_wasapi_devices() {
-        assert_eq!(device_channel_mask(false, Some("Speakers"), &[]), -1);
-        assert_eq!(device_channel_mask(false, Some("Microphone"), &[0, 1]), -1);
-        assert_eq!(device_channel_mask(false, None, &[]), 0);
-        assert_eq!(device_channel_mask(false, Some("__none"), &[]), 0);
-    }
-
-    #[test]
-    fn preserves_explicit_asio_channel_masks() {
-        assert_eq!(device_channel_mask(true, Some("ASIO Device"), &[0, 2]), 5);
-        assert_eq!(device_channel_mask(true, Some("ASIO Device"), &[]), 0);
-        assert_eq!(device_channel_mask(true, Some("__none"), &[0, 1]), 0);
-    }
-}
+mod tests;
