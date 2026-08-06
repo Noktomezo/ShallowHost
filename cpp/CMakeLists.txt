@@ -87,6 +87,13 @@ target_compile_definitions(engine PRIVATE
     JUCE_MODAL_LOOPS_PERMITTED=1
 )
 
+if(MSVC)
+    # `cxx-build` uses the release MSVC STL ABI in every Cargo profile.
+    # CMake defines `_DEBUG` for its Debug configuration, so pin the iterator
+    # ABI explicitly instead of letting the STL select the incompatible level 2.
+    target_compile_definitions(engine PRIVATE _ITERATOR_DEBUG_LEVEL=0)
+endif()
+
 # Rust links this static library with lld-link, which cannot consume MSVC LTCG
 # objects produced by /GL. Rust-side release LTO remains enabled independently.
 set_target_properties(engine PROPERTIES
