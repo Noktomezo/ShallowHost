@@ -22,7 +22,10 @@ use super::titlebar::render_titlebar;
 use gpui_updater::Updater;
 
 mod render_support;
+mod sidebar_motion;
 mod state_actions;
+
+use sidebar_motion::SidebarMotion;
 
 pub struct MainView {
     engine: Arc<Engine>,
@@ -57,7 +60,7 @@ pub struct MainView {
     hovered_at: Option<Instant>,
     unhovered_at: Option<Instant>,
 
-    anim_key: usize,
+    sidebar_motion: SidebarMotion,
     _subscriptions: Vec<Subscription>,
     _meter_task: Task<()>,
     _system_task: Task<()>,
@@ -140,7 +143,7 @@ impl MainView {
             hovered_at: None,
             unhovered_at: None,
 
-            anim_key: 0,
+            sidebar_motion: SidebarMotion::expanded(),
             _subscriptions: Vec::new(),
             _meter_task: Task::ready(()),
             _system_task: Task::ready(()),
@@ -221,6 +224,7 @@ impl MainView {
         &self,
         item: &NavigationItem,
         collapsed: bool,
+        sidebar_progress: f32,
         window: &mut Window,
         cx: &mut Context<Self>,
     ) -> AnyElement {
@@ -228,9 +232,12 @@ impl MainView {
         let is_selected = self.current_route == route;
         let is_hovered = self.hovered_route == Some(route) && !is_selected;
         let is_unhovered = self.unhovered_route == Some(route) && !is_selected;
-        let item_label = item.label();
+        let item_label = SharedString::from(item.label());
+        let tooltip_source = ElementId::Name(format!("{}-collapsed-tooltip", item.id).into());
+        let hover_tooltip_source = tooltip_source.clone();
+        let pressed_tooltip_source = tooltip_source.clone();
+        let tooltip_label = item_label.clone();
 
-        // Smooth Bidirectional Selection Factor (150ms fade-in AND fade-out)
         let selected_alpha = if is_selected {
             let elapsed = self.selected_at.elapsed().as_secs_f32();
             (elapsed / 0.15).clamp(0.0, 1.0)
@@ -244,7 +251,6 @@ impl MainView {
             0.0
         };
 
-        // Smooth Bidirectional Hover Factor (150ms fade-in AND fade-out)
         let hover_alpha = if is_hovered {
             if let Some(at) = self.hovered_at {
                 (at.elapsed().as_secs_f32() / 0.15).clamp(0.0, 1.0)
@@ -261,7 +267,6 @@ impl MainView {
             0.0
         };
 
-        // Synchronized Foreground RGB Interpolation (Icon and Text in 100% Lockstep)
         let active_t = if selected_alpha > 0.001 {
             selected_alpha
         } else {
@@ -275,16 +280,11 @@ impl MainView {
         };
         let icon_color = mix_color(colors::base_200(), target_foreground, active_t);
 
-        // Request frame while selection or hover transitions are active
         if (selected_alpha > 0.0 && selected_alpha < 1.0)
             || (hover_alpha > 0.0 && hover_alpha < 1.0)
         {
             cx.on_next_frame(window, |_, _, cx| cx.notify());
         }
-
-        let anim_key = self.anim_key;
-        let text_anim_id =
-            ElementId::NamedInteger(format!("nav-text-{}", item.id).into(), anim_key as u64);
 
         div()
             .id(item.id)
@@ -298,20 +298,32 @@ impl MainView {
             .gap(px(8.0))
             .rounded_md()
             .cursor_pointer()
-            // Smoothly Interpolated Background & Text Colors
             .when(selected_alpha > 0.001, |this| {
                 this.bg(colors::orange().opacity(selected_alpha))
             })
             .when(selected_alpha <= 0.001 && hover_alpha > 0.001, |this| {
                 this.bg(colors::orange().opacity(hover_alpha * 0.16))
             })
-            .on_hover(cx.listener(move |this, is_hovered, _, cx| {
+            .on_hover(cx.listener(move |this, is_hovered, window, cx| {
                 this.set_hovered_route(route, *is_hovered, cx);
+                if collapsed {
+                    crate::ui::cursor_tooltip::set_hovered(
+                        hover_tooltip_source.clone(),
+                        tooltip_label.clone(),
+                        *is_hovered,
+                        window,
+                        cx,
+                    );
+                } else {
+                    crate::ui::cursor_tooltip::hide_source(&hover_tooltip_source, window, cx);
+                }
             }))
+            .on_mouse_down(MouseButton::Left, move |_, window, cx| {
+                crate::ui::cursor_tooltip::hide_source(&pressed_tooltip_source, window, cx);
+            })
             .on_click(cx.listener(move |this, _, _, cx| {
                 this.navigate(route, cx);
             }))
-            // Icon Container
             .child(
                 div()
                     .relative()
@@ -326,44 +338,17 @@ impl MainView {
                             .text_color(icon_color),
                     ),
             )
-            // Sliding & fading text label (200ms animation on sidebar toggle)
-            .child({
-                let text_color_static = if collapsed {
-                    icon_color.opacity(0.0)
-                } else {
-                    icon_color
-                };
-
+            .child(
                 div()
                     .relative()
                     .flex_1()
                     .text_sm()
-                    .text_color(text_color_static)
+                    .text_color(icon_color.opacity(sidebar_progress))
+                    .ml(px(-14.0 * (1.0 - sidebar_progress)))
                     .truncate()
                     .overflow_hidden()
-                    .with_animation(
-                        text_anim_id,
-                        Animation::new(Duration::from_millis(200)),
-                        move |s, delta| {
-                            let t = delta.clamp(0.0, 1.0);
-                            let eased = if t < 0.5 {
-                                4.0 * t * t * t
-                            } else {
-                                1.0 - (-2.0 * t + 2.0).powi(3) / 2.0
-                            };
-
-                            let (alpha_factor, offset) = if collapsed {
-                                (1.0 - eased, -14.0 * eased)
-                            } else {
-                                (eased, -14.0 * (1.0 - eased))
-                            };
-
-                            s.text_color(icon_color.opacity(alpha_factor))
-                                .ml(px(offset))
-                        },
-                    )
-                    .child(item_label)
-            })
+                    .child(item_label),
+            )
             .into_any_element()
     }
 }
@@ -371,11 +356,12 @@ impl MainView {
 impl Render for MainView {
     fn render(&mut self, window: &mut Window, cx: &mut Context<Self>) -> impl IntoElement {
         let collapsed = self.sidebar_collapsed;
-        let anim_id = ElementId::NamedInteger("sidebar-anim".into(), self.anim_key as u64);
+        let (sidebar_progress, sidebar_animating) = self.sidebar_motion.sample();
+        if sidebar_animating {
+            cx.on_next_frame(window, |_, _, cx| cx.notify());
+        }
         let is_maximized = window.is_maximized();
-
-        let start_width = if collapsed { 144.0 } else { 40.0 };
-        let target_width = if collapsed { 40.0 } else { 144.0 };
+        let sidebar_width = 40.0 + 104.0 * sidebar_progress;
 
         let root_bg = if self.transparent_shell {
             colors::base_950().opacity(0.5)
@@ -385,13 +371,14 @@ impl Render for MainView {
 
         let main_items: Vec<_> = MAIN_NAV_ITEMS
             .iter()
-            .map(|item| self.render_nav_item(item, collapsed, window, cx))
+            .map(|item| self.render_nav_item(item, collapsed, sidebar_progress, window, cx))
             .collect();
 
-        let footer_item = self.render_nav_item(&FOOTER_NAV_ITEM, collapsed, window, cx);
+        let footer_item =
+            self.render_nav_item(&FOOTER_NAV_ITEM, collapsed, sidebar_progress, window, cx);
 
-        let sidebar_toggle_listener = cx.listener(|this: &mut Self, _: &(), _window, cx| {
-            this.toggle_sidebar(cx);
+        let sidebar_toggle_listener = cx.listener(|this: &mut Self, _: &(), window, cx| {
+            this.toggle_sidebar(window, cx);
         });
         let render_ctx = self.render_context();
         let callbacks = Self::dropdown_callbacks(cx);
@@ -435,21 +422,8 @@ impl Render for MainView {
                             .flex_col()
                             .justify_between()
                             .h_full()
+                            .w(px(sidebar_width))
                             .overflow_hidden()
-                            .with_animation(
-                                anim_id,
-                                Animation::new(Duration::from_millis(200)),
-                                move |this, delta| {
-                                    let t = delta.clamp(0.0, 1.0);
-                                    let eased = if t < 0.5 {
-                                        4.0 * t * t * t
-                                    } else {
-                                        1.0 - (-2.0 * t + 2.0).powi(3) / 2.0
-                                    };
-                                    let width = start_width + (target_width - start_width) * eased;
-                                    this.w(px(width))
-                                },
-                            )
                             .child(
                                 div()
                                     .flex_1()

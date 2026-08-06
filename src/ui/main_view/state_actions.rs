@@ -223,9 +223,10 @@ impl MainView {
         cx.notify();
     }
 
-    pub(super) fn toggle_sidebar(&mut self, cx: &mut Context<Self>) {
+    pub(super) fn toggle_sidebar(&mut self, window: &mut Window, cx: &mut Context<Self>) {
+        crate::ui::cursor_tooltip::hide(window, cx);
         self.sidebar_collapsed = !self.sidebar_collapsed;
-        self.anim_key += 1;
+        self.sidebar_motion.set_collapsed(self.sidebar_collapsed);
         cx.notify();
     }
 

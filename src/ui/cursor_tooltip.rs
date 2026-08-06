@@ -25,16 +25,20 @@ struct CursorTooltipState {
 impl Global for CursorTooltipState {}
 
 impl CursorTooltipState {
-    fn clear_source(&mut self, source: &ElementId) -> bool {
-        if self.source.as_ref() != Some(source) {
-            return false;
-        }
-
+    fn clear(&mut self) {
         self.revision = self.revision.wrapping_add(1);
         self.source = None;
         self.text = None;
         self.visible = false;
         self.show_task = None;
+    }
+
+    fn clear_source(&mut self, source: &ElementId) -> bool {
+        if self.source.as_ref() != Some(source) {
+            return false;
+        }
+
+        self.clear();
         true
     }
 }
@@ -109,6 +113,15 @@ pub fn hide_source(source: &ElementId, window: &mut Window, cx: &mut App) {
     let state = cx.global_mut::<CursorTooltipState>();
     let was_visible = state.visible;
     if state.clear_source(source) && was_visible {
+        window.refresh();
+    }
+}
+
+pub fn hide(window: &mut Window, cx: &mut App) {
+    let state = cx.global_mut::<CursorTooltipState>();
+    let was_visible = state.visible;
+    state.clear();
+    if was_visible {
         window.refresh();
     }
 }
