@@ -100,17 +100,6 @@ jobs:
             dist/*.msi
           if-no-files-found: error
 
-      - name: Dispatch version promotion
-        if: github.event_name == 'workflow_dispatch'
-        env:
-          GH_TOKEN: ${{ secrets.RELEASE_TOKEN }}
-        shell: pwsh
-        run: |
-          gh workflow run promote-version.yml `
-            --ref main `
-            -f "pr_number=$env:PR_NUMBER" `
-            -f "head_sha=$env:GITHUB_SHA"
-
       - name: Publish dispatched PR build result
         if: always() && github.event_name == 'workflow_dispatch'
         env:
