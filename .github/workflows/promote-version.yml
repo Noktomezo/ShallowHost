@@ -10,13 +10,29 @@ on:
 jobs:
   tag:
     if: >-
-      github.event.workflow_run.conclusion == 'success' &&
-      github.event.workflow_run.pull_requests[0] != null
+      github.event.workflow_run.conclusion == 'success'
     runs-on: ubuntu-latest
     permissions:
       contents: write
       pull-requests: read
     steps:
+      - name: Resolve version bump PR
+        id: pull_request
+        env:
+          GH_TOKEN: ${{ secrets.RELEASE_TOKEN }}
+          HEAD_SHA: ${{ github.event.workflow_run.head_sha }}
+          REPOSITORY: ${{ github.repository }}
+        shell: pwsh
+        run: |
+          $pulls = gh api `
+            -H 'Accept: application/vnd.github+json' `
+            "repos/$env:REPOSITORY/commits/$env:HEAD_SHA/pulls" | ConvertFrom-Json
+          $pull = @($pulls | Where-Object { $_.state -eq 'open' })[0]
+          if ($null -eq $pull) {
+            throw "No open pull request contains successfully built commit $env:HEAD_SHA"
+          }
+          "number=$($pull.number)" | Out-File $env:GITHUB_OUTPUT -Append
+
       - uses: actions/checkout@v4
         with:
           fetch-depth: 0
@@ -27,7 +43,7 @@ jobs:
         id: version
         env:
           GH_TOKEN: ${{ secrets.RELEASE_TOKEN }}
-          PR_NUMBER: ${{ github.event.workflow_run.pull_requests[0].number }}
+          PR_NUMBER: ${{ steps.pull_request.outputs.number }}
           REPOSITORY: ${{ github.repository }}
           HEAD_SHA: ${{ github.event.workflow_run.head_sha }}
         shell: pwsh

@@ -4,15 +4,25 @@ on:
   pull_request:
     branches:
       - main
+  workflow_dispatch:
+    inputs:
+      pr_number:
+        description: Version bump pull request number
+        required: true
+        type: string
 
 concurrency:
-  group: pr-build-${{ github.event.pull_request.number }}
+  group: pr-build-${{ github.event.pull_request.number || inputs.pr_number }}
   cancel-in-progress: true
 
 jobs:
   build:
-    if: startsWith(github.event.pull_request.head.ref, 'chore/version-bump-v')
+    if: >-
+      github.event_name == 'workflow_dispatch' ||
+      startsWith(github.event.pull_request.head.ref, 'chore/version-bump-v')
     runs-on: windows-latest
+    env:
+      PR_NUMBER: ${{ github.event.pull_request.number || inputs.pr_number }}
     steps:
       - uses: actions/checkout@v4
 
@@ -45,7 +55,7 @@ jobs:
       - name: Package Windows distributions
         shell: pwsh
         run: |
-          $baseName = "ShallowHost-pr-${{ github.event.pull_request.number }}-windows-x86_64"
+          $baseName = "ShallowHost-pr-$env:PR_NUMBER-windows-x86_64"
           $manifest = Get-Content Cargo.toml -Raw
           if ($manifest -notmatch '(?m)^version = "([^"]+)"(?=\r?$)') {
             throw 'Could not read package version from Cargo.toml'
@@ -68,7 +78,7 @@ jobs:
       - name: Upload PR build
         uses: actions/upload-artifact@v4
         with:
-          name: ShallowHost-pr-${{ github.event.pull_request.number }}
+          name: ShallowHost-pr-${{ env.PR_NUMBER }}
           path: |
             dist/*.zip
             dist/*.msi
