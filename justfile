@@ -1,50 +1,32 @@
-set windows-shell := ["powershell", "-NoLogo", "-NoProfile", "-ExecutionPolicy", "Bypass", "-Command"]
+default: check
 
-# List all available recipes
-_default:
-  @just --list
-
-# Generate icons from the same source used in CI
-gen-icons:
-  bun tauri icon assets/app-logo.svg
-
-# Run in dev mode with hot reload
+# Run dev server with auto-reload on file changes
 dev:
-  bun run tauri dev
+    watchexec -r -e rs -- cargo run
 
-# Install developer hooks
-boot:
-  bun install
-  cargo check --manifest-path "src-tauri/Cargo.toml"
+# Build optimized release binary and compress with UPX (--best --lzma) via xtask
+build:
+    cargo run --package xtask --release -- build
 
-# Local installer build without updater artifacts/latest.json.
-build: gen-icons
-  bun tauri build --no-sign
-  upx --best --lzma "src-tauri/target/release/ShallowHost.exe"
+# Run cargo check across all targets
+check:
+    cargo check --all-targets
 
-# Lint only backend
-lint-back:
-  cargo clippy --manifest-path "src-tauri/Cargo.toml" --all-targets --all-features -- -D warnings
+# Run unit and integration tests
+test:
+    cargo test --all-targets
 
-# Lint only frontend
-lint-front:
-  bun run typecheck
-  bun run lint
+# Run clippy for strict lint checks
+clippy:
+    cargo clippy --all-targets -- -D warnings
 
-# Lint both backend and frontend
-lint: lint-back lint-front
+# Format check
+fmt:
+    cargo fmt --all --check
 
-# Format only backend
-format-back:
-  cargo clippy --fix --allow-dirty --manifest-path "src-tauri/Cargo.toml" --all-targets --all-features
-  cargo fmt --manifest-path "src-tauri/Cargo.toml"
+# Full strict verification (check + test + clippy + fmt)
+strict: check test clippy fmt
 
-# Format only frontend
-format-front:
-  bun run format
-
-# Format both backend and frontend
-format: format-back format-front
-
+# Clean build artifacts
 clean:
-  bunx poof dist src-tauri/target
+    cargo clean

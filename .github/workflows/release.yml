@@ -1,55 +1,127 @@
-name: Release CI
+name: Release
 
 on:
   push:
     tags:
-      - 'v*'
+      - "v*"
+
+permissions:
+  contents: write
 
 jobs:
-  publish:
-    permissions:
-      contents: write
+  build-windows:
     runs-on: windows-latest
     steps:
-      - uses: actions/checkout@v7
-
-      - name: Setup Bun
-        uses: oven-sh/setup-bun@v2
-        with:
-          bun-version: latest
+      - uses: actions/checkout@v4
 
       - name: Install Rust
         uses: dtolnay/rust-toolchain@stable
 
-      - name: Rust Cache
-        uses: swatinem/rust-cache@v2
+      - name: Cache Rust build
+        uses: Swatinem/rust-cache@v2
+
+      - name: Verify release configuration
+        shell: pwsh
+        run: |
+          $manifest = Get-Content Cargo.toml -Raw
+          if ($manifest -notmatch '(?m)^version = "([^"]+)"$') {
+            throw 'Could not read package version from Cargo.toml'
+          }
+          if ($env:GITHUB_REF_NAME -ne "v$($Matches[1])") {
+            throw "Tag $env:GITHUB_REF_NAME does not match Cargo version $($Matches[1])"
+          }
+
+      - name: Build release
+        run: cargo build --release --package shallow-host-gpui --bin ShallowHost
+
+      - name: Install WiX Toolset
+        shell: pwsh
+        run: |
+          dotnet tool install --global wix --version 6.0.2
+          wix extension add --global WixToolset.Util.wixext/6.0.2
+
+      - name: Package Windows distributions
+        shell: pwsh
+        run: |
+          $version = $env:GITHUB_REF_NAME.TrimStart('v')
+          $baseName = "ShallowHost-$env:GITHUB_REF_NAME-windows-x86_64"
+          New-Item -ItemType Directory -Path dist | Out-Null
+          New-Item -ItemType Directory -Path package/ShallowHost | Out-Null
+          Copy-Item target/release/ShallowHost.exe package/ShallowHost/ShallowHost.exe
+          Copy-Item assets package/ShallowHost/assets -Recurse
+          Compress-Archive -Path package/ShallowHost -DestinationPath "dist/$baseName.zip"
+          wix build packaging/windows/ShallowHost.wxs `
+            -arch x64 `
+            -ext WixToolset.Util.wixext `
+            -d Version="$version" `
+            -d ExeFile="$((Resolve-Path 'target/release/ShallowHost.exe').Path)" `
+            -d AssetsDir="$((Resolve-Path 'assets').Path)" `
+            -d IconFile="$((Resolve-Path 'assets/windows/ShallowHost.ico').Path)" `
+            -o "dist/$baseName.msi"
+
+      - name: Upload unsigned distributions
+        uses: actions/upload-artifact@v4
         with:
-          workspaces: src-tauri -> target
+          name: shallowhost-windows
+          path: dist
+          if-no-files-found: error
 
-      - name: Install dependencies
-        run: bun install --frozen-lockfile
+  publish:
+    needs: build-windows
+    runs-on: ubuntu-latest
+    env:
+      SHALLOWHOST_UPDATE_MINISIGN_SECRET_KEY: ${{ secrets.SHALLOWHOST_UPDATE_MINISIGN_SECRET_KEY }}
+      SHALLOWHOST_UPDATE_MINISIGN_PASSWORD: ${{ secrets.SHALLOWHOST_UPDATE_MINISIGN_PASSWORD }}
+    steps:
+      - uses: actions/checkout@v4
 
-      - name: Install Just
-        uses: taiki-e/install-action@just
-
-      - name: Run linters
-        run: just format-front
-
-      - name: Generate icons
-        run: just gen-icons
-
-      - name: Build and Publish
-        uses: tauri-apps/tauri-action@v1
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          TAURI_SIGNING_PRIVATE_KEY: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY }}
-          TAURI_SIGNING_PRIVATE_KEY_PASSWORD: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY_PASSWORD }}
+      - name: Download application
+        uses: actions/download-artifact@v4
         with:
-          tagName: ${{ github.ref_name }}
-          releaseName: 'ShallowHost ${{ github.ref_name }}'
-          releaseBody: ✨ Some real-time magic with your audio via VST2/VST3 plugins. See assets below ⬇️
-          releaseDraft: true
+          name: shallowhost-windows
+          path: dist
+
+      - name: Validate signing configuration
+        run: |
+          set -euo pipefail
+          : "${SHALLOWHOST_UPDATE_MINISIGN_SECRET_KEY:?Configure SHALLOWHOST_UPDATE_MINISIGN_SECRET_KEY}"
+          : "${SHALLOWHOST_UPDATE_MINISIGN_PASSWORD:?Configure SHALLOWHOST_UPDATE_MINISIGN_PASSWORD}"
+          test -s keys/shallowhost-minisign.pub
+
+      - name: Install minisign
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y minisign
+
+      - name: Sign and package release
+        run: |
+          set -euo pipefail
+          key_file="${RUNNER_TEMP}/shallowhost-minisign.key"
+          public_key="$(tr -d '[:space:]' < keys/shallowhost-minisign.pub)"
+          umask 077
+          trap 'rm -f "$key_file"' EXIT
+          printf '%s' "$SHALLOWHOST_UPDATE_MINISIGN_SECRET_KEY" | tr -d '[:space:]' | base64 -d > "$key_file"
+          for artifact in dist/*.msi dist/*.zip; do
+            printf '%s\n' "$SHALLOWHOST_UPDATE_MINISIGN_PASSWORD" | \
+              minisign -S -m "$artifact" -s "$key_file" -x "$artifact.minisig"
+            minisign -V -m "$artifact" -P "$public_key" -x "$artifact.minisig"
+          done
+          (cd dist && sha256sum *.msi *.zip > SHA256SUMS)
+
+      - name: Publish GitHub release
+        uses: softprops/action-gh-release@v2
+        with:
+          draft: true
           prerelease: false
-          uploadUpdaterJson: true
-          updaterJsonPreferNsis: true
-          args: --verbose
+          generate_release_notes: true
+          body: |
+            TODO: replace this placeholder with the release notes before publishing.
+
+            При переходе со старой Tauri-сборки первый GPUI-релиз нужно установить вручную.
+            Последующие обновления устанавливаются внутри ShallowHost.
+          files: |
+            dist/ShallowHost-*.msi
+            dist/ShallowHost-*.msi.minisig
+            dist/ShallowHost-*.zip
+            dist/ShallowHost-*.zip.minisig
+            dist/SHA256SUMS

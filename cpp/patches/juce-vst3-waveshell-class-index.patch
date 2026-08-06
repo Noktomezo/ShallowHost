@@ -1,0 +1,35 @@
+diff --git a/modules/juce_audio_processors_headless/format_types/juce_VST3PluginFormatImpl.h b/modules/juce_audio_processors_headless/format_types/juce_VST3PluginFormatImpl.h
+index 7e2231007d..c40f80d5cd 100644
+--- a/modules/juce_audio_processors_headless/format_types/juce_VST3PluginFormatImpl.h
++++ b/modules/juce_audio_processors_headless/format_types/juce_VST3PluginFormatImpl.h
+@@ -1292,7 +1292,9 @@ private:
+ struct VST3ModuleHandle final
+ {
+ public:
+-    static VST3ModuleHandle create (const File& pluginFile, const PluginDescription& desc)
++    static VST3ModuleHandle create (const File& pluginFile,
++                                    const PluginDescription& desc,
++                                    FUnknown* hostContext)
+     {
+         VST3ModuleHandle result;
+         result.handle = RefCountedDllHandle::getHandle (pluginFile.getFullPathName());
+@@ -1302,6 +1304,10 @@ public:
+         if (factory == nullptr)
+             return {};
+ 
++        VSTComSmartPtr<IPluginFactory3> factory3;
++        if (hostContext != nullptr && factory3.loadFrom (factory.get()))
++            factory3->setHostContext (hostContext);
++
+         const auto numClasses = factory->countClasses();
+         result.classIndex = findClassMatchingDescription (factory, desc);
+ 
+@@ -3621,7 +3627,7 @@ static std::unique_ptr<AudioPluginInstance> createVST3Instance (VST3PluginFormat
+     const ScopedWorkingDirectory scope;
+     file.getParentDirectory().setAsCurrentWorkingDirectory();
+ 
+-    const auto module = VST3ModuleHandle::create (file, description);
++    const auto module = VST3ModuleHandle::create (file, description, host->getFUnknown());
+ 
+     if (! module.isValid())
+         return nullptr;
