@@ -4,7 +4,7 @@ use gpui_updater::{EngineConfig, GitHubSource, UpdateStatus, Updater, Verificati
 const RELEASE_OWNER: &str = "Noktomezo";
 const RELEASE_REPOSITORY: &str = "ShallowHost";
 const CHECKSUMS_ASSET: &str = "SHA256SUMS";
-const MINISIGN_PUBLIC_KEY: Option<&str> = option_env!("SHALLOWHOST_UPDATE_MINISIGN_PUBLIC_KEY");
+const MINISIGN_PUBLIC_KEY: &str = include_str!("../keys/shallowhost-minisign.pub");
 
 fn release_asset_patterns() -> Vec<String> {
     let architecture = match std::env::consts::ARCH {
@@ -27,13 +27,9 @@ pub fn new_entity(cx: &mut App) -> Entity<Updater> {
         // Cargo validates the package version as SemVer before compiling the crate.
         let version = Version::parse(env!("CARGO_PKG_VERSION"))
             .expect("Cargo package version must be valid SemVer");
-        let mut config = EngineConfig::new(version).verification(Verification::Strict);
-        if let Some(public_key) = MINISIGN_PUBLIC_KEY
-            .map(str::trim)
-            .filter(|public_key| !public_key.is_empty())
-        {
-            config = config.minisign_public_key(public_key);
-        }
+        let config = EngineConfig::new(version)
+            .verification(Verification::Strict)
+            .minisign_public_key(MINISIGN_PUBLIC_KEY.trim());
         Updater::new(source, config, cx)
     })
 }

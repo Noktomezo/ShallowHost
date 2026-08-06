@@ -11,8 +11,6 @@ permissions:
 jobs:
   build-windows:
     runs-on: windows-latest
-    env:
-      SHALLOWHOST_UPDATE_MINISIGN_PUBLIC_KEY: ${{ secrets.SHALLOWHOST_UPDATE_MINISIGN_PUBLIC_KEY }}
     steps:
       - uses: actions/checkout@v4
 
@@ -25,9 +23,6 @@ jobs:
       - name: Verify release configuration
         shell: pwsh
         run: |
-          if ([string]::IsNullOrWhiteSpace($env:SHALLOWHOST_UPDATE_MINISIGN_PUBLIC_KEY)) {
-            throw 'Configure SHALLOWHOST_UPDATE_MINISIGN_PUBLIC_KEY before publishing'
-          }
           $manifest = Get-Content Cargo.toml -Raw
           if ($manifest -notmatch '(?m)^version = "([^"]+)"$') {
             throw 'Could not read package version from Cargo.toml'
@@ -75,10 +70,11 @@ jobs:
     needs: build-windows
     runs-on: ubuntu-latest
     env:
-      SHALLOWHOST_UPDATE_MINISIGN_PUBLIC_KEY: ${{ secrets.SHALLOWHOST_UPDATE_MINISIGN_PUBLIC_KEY }}
       SHALLOWHOST_UPDATE_MINISIGN_SECRET_KEY: ${{ secrets.SHALLOWHOST_UPDATE_MINISIGN_SECRET_KEY }}
       SHALLOWHOST_UPDATE_MINISIGN_PASSWORD: ${{ secrets.SHALLOWHOST_UPDATE_MINISIGN_PASSWORD }}
     steps:
+      - uses: actions/checkout@v4
+
       - name: Download application
         uses: actions/download-artifact@v4
         with:
@@ -88,9 +84,9 @@ jobs:
       - name: Validate signing configuration
         run: |
           set -euo pipefail
-          : "${SHALLOWHOST_UPDATE_MINISIGN_PUBLIC_KEY:?Configure SHALLOWHOST_UPDATE_MINISIGN_PUBLIC_KEY}"
           : "${SHALLOWHOST_UPDATE_MINISIGN_SECRET_KEY:?Configure SHALLOWHOST_UPDATE_MINISIGN_SECRET_KEY}"
           : "${SHALLOWHOST_UPDATE_MINISIGN_PASSWORD:?Configure SHALLOWHOST_UPDATE_MINISIGN_PASSWORD}"
+          test -s keys/shallowhost-minisign.pub
 
       - name: Install minisign
         run: |
@@ -101,13 +97,14 @@ jobs:
         run: |
           set -euo pipefail
           key_file="${RUNNER_TEMP}/shallowhost-minisign.key"
+          public_key="$(tr -d '[:space:]' < keys/shallowhost-minisign.pub)"
           umask 077
           trap 'rm -f "$key_file"' EXIT
           printf '%s' "$SHALLOWHOST_UPDATE_MINISIGN_SECRET_KEY" | tr -d '[:space:]' | base64 -d > "$key_file"
           for artifact in dist/*.msi dist/*.zip; do
             printf '%s\n' "$SHALLOWHOST_UPDATE_MINISIGN_PASSWORD" | \
               minisign -S -m "$artifact" -s "$key_file" -x "$artifact.minisig"
-            minisign -V -m "$artifact" -P "$SHALLOWHOST_UPDATE_MINISIGN_PUBLIC_KEY" -x "$artifact.minisig"
+            minisign -V -m "$artifact" -P "$public_key" -x "$artifact.minisig"
           done
           (cd dist && sha256sum *.msi *.zip > SHA256SUMS)
 
