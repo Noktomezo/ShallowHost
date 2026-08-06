@@ -63,7 +63,7 @@ mod platform {
             let icon = Icon::from_resource(1, Some((32, 32)))
                 .map_err(|error| SystemIntegrationError::Tray(error.to_string()))?;
             let tray_icon = TrayIconBuilder::new()
-                .with_tooltip("ShallowHost")
+                .with_tooltip(crate::APP_TITLE)
                 .with_icon(icon)
                 .with_menu(Box::new(menu))
                 .with_menu_on_left_click(false)
