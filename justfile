@@ -4,6 +4,10 @@ default: check
 dev:
     watchexec -r -e rs -- cargo run
 
+# Preview an available update without downloading, installing, or restarting
+dev-update:
+    $env:SHALLOWHOST_MOCK_UPDATE = "1"; watchexec -r -e rs -- cargo run
+
 # Build optimized release binary and compress with UPX (--best --lzma) via xtask
 build:
     cargo run --package xtask --release -- build

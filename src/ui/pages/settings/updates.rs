@@ -2,7 +2,7 @@ use std::time::{Duration, Instant};
 
 use gpui::prelude::*;
 use gpui::*;
-use gpui_updater::{UpdateStatus, Updater};
+use gpui_updater::{UpdateStatus, Updater, Version};
 
 use super::{ToggleRowProps, card, resolve_path, row, separator, toggle_row};
 use crate::config::SystemSettings;
@@ -20,7 +20,12 @@ pub(super) fn updates_card(
     updater: Entity<Updater>,
     cx: &mut App,
 ) -> AnyElement {
-    let status = updater.read(cx).status().clone();
+    let mock_preview = crate::updater::is_mock_preview();
+    let status = if mock_preview {
+        UpdateStatus::Available(Version::new(99, 0, 0))
+    } else {
+        updater.read(cx).status().clone()
+    };
     let busy = status.is_busy();
     let action_label = action_label(&status);
     let error_line = error_line(&status);
@@ -58,7 +63,9 @@ pub(super) fn updates_card(
                                 .cursor_pointer()
                                 .hover(|style| style.bg(colors::base_850()))
                                 .on_click(move |_, _, cx| {
-                                    crate::updater::run_primary_action(&action_updater, cx);
+                                    if !mock_preview {
+                                        crate::updater::run_primary_action(&action_updater, cx);
+                                    }
                                 })
                         })
                         .child(update_icon(busy))

@@ -6,6 +6,12 @@ use gpui_updater::{
 const RELEASE_OWNER: &str = "Noktomezo";
 const RELEASE_REPOSITORY: &str = "ShallowHost";
 const MINISIGN_PUBLIC_KEY: &str = "RWSeWrBbDqi6SGEfcTvdy+8CgdwKGxVK30mNPRJC953JSPStzZYl2RbU";
+const MOCK_UPDATE_ENV: &str = "SHALLOWHOST_MOCK_UPDATE";
+
+#[must_use]
+pub fn is_mock_preview() -> bool {
+    cfg!(debug_assertions) && std::env::var_os(MOCK_UPDATE_ENV).is_some()
+}
 
 fn release_manifest_url() -> String {
     format!(
@@ -42,6 +48,9 @@ pub fn new_entity(cx: &mut App) -> Entity<Updater> {
 }
 
 pub fn start_check(updater: &Entity<Updater>, cx: &mut App) {
+    if is_mock_preview() {
+        return;
+    }
     updater.update(cx, Updater::check);
 }
 
