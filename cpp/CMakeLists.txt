@@ -1,8 +1,10 @@
 cmake_minimum_required(VERSION 3.22)
 
 # Keep the distributable self-contained instead of requiring users to install
-# the Microsoft Visual C++ Redistributable separately.
-set(CMAKE_MSVC_RUNTIME_LIBRARY "MultiThreaded$<$<CONFIG:Debug>:Debug>")
+# the Microsoft Visual C++ Redistributable separately. Rust's `crt-static`
+# C++ dependencies use the release static CRT and iterator ABI in every Cargo
+# profile, so JUCE must do the same even when its own optimisation level is Debug.
+set(CMAKE_MSVC_RUNTIME_LIBRARY "MultiThreaded")
 
 project(ShallowHostCpp VERSION 0.1.0 LANGUAGES C CXX)
 
