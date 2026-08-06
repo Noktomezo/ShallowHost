@@ -3,12 +3,16 @@ name = "shallow-host-gpui"
 version = "0.3.0"
 edition = "2024"
 build = "build.rs"
+license = "MIT"
+repository = "https://github.com/Noktomezo/ShallowHost"
+readme = "README.md"
 
 [[bin]]
 name = "ShallowHost"
 path = "src/main.rs"
 
 [workspace]
+resolver = "3"
 members = [
     ".",
     "xtask",
