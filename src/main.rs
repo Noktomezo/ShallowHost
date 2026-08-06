@@ -84,6 +84,7 @@ fn main() {
                 ..Default::default()
             },
             move |window, cx| {
+                window.set_window_title("ShallowHost");
                 let engine = Arc::clone(&engine);
                 let view = cx.new(|cx| MainView::new(engine, storage, window, cx));
                 cx.new(|cx| {

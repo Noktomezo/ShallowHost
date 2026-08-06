@@ -170,6 +170,29 @@ jobs:
           done
           (cd dist && sha256sum *.msi *.zip > SHA256SUMS)
 
+      - name: Create updater manifest
+        if: steps.context.outputs.promote == 'true'
+        env:
+          VERSION: ${{ steps.version.outputs.version }}
+        run: |
+          set -euo pipefail
+          msi_name="ShallowHost-v${VERSION}-windows-x86_64.msi"
+          sha256="$(awk -v name="$msi_name" '$2 == name { print $1 }' dist/SHA256SUMS)"
+          if [[ -z "$sha256" ]]; then
+            echo "No checksum found for $msi_name" >&2
+            exit 1
+          fi
+          jq -n \
+            --arg version "v${VERSION}" \
+            --arg notes_url "https://github.com/${GITHUB_REPOSITORY}/releases/tag/v${VERSION}" \
+            --arg name "$msi_name" \
+            --arg url "https://github.com/${GITHUB_REPOSITORY}/releases/download/v${VERSION}/${msi_name}" \
+            --arg signature_url "https://github.com/${GITHUB_REPOSITORY}/releases/download/v${VERSION}/${msi_name}.minisig" \
+            --arg sha256 "$sha256" \
+            --argjson size "$(stat -c%s "dist/$msi_name")" \
+            '{schema_version: 1, version: $version, notes_url: $notes_url, assets: [{name: $name, url: $url, size: $size, sha256: $sha256, signature_url: $signature_url, os: "windows", arch: "x86_64", format: "msi"}]}' \
+            > dist/latest.json
+
       - name: Create release tag
         if: steps.context.outputs.promote == 'true'
         env:
@@ -207,3 +230,4 @@ jobs:
             dist/ShallowHost-*.zip
             dist/ShallowHost-*.zip.minisig
             dist/SHA256SUMS
+            dist/latest.json

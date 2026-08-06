@@ -9,6 +9,7 @@ pub type CloseCallback = Rc<dyn Fn(&mut Window, &mut App)>;
 
 pub fn render_titlebar(
     is_maximized: bool,
+    sidebar_collapsed: bool,
     on_toggle_sidebar: ToggleSidebarCallback,
     on_close: CloseCallback,
 ) -> AnyElement {
@@ -34,7 +35,11 @@ pub fn render_titlebar(
                             cx.stop_propagation();
                         })
                         .on_click(move |_, window, cx| on_toggle_sidebar(window, cx))
-                        .child(titlebar_icon("assets/icons/panel-left.svg")),
+                        .child(titlebar_icon(if sidebar_collapsed {
+                            "assets/icons/panel-left-open.svg"
+                        } else {
+                            "assets/icons/panel-left.svg"
+                        })),
                 ),
         )
         .child(

@@ -1,10 +1,17 @@
 use gpui::{App, AppContext as _, Entity};
-use gpui_updater::{EngineConfig, GitHubSource, UpdateStatus, Updater, Verification, Version};
+use gpui_updater::{
+    EngineConfig, StaticManifestSource, UpdateStatus, Updater, Verification, Version,
+};
 
 const RELEASE_OWNER: &str = "Noktomezo";
 const RELEASE_REPOSITORY: &str = "ShallowHost";
-const CHECKSUMS_ASSET: &str = "SHA256SUMS";
 const MINISIGN_PUBLIC_KEY: &str = "RWSeWrBbDqi6SGEfcTvdy+8CgdwKGxVK30mNPRJC953JSPStzZYl2RbU";
+
+fn release_manifest_url() -> String {
+    format!(
+        "https://github.com/{RELEASE_OWNER}/{RELEASE_REPOSITORY}/releases/latest/download/latest.json"
+    )
+}
 
 fn release_asset_patterns() -> Vec<String> {
     let architecture = match std::env::consts::ARCH {
@@ -20,10 +27,10 @@ fn release_asset_patterns() -> Vec<String> {
 
 pub fn new_entity(cx: &mut App) -> Entity<Updater> {
     cx.new(|cx| {
-        let source = GitHubSource::new(RELEASE_OWNER, RELEASE_REPOSITORY)
-            .asset_patterns(release_asset_patterns())
-            .with_checksums(CHECKSUMS_ASSET)
-            .with_minisig();
+        // The static manifest avoids GitHub REST's shared unauthenticated IP limit, which is
+        // especially easy to exhaust through consumer VPNs such as WARP.
+        let source = StaticManifestSource::new(release_manifest_url())
+            .asset_patterns(release_asset_patterns());
         // Cargo validates the package version as SemVer before compiling the crate.
         let version = Version::parse(env!("CARGO_PKG_VERSION"))
             .expect("Cargo package version must be valid SemVer");
@@ -49,7 +56,7 @@ pub fn run_primary_action(updater: &Entity<Updater>, cx: &mut App) {
 
 #[cfg(test)]
 mod tests {
-    use super::release_asset_patterns;
+    use super::{release_asset_patterns, release_manifest_url};
 
     #[test]
     fn updater_selects_a_windows_msi_for_the_current_architecture() {
@@ -61,5 +68,13 @@ mod tests {
             pattern == std::env::consts::ARCH
                 || (std::env::consts::ARCH == "aarch64" && pattern == "arm64")
         }));
+    }
+
+    #[test]
+    fn updater_manifest_uses_the_public_latest_release_redirect() {
+        assert_eq!(
+            release_manifest_url(),
+            "https://github.com/Noktomezo/ShallowHost/releases/latest/download/latest.json"
+        );
     }
 }

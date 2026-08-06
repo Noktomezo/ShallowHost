@@ -391,6 +391,7 @@ impl Render for MainView {
         });
         let titlebar = render_titlebar(
             is_maximized,
+            collapsed,
             Rc::new(move |window, cx| sidebar_toggle_listener(&(), window, cx)),
             Rc::new(move |window, cx| close_listener(&(), window, cx)),
         );
