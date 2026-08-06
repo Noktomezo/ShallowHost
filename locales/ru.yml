@@ -10,7 +10,7 @@ title:
 
 home:
   title: "Хост"
-  description: "Страница эффектов микрофона."
+  description: "Настройка звука и цепочки обработки."
   audio: "Аудио"
   audioDescription: "Устройства и параметры звука."
   driver: "Драйвер"
@@ -62,7 +62,7 @@ home:
 
 plugins:
   title: "Плагины"
-  description: "Сканирование и управление плагинами VST3 / CLAP / AU."
+  description: "Библиотека и управление аудиоплагинами."
   scan: "Сканировать"
   scanning: "Сканирование..."
   empty: "Плагины ещё не отсканированы."
@@ -86,7 +86,7 @@ plugins:
 
 settings:
   title: "Настройки"
-  description: "Внешний вид и язык приложения."
+  description: "Параметры приложения и его поведения."
   appearance: "Внешний вид"
   appearanceDescription: "Тема, язык и оформление окна."
   theme: "Тема"

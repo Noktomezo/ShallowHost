@@ -10,7 +10,7 @@ title:
 
 home:
   title: "Host"
-  description: "Microphone effects page."
+  description: "Audio and processing chain configuration."
   audio: "Audio"
   audioDescription: "Audio devices and parameters."
   driver: "Driver"
@@ -62,7 +62,7 @@ home:
 
 plugins:
   title: "Plugins"
-  description: "Scan and manage VST3 / CLAP / AU plugins."
+  description: "Audio plugin library and management."
   scan: "Scan"
   scanning: "Scanning..."
   empty: "No plugins scanned yet."
@@ -86,7 +86,7 @@ plugins:
 
 settings:
   title: "Settings"
-  description: "Application appearance and language."
+  description: "Application preferences and behavior."
   appearance: "Appearance"
   appearanceDescription: "Theme, language, and window appearance."
   theme: "Theme"
