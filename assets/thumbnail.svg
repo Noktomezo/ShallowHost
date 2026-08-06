@@ -1,0 +1,16 @@
+<svg width="5227" height="824" viewBox="0 0 5227 824" fill="none" xmlns="http://www.w3.org/2000/svg" shape-rendering="geometricPrecision" text-rendering="geometricPrecision">
+<g>
+<rect x="10" y="10" width="804" height="804" rx="175" fill="#1C1B1A" stroke="url(#paint0_linear_102_17)" stroke-width="20"/>
+<path d="M343.333 755.333C333.605 755.333 325.457 752.037 318.888 745.445C312.296 738.876 309 730.728 309 721V103C309 93.2723 312.296 85.1124 318.888 78.5204C325.457 71.9513 333.605 68.6667 343.333 68.6667C353.061 68.6667 361.221 71.9513 367.813 78.5204C374.382 85.1124 377.667 93.2723 377.667 103V721C377.667 730.728 374.382 738.876 367.813 745.445C361.221 752.037 353.061 755.333 343.333 755.333ZM206 549.333C196.272 549.333 188.112 546.037 181.52 539.445C174.951 532.876 171.667 524.728 171.667 515V309C171.667 299.272 174.951 291.112 181.52 284.52C188.112 277.951 196.272 274.667 206 274.667C215.728 274.667 223.888 277.951 230.48 284.52C237.049 291.112 240.333 299.272 240.333 309V515C240.333 524.728 237.049 532.876 230.48 539.445C223.888 546.037 215.728 549.333 206 549.333ZM480.667 618C470.939 618 462.79 614.704 456.221 608.112C449.629 601.543 446.333 593.395 446.333 583.667V240.333C446.333 230.606 449.629 222.446 456.221 215.854C462.79 209.285 470.939 206 480.667 206C490.394 206 498.554 209.285 505.146 215.854C511.715 222.446 515 230.606 515 240.333V583.667C515 593.395 511.715 601.543 505.146 608.112C498.554 614.704 490.394 618 480.667 618ZM618 515C608.272 515 600.124 511.704 593.555 505.112C586.963 498.543 583.667 492.395 592.667 482.667V343.333C592.667 335.606 595.963 327.446 602.555 320.854C609.124 314.285 617.272 311 627 311C636.728 311 644.876 314.285 651.445 320.854C658.037 327.446 661.333 335.606 661.333 345.333V482.667C661.333 492.395 658.037 500.543 651.445 507.112C644.876 513.704 636.728 517 627 517Z" fill="url(#paint1_linear_102_17)"/>
+</g>
+<g>
+<rect x="909" y="10" width="4308" height="804" rx="175" fill="#1C1B1A" stroke="url(#paint2_linear_102_17)" stroke-width="20"/>
+<text x="3063" y="445" text-anchor="middle" dominant-baseline="central" font-family="'Outfit', 'Plus Jakarta Sans', 'Inter', 'Segoe UI', system-ui, -apple-system, sans-serif" font-weight="800" font-size="340" letter-spacing="16" fill="url(#paint3_linear_102_17)">SHALLOWHOST</text>
+</g>
+<defs>
+<linearGradient id="paint0_linear_102_17" x1="0" y1="0" x2="824" y2="824" gradientUnits="userSpaceOnUse"><stop stop-color="#EC8B49"/><stop offset="1" stop-color="#9D4310"/></linearGradient>
+<linearGradient id="paint1_linear_102_17" x1="172" y1="69.0001" x2="652" y2="755" gradientUnits="userSpaceOnUse"><stop stop-color="#EC8B49"/><stop offset="1" stop-color="#9D4310"/></linearGradient>
+<linearGradient id="paint2_linear_102_17" x1="899" y1="0" x2="1201.78" y2="1590.35" gradientUnits="userSpaceOnUse"><stop stop-color="#EC8B49"/><stop offset="1" stop-color="#9D4310"/></linearGradient>
+<linearGradient id="paint3_linear_102_17" x1="1049" y1="87" x2="5077" y2="607" gradientUnits="userSpaceOnUse"><stop stop-color="#EC8B49"/><stop offset="1" stop-color="#9D4310"/></linearGradient>
+</defs>
+</svg>
