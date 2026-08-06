@@ -1,0 +1,74 @@
+name: Promote Version
+
+on:
+  workflow_run:
+    workflows:
+      - PR Build
+    types:
+      - completed
+
+jobs:
+  tag:
+    if: >-
+      github.event.workflow_run.conclusion == 'success' &&
+      github.event.workflow_run.pull_requests[0] != null
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      pull-requests: read
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          ref: ${{ github.event.workflow_run.head_sha }}
+          token: ${{ secrets.RELEASE_TOKEN }}
+
+      - name: Validate version bump PR
+        id: version
+        env:
+          GH_TOKEN: ${{ secrets.RELEASE_TOKEN }}
+          PR_NUMBER: ${{ github.event.workflow_run.pull_requests[0].number }}
+          REPOSITORY: ${{ github.repository }}
+          HEAD_SHA: ${{ github.event.workflow_run.head_sha }}
+        shell: pwsh
+        run: |
+          $pr = gh api "repos/$env:REPOSITORY/pulls/$env:PR_NUMBER" | ConvertFrom-Json
+          if ($pr.head.repo.full_name -ne $env:REPOSITORY) {
+            throw 'Version tags may only be promoted from branches in this repository'
+          }
+          if ($pr.state -ne 'open') {
+            throw 'The version bump PR is no longer open'
+          }
+          if ('version-bump' -notin @($pr.labels.name)) {
+            throw 'The successfully built PR is not marked as a version bump'
+          }
+          $manifest = Get-Content Cargo.toml -Raw
+          if ($manifest -notmatch '(?m)^version = "(\d+\.\d+\.\d+)"$') {
+            throw 'Could not read a stable SemVer package version from Cargo.toml'
+          }
+          $version = $Matches[1]
+          if ($pr.head.ref -ne "chore/version-bump-v$version") {
+            throw "Version $version does not match PR branch $($pr.head.ref)"
+          }
+          "version=$version" | Out-File $env:GITHUB_OUTPUT -Append
+
+      - name: Create release tag
+        env:
+          VERSION: ${{ steps.version.outputs.version }}
+          HEAD_SHA: ${{ github.event.workflow_run.head_sha }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          tag="v${VERSION}"
+          existing="$(git ls-remote --tags origin "refs/tags/${tag}" | cut -f1)"
+          if [[ -n "$existing" ]]; then
+            if [[ "$existing" == "$HEAD_SHA" ]]; then
+              echo "$tag already points to the successfully built commit"
+              exit 0
+            fi
+            echo "$tag already exists at another commit" >&2
+            exit 1
+          fi
+          git tag "$tag" "$HEAD_SHA"
+          git push origin "$tag"
+

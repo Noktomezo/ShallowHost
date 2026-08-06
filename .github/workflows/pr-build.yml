@@ -1,0 +1,74 @@
+name: PR Build
+
+on:
+  pull_request:
+    branches:
+      - main
+
+concurrency:
+  group: pr-build-${{ github.event.pull_request.number }}
+  cancel-in-progress: true
+
+jobs:
+  build:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install Rust
+        uses: dtolnay/rust-toolchain@stable
+        with:
+          components: rustfmt, clippy
+
+      - name: Cache Rust build
+        uses: Swatinem/rust-cache@v2
+
+      - name: Check formatting
+        run: cargo fmt --all --check
+
+      - name: Run tests
+        run: cargo test --all-targets
+
+      - name: Run Clippy
+        run: cargo clippy --all-targets -- -D warnings
+
+      - name: Build release binary
+        run: cargo build --release --package shallow-host-gpui --bin ShallowHost
+
+      - name: Install WiX Toolset
+        shell: pwsh
+        run: |
+          dotnet tool install --global wix --version 6.0.2
+          wix extension add --global WixToolset.Util.wixext/6.0.2
+
+      - name: Package Windows distributions
+        shell: pwsh
+        run: |
+          $baseName = "ShallowHost-pr-${{ github.event.pull_request.number }}-windows-x86_64"
+          $manifest = Get-Content Cargo.toml -Raw
+          if ($manifest -notmatch '(?m)^version = "([^"]+)"$') {
+            throw 'Could not read package version from Cargo.toml'
+          }
+          $version = $Matches[1]
+          New-Item -ItemType Directory -Path package/ShallowHost | Out-Null
+          New-Item -ItemType Directory -Path dist | Out-Null
+          Copy-Item target/release/ShallowHost.exe package/ShallowHost/ShallowHost.exe
+          Copy-Item assets package/ShallowHost/assets -Recurse
+          Compress-Archive -Path package/ShallowHost -DestinationPath "dist/$baseName.zip"
+          wix build packaging/windows/ShallowHost.wxs `
+            -arch x64 `
+            -ext WixToolset.Util.wixext `
+            -d Version="$version" `
+            -d ExeFile="$((Resolve-Path 'target/release/ShallowHost.exe').Path)" `
+            -d AssetsDir="$((Resolve-Path 'assets').Path)" `
+            -d IconFile="$((Resolve-Path 'assets/windows/ShallowHost.ico').Path)" `
+            -o "dist/$baseName.msi"
+
+      - name: Upload PR build
+        uses: actions/upload-artifact@v4
+        with:
+          name: ShallowHost-pr-${{ github.event.pull_request.number }}
+          path: |
+            dist/*.zip
+            dist/*.msi
+          if-no-files-found: error

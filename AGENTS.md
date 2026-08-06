@@ -1,102 +1,118 @@
-# AGENTS.md
+# AGENTS.md — mandatory rules for agents
 
-## --- Project Overview --------------------------------------------------------
+## Rust — STRICT RULES (always on)
 
-**ShallowHost** - a graphical shell for scanning, loading and hosting VST2/VST3 plugins (e.g real-time microphone effects).
+These rules apply to **every** Rust change. No exceptions for “quick fix”, “example”, or “temporary”.
 
-## Tech Stack
+### 1. Correctness first
+- Code must compile. Do not leave broken code, unfinished stubs that don’t type-check, or “fix later” that breaks the build.
+- Prefer `Result` / explicit error types over `unwrap()` / `expect()` in non-test, non-prototype paths.
+- `unwrap()` / `expect()` only when the invariant is locally obvious and documented in a one-line comment *why* it cannot fail.
+- No silent `let _ = ...` on fallible ops unless the ignore is intentional and named (`let _ = intentionally_ignored`).
 
-| Layer | Technology |
-| --- | --- |
-| Desktop shell | Tauri v2 |
-| Frontend runtime | Bun |
-| Build tool | Vite |
-| UI framework | React 19 |
-| Language | TypeScript (strict) |
-| Styling | TailwindCSS v4 |
-| Component library | shadcn/ui |
-| Routing | TanStack Router |
-| State management | Zustand |
-| i18n | i18next + react-i18next |
-| Backend | Rust (Tauri commands) |
-| Notifications | Sonner |
+### 2. Ownership & borrowing
+- Do not fight the borrow checker with `clone()` spam. Clone only when needed; prefer references, `Arc`, or restructuring.
+- Prefer `&str` / `&[T]` / `&Path` in APIs over owned types unless ownership transfer is required.
+- Avoid circular `Rc`/`Arc` without `Weak`. Prefer clear ownership trees.
+- Interior mutability (`RefCell`, `Mutex`, `RwLock`) only when shared mutable state is unavoidable; document why.
 
-## Folder Structure
+### 3. Types & APIs
+- Public APIs: explicit types on exported functions when it improves clarity; no “clever” inference that hides intent.
+- Prefer enums + exhaustive `match` over boolean flags and stringly-typed states.
+- No `as` casts unless necessary; prefer `TryFrom` / `from` / checked conversions. Comment every `as`.
+- Avoid `dyn Trait` unless object safety / heterogeneous collections require it. Prefer generics + monomorphization when feasible.
+- Do not introduce new dependencies without need. Prefer std, then existing workspace crates.
 
-- Frontend: Feature-Sliced Design (FSD)
-- Backend: Vertical Slice Design
+### 4. Error handling
+- Errors must be actionable: context via `anyhow::Context` / `with_context` or domain error types — not bare strings everywhere.
+- Libraries: typed errors (`thiserror` or hand-rolled). Binaries/apps: `anyhow` at the edges is fine.
+- Never discard errors with empty `ok()` or empty match arms on `Err`.
 
-## Dependency Rules
+### 5. Async & concurrency
+- Do not block the async runtime (`std::thread::sleep`, heavy sync I/O, CPU-bound work on the async thread).
+- CPU-heavy work → dedicated thread / `spawn_blocking` / rayon as appropriate.
+- `Send` + `Sync` bounds only when required; don’t sprinkle them “just in case”.
+- Prefer structured concurrency: cancel-safe patterns, no detached tasks that own critical state without supervision.
 
-### Frontend (src)
+### 6. Unsafe
+- **No `unsafe` by default.** Every `unsafe` block needs:
+  1. A short `// SAFETY:` comment stating the invariant
+  2. Why safe alternatives are insufficient
+- Prefer existing safe wrappers over raw pointers / transmute / manual lifetimes in unsafe.
 
-- **Runtime:** `bun` only. Never `npm`/`pnpm`/`node`.
-- Install: `bun add <pkg>` / `bun add -d <pkg>`. Run: `bunx <tool>` / `bun run <script>`.
-- Commit `bun.lock` only. Never `package-lock.json` or `pnpm-lock.yaml`.
+### 7. Style & structure
+- Follow `rustfmt` and project `clippy` (pedantic lints only if the repo already enables them).
+- Modules: small, cohesive. No god-files. Split when a file mixes unrelated concerns.
+- Naming: idiomatic Rust (`snake_case`, `CamelCase`, `SCREAMING_SNAKE` for consts). No Hungarian notation.
+- Comments explain *why*, not *what*. Delete narrating comments (`// increment i`).
+- No dead code: no unused imports, vars, or `#[allow(dead_code)]` without justification.
 
-### Backend (src-tauri)
+### 8. Tests
+- Non-trivial logic gets tests. Pure functions → unit tests; integration boundaries → integration tests.
+- Tests must be deterministic. No reliance on wall-clock, ordering of HashMap, or network without isolation.
+- Prefer table-driven tests for multiple cases.
 
-- Add deps: `cargo add <crate>` (never edit `Cargo.toml` by hand). With features: `--features <f1>,<f2>`. Then `cargo check`.
-- **rayon** mandatory-by-default for CPU-heavy or bounded independent IO/status work across many items (tweak statuses, registry scans, file parsing, metadata building).
-- Keep `rayon` out of: strict-order, shared mutable state, UI-thread affinity, non-thread-safe COM/Win32, global process settings, service-control sequences, or where parallelism amplifies load/side effects.
-- For Tauri commands: wrap blocking work in `tauri::async_runtime::spawn_blocking`, use `rayon` inside only when per-item work is independent.
-- Prefer sequential when: tiny collection, already async, or parallelism makes error handling/rollback less predictable.
+### 9. Performance (only when relevant)
+- No premature micro-optimizations. Measure first if claiming a perf fix.
+- Avoid unnecessary allocations in hot paths (`format!` in tight loops, repeated `to_string()`, collect when an iterator suffices).
+- Prefer `impl Iterator` / streaming over intermediate `Vec` when the API allows.
 
-### Tauri
+### 10. Git / change discipline
+- Minimal diff: change only what’s required for the task.
+- Do not reformat unrelated code, rename widely, or “clean up” drive-by unless asked.
+- Do not add features beyond the request.
 
-- Tauri v2 APIs only. Register commands in `lib.rs` via `invoke_handler(generate_handler![...])`. Use `#[tauri::command]` on all handlers.
+### 11. Before finishing any Rust task
+Checklist (mentally or explicitly):
+- [ ] Compiles with project’s standard `cargo check` / `cargo test` scope
+- [ ] No new unjustified `unwrap` / `unsafe` / deps
+- [ ] Errors propagated with context
+- [ ] Public API and ownership make sense
+- [ ] Diff is minimal and on-task
 
-## Core Priorities
+### Structure & size
+- Keep source files **under ~500 lines**; split earlier (~400) when responsibility blurs.
+- Layout by layer/feature: `app/`, `ui/`, `domain/`, `services/`, `state/` — not giant catch-all files.
+- No god `utils.rs` / bloated `main.rs`. One clear job per file.
+- Prefer `feature/mod.rs` + small siblings over one huge module.
 
-Performance, reliability, predictability under load/failures. When trading off, choose correctness over convenience.
+### Hard refusals
+Refuse or stop and ask when asked to:
+- Ship code that doesn’t compile
+- Hide errors / swallow `Result`
+- Add `unsafe` without invariants
+- Pull heavy deps for trivial tasks
+- Mass-refactor unrelated modules under a small feature request
 
-## Maintainability
+### Don’t reinvent the wheel
+If a problem is already solved by a **maintained, widely used crate** (or one already in the workspace), use it.
+Do not hand-roll HTTP, parsing, crypto, retries, CLI, serialization, etc. without a concrete reason.
+Reuse workspace deps first; new deps need a one-line justification. Reinventing requires an explicit “why not crate X”.
 
-Extract shared logic to modules. No duplicate logic across files. Change existing code; don't add local shortcuts.
+### Web/API/Docs Search — Firecrawl only
+No built-in web_search/browse. No alternative scrapers.
+If Firecrawl is not authenticated → stop and require user login (`firecrawl login` / `FIRECRAWL_API_KEY`).
+Never fall back to other search tools.
 
-## Codebase Navigation — `@colbymchenry/codegraph`
+### GPUI Skills — MANDATORY (non-negotiable)
 
-**MANDATORY:** Use codegraph for all codebase navigation, symbol discovery, relationship analysis. Generic grep discouraged unless searching raw literal strings.
+Before writing, editing, or suggesting ANY GPUI-related code, you MUST:
 
-```bash
-bunx --bun @colbymchenry/codegraph init # first time
-bunx --bun @colbymchenry/codegraph index # re-index after edits
-bunx --bun @colbymchenry/codegraph query <symbol> # find definitions/usages
-bunx --bun @colbymchenry/codegraph context "<task>" # structured markdown for a feature
-bunx --bun @colbymchenry/codegraph status # graph health
-```
+1. **Identify relevant skills** for the current task (entities, elements, layout, actions, async, overlays, components, etc.).
+2. **Read the matching SKILL.md** (and linked reference files) via the skill tooling / file read. Do not rely on memory or prior turns.
+3. **Apply the skill rules** in the solution. If a skill contradicts your default approach, the skill wins.
+4. **State briefly** which skill(s) you used (e.g. `used: gpui-entity, gpui-layout-and-style`).
 
-Workflow: explore with `query`/`context` before reading files → re-index after edits → trace deps with `query` before modifications.
+### On every iteration
+- Re-check skills if the task scope changed (new component type, overlay, async, custom Element, etc.).
+- Do not skip this step because “you already know GPUI”.
+- Do not invent APIs, patterns, or positioning rules that conflict with the loaded skills.
+- If no skill covers the case, say so explicitly and fall back to official GPUI/Zed patterns — still do not guess.
 
-## RTK — Token-Optimized Commands
+### Refusal conditions
+Refuse to implement if you have not loaded at least one relevant skill for the task domain. Load it first, then continue.
 
-**Always prefix shell commands with `rtk`** (60-90% context savings, zero behavior change, passthrough if no filter).
-
-- Chain: `rtk git add . && rtk git commit -m "msg"`
-- Debugging: raw command without `rtk`
-- `rtk proxy <cmd>` — no filtering, tracks usage
-
-## Post-Task Checks
-
-Run after every task. Do not skip.
-
-### Frontend (format → typecheck → dead-code → audit)
-
-```bash
-bun run format # eslint --fix (eslint-stylistic replaces Prettier)
-bun run typecheck # tsc --noEmit, zero errors
-bunx fallow # zero issues
-bunx react-doctor # UI health
-```
-
-### Backend (fmt → clippy → check)
-
-```bash
-cargo fmt
-cargo clippy --fix --allow-dirty --allow-staged --all-targets -- -D warnings
-cargo check
-```
-
-## --- Reference Repos ---------------------------------------------------------
-
-- https://github.com/opencma/LightHost - original idea and behaviour reference
+### Preferred skill sources (in order)
+1. Project-local skills (`.claude/skills`, `.agents/skills`, `skills/`, etc.)
+2. `longbridge/gpui-component` skill set
+3. Other installed GPUI skills (`cnwzhu/gpui-skills`, etc.)
