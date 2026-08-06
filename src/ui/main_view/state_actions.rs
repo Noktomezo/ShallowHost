@@ -7,12 +7,61 @@ use std::time::Instant;
 use super::MainView;
 use crate::system_integration::{TrayAction, hide_window, show_window};
 use crate::ui::audio_controls::ChannelDirection;
+use crate::ui::chain_operations::PendingPlugin;
 use crate::ui::colors;
 use crate::ui::i18n;
 use crate::ui::routes::{Language, Route, SystemSetting, ThemeMode};
 use crate::ui::routes::{PluginPathKind, PluginPathUpdate};
 
 impl MainView {
+    pub(super) fn start_chain_restore_task(&mut self, cx: &mut Context<Self>) {
+        let placeholder_engine = Arc::clone(&self.engine);
+        let restore_engine = Arc::clone(&self.engine);
+        let operations = self.chain_operation_state.clone();
+        self._chain_restore_task = cx.spawn(async move |_, cx| {
+            let placeholders = cx
+                .background_spawn(async move { placeholder_engine.saved_chain_placeholders() })
+                .await;
+            let placeholders = match placeholders {
+                Ok(placeholders) => placeholders,
+                Err(error) => {
+                    eprintln!("failed to read saved plugin chain: {error}");
+                    return;
+                }
+            };
+            let pending = placeholders
+                .into_iter()
+                .filter_map(PendingPlugin::from_chain_item)
+                .collect::<Vec<_>>();
+            if pending.is_empty() {
+                return;
+            }
+            let started = operations.update(&mut *cx, |state, cx| {
+                let started = state.begin_restore(pending);
+                if started {
+                    cx.notify();
+                }
+                started
+            });
+            if !started {
+                return;
+            }
+            cx.refresh();
+
+            let result = cx
+                .background_spawn(async move { restore_engine.restore_chain_state() })
+                .await;
+            if let Err(error) = result {
+                eprintln!("failed to restore plugin chain: {error}");
+            }
+            operations.update(&mut *cx, |state, cx| {
+                state.finish_restore();
+                cx.notify();
+            });
+            cx.refresh();
+        });
+    }
+
     pub(super) fn start_system_task(&mut self, cx: &mut Context<Self>) {
         if self.system_integration.is_none() {
             return;

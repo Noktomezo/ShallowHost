@@ -108,6 +108,17 @@ impl AudioControls {
 
     pub fn apply(&self, engine: &Arc<Engine>, cx: &App, is_mono: bool) {
         let settings = self.settings(cx, is_mono);
+        let is_asio = settings.driver == "asio";
+        let input_mask = device_channel_mask(
+            is_asio,
+            settings.input_device.as_deref(),
+            &settings.active_inputs,
+        );
+        let output_mask = device_channel_mask(
+            is_asio,
+            settings.output_device.as_deref(),
+            &settings.active_outputs,
+        );
         let input = settings.input_device.as_deref().unwrap_or("__none");
         let output = settings.output_device.as_deref().unwrap_or("__none");
         let config = AudioConfig {
@@ -116,8 +127,8 @@ impl AudioControls {
             output: Some(output),
             sample_rate: settings.sample_rate,
             buffer_size: settings.buffer_size,
-            input_mask: channel_mask(&settings.active_inputs),
-            output_mask: channel_mask(&settings.active_outputs),
+            input_mask,
+            output_mask,
             is_mono,
         };
 
@@ -391,6 +402,13 @@ fn channel_mask(indices: &[usize]) -> i32 {
     })
 }
 
+fn device_channel_mask(is_asio: bool, device: Option<&str>, indices: &[usize]) -> i32 {
+    if device.is_none() || device == Some("__none") {
+        return 0;
+    }
+    if is_asio { channel_mask(indices) } else { -1 }
+}
+
 fn retain_valid(active: &mut Vec<usize>, channel_count: usize) {
     active.retain(|index| *index < channel_count);
     if active.is_empty() && channel_count > 0 {
@@ -402,7 +420,7 @@ fn retain_valid(active: &mut Vec<usize>, channel_count: usize) {
 mod tests {
     use std::collections::HashMap;
 
-    use super::{AudioRoutingState, buffer_size_parts, clear_routing};
+    use super::{AudioRoutingState, buffer_size_parts, clear_routing, device_channel_mask};
 
     #[test]
     fn formats_approximate_buffer_latency() {
@@ -433,5 +451,20 @@ mod tests {
         assert!(routing.output_channels.is_empty());
         assert!(routing.active_inputs.is_empty());
         assert!(routing.active_outputs.is_empty());
+    }
+
+    #[test]
+    fn uses_default_channels_for_selected_wasapi_devices() {
+        assert_eq!(device_channel_mask(false, Some("Speakers"), &[]), -1);
+        assert_eq!(device_channel_mask(false, Some("Microphone"), &[0, 1]), -1);
+        assert_eq!(device_channel_mask(false, None, &[]), 0);
+        assert_eq!(device_channel_mask(false, Some("__none"), &[]), 0);
+    }
+
+    #[test]
+    fn preserves_explicit_asio_channel_masks() {
+        assert_eq!(device_channel_mask(true, Some("ASIO Device"), &[0, 2]), 5);
+        assert_eq!(device_channel_mask(true, Some("ASIO Device"), &[]), 0);
+        assert_eq!(device_channel_mask(true, Some("__none"), &[0, 1]), 0);
     }
 }

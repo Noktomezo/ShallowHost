@@ -83,12 +83,13 @@ impl HomePage {
                 .is_some_and(|unique_id| operation.is_adding(unique_id));
             item.removing = operation.is_clearing() || operation.is_removing(&item.id);
         }
-        if let Some(pending) = operation.pending_plugin()
-            && !chain
+        for pending in operation.pending_plugins() {
+            if !chain
                 .iter()
-                .any(|item| item.unique_id.as_deref() == Some(&pending.unique_id))
-        {
-            chain.push(pending.chain_item());
+                .any(|item| item.unique_id.as_deref() == Some(pending.unique_id.as_str()))
+            {
+                chain.push(pending.chain_item());
+            }
         }
 
         SmoothVerticalScroll::new(

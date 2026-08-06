@@ -61,6 +61,7 @@ pub struct MainView {
     _subscriptions: Vec<Subscription>,
     _meter_task: Task<()>,
     _system_task: Task<()>,
+    _chain_restore_task: Task<()>,
 }
 
 impl MainView {
@@ -143,6 +144,7 @@ impl MainView {
             _subscriptions: Vec::new(),
             _meter_task: Task::ready(()),
             _system_task: Task::ready(()),
+            _chain_restore_task: Task::ready(()),
         };
 
         this._subscriptions.push(cx.subscribe(
@@ -192,10 +194,8 @@ impl MainView {
         if this.audio_controls.is_asio(cx) {
             this.audio_controls.refresh_asio_channels(&this.engine, cx);
         }
-        if let Err(error) = this.engine.restore_chain_state() {
-            eprintln!("failed to restore plugin chain: {error}");
-        }
         this.audio_controls.apply(&this.engine, cx, this.is_mono);
+        this.start_chain_restore_task(cx);
         this.start_meter_task(cx);
         this.start_system_task(cx);
         this.install_close_handler(window, cx);

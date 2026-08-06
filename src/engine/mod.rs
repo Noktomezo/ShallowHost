@@ -325,6 +325,20 @@ impl Engine {
         Ok(())
     }
 
+    pub fn saved_chain_placeholders(&self) -> Result<Vec<ChainItem>, EngineError> {
+        let state = match fs::read_to_string(&self.chain_state_path) {
+            Ok(state) => state,
+            Err(source) if source.kind() == std::io::ErrorKind::NotFound => return Ok(Vec::new()),
+            Err(source) => {
+                return Err(EngineError::ReadChainState {
+                    path: self.chain_state_path.clone(),
+                    source,
+                });
+            }
+        };
+        parse_saved_chain_placeholders(&state)
+    }
+
     pub fn save_chain_state(&self) -> Result<(), EngineError> {
         let _guard = self.lock()?;
         let state = ffi::save_state()?;
@@ -370,9 +384,36 @@ fn parse_json<T: for<'de> Deserialize<'de>>(json: &str) -> Result<T, EngineError
     serde_json::from_str(json).map_err(EngineError::from)
 }
 
+fn parse_saved_chain_placeholders(json: &str) -> Result<Vec<ChainItem>, EngineError> {
+    #[derive(Deserialize)]
+    struct SavedChainItem {
+        unique_id: Option<String>,
+        name: Option<String>,
+        vendor: Option<String>,
+        format: Option<String>,
+        bypassed: Option<bool>,
+    }
+
+    let items: Vec<SavedChainItem> = parse_json(json)?;
+    Ok(items
+        .into_iter()
+        .enumerate()
+        .map(|(index, item)| ChainItem {
+            id: format!("saved-{index}"),
+            name: item.name.unwrap_or_else(|| String::from("Plugin")),
+            vendor: item.vendor.unwrap_or_default(),
+            format: item.format.unwrap_or_else(|| String::from("VST3")),
+            bypassed: item.bypassed.unwrap_or(false),
+            unique_id: item.unique_id,
+            initializing: true,
+            removing: false,
+        })
+        .collect())
+}
+
 #[cfg(test)]
 mod tests {
-    use super::{AudioDevices, ChainItem, parse_json};
+    use super::{AudioDevices, ChainItem, parse_json, parse_saved_chain_placeholders};
 
     #[test]
     fn parses_audio_devices_from_native_contract() {
@@ -396,5 +437,18 @@ mod tests {
         assert_eq!(chain[0].id, "42");
         assert_eq!(chain[0].unique_id.as_deref(), Some("uid"));
         assert!(!chain[0].bypassed);
+    }
+
+    #[test]
+    fn reads_saved_chain_as_initializing_placeholders() {
+        let chain = parse_saved_chain_placeholders(
+            r#"[{"unique_id":"uid","name":"Clear","vendor":"Supertone","format":"VST3","bypassed":true,"state":"ignored"}]"#,
+        )
+        .expect("fixture is valid saved chain JSON");
+
+        assert_eq!(chain[0].id, "saved-0");
+        assert_eq!(chain[0].name, "Clear");
+        assert!(chain[0].bypassed);
+        assert!(chain[0].initializing);
     }
 }

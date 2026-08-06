@@ -13,6 +13,15 @@ pub struct PendingPlugin {
 }
 
 impl PendingPlugin {
+    pub fn from_chain_item(item: ChainItem) -> Option<Self> {
+        Some(Self {
+            unique_id: item.unique_id?,
+            name: item.name,
+            vendor: item.vendor,
+            format: item.format,
+        })
+    }
+
     pub fn chain_item(&self) -> ChainItem {
         ChainItem {
             id: format!("pending-{}", self.unique_id),
@@ -30,6 +39,7 @@ impl PendingPlugin {
 #[derive(Clone, Debug, PartialEq, Eq)]
 enum ChainOperation {
     Adding(PendingPlugin),
+    Restoring(Vec<PendingPlugin>),
     Removing(String),
     Clearing,
 }
@@ -44,16 +54,18 @@ impl ChainOperationState {
         self.operation.is_some()
     }
 
-    pub fn pending_plugin(&self) -> Option<&PendingPlugin> {
+    pub fn pending_plugins(&self) -> &[PendingPlugin] {
         match &self.operation {
-            Some(ChainOperation::Adding(plugin)) => Some(plugin),
-            Some(ChainOperation::Removing(_) | ChainOperation::Clearing) | None => None,
+            Some(ChainOperation::Adding(plugin)) => std::slice::from_ref(plugin),
+            Some(ChainOperation::Restoring(plugins)) => plugins,
+            Some(ChainOperation::Removing(_) | ChainOperation::Clearing) | None => &[],
         }
     }
 
     pub fn is_adding(&self, unique_id: &str) -> bool {
-        self.pending_plugin()
-            .is_some_and(|plugin| plugin.unique_id == unique_id)
+        self.pending_plugins()
+            .iter()
+            .any(|plugin| plugin.unique_id == unique_id)
     }
 
     pub fn is_removing(&self, node_id: &str) -> bool {
@@ -62,6 +74,16 @@ impl ChainOperationState {
 
     pub fn is_clearing(&self) -> bool {
         matches!(self.operation, Some(ChainOperation::Clearing))
+    }
+
+    pub fn begin_restore(&mut self, plugins: Vec<PendingPlugin>) -> bool {
+        self.begin(ChainOperation::Restoring(plugins))
+    }
+
+    pub fn finish_restore(&mut self) {
+        if matches!(self.operation, Some(ChainOperation::Restoring(_))) {
+            self.finish();
+        }
     }
 
     fn begin(&mut self, operation: ChainOperation) -> bool {
@@ -179,7 +201,7 @@ mod tests {
         state.finish();
 
         assert!(!state.is_busy());
-        assert!(state.pending_plugin().is_none());
+        assert!(state.pending_plugins().is_empty());
     }
 
     #[test]
@@ -187,5 +209,22 @@ mod tests {
         let item = plugin().chain_item();
         assert!(item.initializing);
         assert_eq!(item.unique_id.as_deref(), Some("vst3.test"));
+    }
+
+    #[test]
+    fn exposes_all_plugins_while_restoring_saved_chain() {
+        let mut state = ChainOperationState::default();
+        let second = PendingPlugin {
+            unique_id: String::from("vst3.second"),
+            ..plugin()
+        };
+
+        assert!(state.begin_restore(vec![plugin(), second]));
+        assert_eq!(state.pending_plugins().len(), 2);
+        assert!(state.is_adding("vst3.test"));
+        assert!(state.is_adding("vst3.second"));
+
+        state.finish_restore();
+        assert!(!state.is_busy());
     }
 }
