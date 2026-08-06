@@ -98,6 +98,10 @@ pub struct ChainItem {
     pub format: String,
     pub bypassed: bool,
     pub unique_id: Option<String>,
+    #[serde(default)]
+    pub initializing: bool,
+    #[serde(default)]
+    pub removing: bool,
 }
 
 #[derive(Clone, Debug, Deserialize, PartialEq, Eq)]
@@ -136,6 +140,7 @@ pub struct AudioConfig<'a> {
 pub struct Engine {
     call_lock: Mutex<()>,
     plugins: Mutex<Vec<ScannedPlugin>>,
+    chain_cache: Mutex<Vec<ChainItem>>,
     chain_state_path: PathBuf,
 }
 
@@ -144,6 +149,7 @@ impl Engine {
         let engine = Self {
             call_lock: Mutex::new(()),
             plugins: Mutex::new(Vec::new()),
+            chain_cache: Mutex::new(Vec::new()),
             chain_state_path: data_dir.join("chain.json"),
         };
         let _guard = engine.lock()?;
@@ -212,7 +218,14 @@ impl Engine {
 
     pub fn chain(&self) -> Result<Vec<ChainItem>, EngineError> {
         let _guard = self.lock()?;
-        parse_json(&ffi::chain()?)
+        self.cache_chain_from_native()
+    }
+
+    pub fn cached_chain(&self) -> Result<Vec<ChainItem>, EngineError> {
+        self.chain_cache
+            .lock()
+            .map(|chain| chain.clone())
+            .map_err(|_| EngineError::LockPoisoned)
     }
 
     pub fn add_to_chain(&self, unique_id: &str) -> Result<(), EngineError> {
@@ -221,6 +234,7 @@ impl Engine {
         if response.is_empty() || response == "false" {
             return Err(EngineError::NativeFailure("add plugin to chain"));
         }
+        self.cache_chain_from_native()?;
         drop(_guard);
         self.save_chain_state()
     }
@@ -228,6 +242,7 @@ impl Engine {
     pub fn clear_chain(&self) -> Result<(), EngineError> {
         let _guard = self.lock()?;
         ffi::clear_chain();
+        self.cache_chain_from_native()?;
         drop(_guard);
         self.save_chain_state()
     }
@@ -237,6 +252,9 @@ impl Engine {
         let removed = ffi::remove_from_chain(node_id)
             .then_some(())
             .ok_or(EngineError::NativeFailure("remove plugin from chain"));
+        if removed.is_ok() {
+            self.cache_chain_from_native()?;
+        }
         drop(_guard);
         removed?;
         self.save_chain_state()
@@ -249,6 +267,9 @@ impl Engine {
         let reordered = ffi::reorder_chain(node_id, native_index)?
             .then_some(())
             .ok_or(EngineError::NativeFailure("reorder plugin chain"));
+        if reordered.is_ok() {
+            self.cache_chain_from_native()?;
+        }
         drop(_guard);
         reordered?;
         self.save_chain_state()
@@ -259,6 +280,9 @@ impl Engine {
         let changed = ffi::bypass_plugin(node_id, bypassed)
             .then_some(())
             .ok_or(EngineError::NativeFailure("change plugin bypass"));
+        if changed.is_ok() {
+            self.cache_chain_from_native()?;
+        }
         drop(_guard);
         changed?;
         self.save_chain_state()
@@ -296,7 +320,9 @@ impl Engine {
         let _guard = self.lock()?;
         ffi::load_state(&state)?
             .then_some(())
-            .ok_or(EngineError::NativeFailure("restore plugin chain state"))
+            .ok_or(EngineError::NativeFailure("restore plugin chain state"))?;
+        self.cache_chain_from_native()?;
+        Ok(())
     }
 
     pub fn save_chain_state(&self) -> Result<(), EngineError> {
@@ -311,6 +337,16 @@ impl Engine {
 
     fn lock(&self) -> Result<std::sync::MutexGuard<'_, ()>, EngineError> {
         self.call_lock.lock().map_err(|_| EngineError::LockPoisoned)
+    }
+
+    fn cache_chain_from_native(&self) -> Result<Vec<ChainItem>, EngineError> {
+        let chain = parse_json(&ffi::chain()?)?;
+        let mut cache = self
+            .chain_cache
+            .lock()
+            .map_err(|_| EngineError::LockPoisoned)?;
+        cache.clone_from(&chain);
+        Ok(chain)
     }
 }
 

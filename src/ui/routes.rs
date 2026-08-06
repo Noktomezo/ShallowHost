@@ -8,6 +8,7 @@ use crate::engine::Engine;
 use gpui_updater::Updater;
 
 use super::audio_controls::{AudioControls, ChannelDirection};
+use super::chain_operations::ChainOperationState;
 use super::motion::DropdownMotion;
 use super::pages::plugins::PluginScanState;
 use super::pages::{HomePage, PluginsPage, SettingsPage};
@@ -65,6 +66,7 @@ pub struct RenderContext {
     pub theme_dropdown_motion: Entity<DropdownMotion>,
     pub language_dropdown_motion: Entity<DropdownMotion>,
     pub plugin_scan_state: Entity<PluginScanState>,
+    pub chain_operation_state: Entity<ChainOperationState>,
     pub updater: Entity<Updater>,
 }
 
@@ -111,6 +113,7 @@ impl Route {
                 ctx.is_mono,
                 ctx.mono_changed_at,
                 ctx.meter,
+                ctx.chain_operation_state,
             )
             .render(window, cx)
             .into_any_element(),
@@ -120,6 +123,7 @@ impl Route {
                 ctx.plugin_settings,
                 ctx.scan_paths_open,
                 ctx.plugin_scan_state,
+                ctx.chain_operation_state,
             )
             .render(window, cx)
             .into_any_element(),

@@ -8,7 +8,8 @@ use super::controls::{IconButtonStyle, chain_navigation_button, icon_button};
 use super::{PluginItem, PluginScanState};
 use crate::config::PluginSettings;
 use crate::engine::Engine;
-use crate::ui::badge::{BadgeStyle, badge};
+use crate::ui::badge::{BadgeStyle, badge, loading_badge};
+use crate::ui::chain_operations::{self, ChainOperationState, PendingPlugin};
 use crate::ui::colors;
 use crate::ui::i18n;
 use crate::ui::routes::{DropdownCallbacks, NavigateCallback, Route};
@@ -101,6 +102,7 @@ impl HeaderContext {
                             i18n::t("plugins.scanPathsTitle"),
                             IconButtonStyle::Outline,
                             false,
+                            false,
                         )
                         .on_click(move |_, window, cx| open_scan_paths(true, window, cx)),
                     )
@@ -110,6 +112,7 @@ impl HeaderContext {
                             "assets/icons/refresh-cw.svg",
                             i18n::t("plugins.scan"),
                             IconButtonStyle::Primary,
+                            scanning,
                             scanning,
                         )
                         .on_click(move |_, window, cx| {
@@ -157,6 +160,7 @@ pub(super) fn render(
     plugins: Arc<Vec<PluginItem>>,
     engine: Arc<Engine>,
     on_navigate: NavigateCallback,
+    chain_operations: Entity<ChainOperationState>,
 ) -> AnyElement {
     // The header is row zero, so it participates in the same viewport and scroll
     // position as the cards instead of introducing a nested scrolling region.
@@ -175,6 +179,7 @@ pub(super) fn render(
     let scrollbar_state = list_state.clone();
     let render_plugins = Arc::clone(&plugins);
     let plugin_count = plugins.len();
+    let card_scan_state = header.scan_state.clone();
     let content = list(list_state, move |row, _window, cx| {
         if row == 0 {
             return div()
@@ -203,6 +208,9 @@ pub(super) fn render(
                 plugin,
                 Arc::clone(&engine),
                 on_navigate.clone(),
+                chain_operations.clone(),
+                card_scan_state.clone(),
+                cx,
             ))
             .into_any_element()
     });
@@ -227,12 +235,23 @@ fn render_plugin_card(
     plugin: PluginItem,
     engine: Arc<Engine>,
     on_navigate: NavigateCallback,
+    chain_operations: Entity<ChainOperationState>,
+    scan_state: Entity<PluginScanState>,
+    cx: &App,
 ) -> AnyElement {
     let add_engine = Arc::clone(&engine);
+    let add_operations = chain_operations.clone();
     let remove_engine = engine;
-    let plugin_id = plugin.id.clone();
     let remove_id = plugin.id.clone();
     let plugin_path = plugin.path.clone();
+    let pending_plugin = PendingPlugin {
+        unique_id: plugin.id.clone(),
+        name: plugin.name.clone(),
+        vendor: plugin.vendor.clone(),
+        format: plugin.format.clone(),
+    };
+    let chain_busy = chain_operations.read(cx).is_busy();
+    let scanning = scan_state.read(cx).scanning;
 
     div()
         .id(SharedString::from(format!("plugin-card-{index}")))
@@ -295,7 +314,10 @@ fn render_plugin_card(
                                         .child(plugin.name),
                                 )
                                 .child(badge(plugin.format.to_uppercase(), BadgeStyle::Purple))
-                                .when(plugin.in_chain, |row| {
+                                .when(plugin.initializing, |row| {
+                                    row.child(loading_badge(i18n::t("plugins.initializing")))
+                                })
+                                .when(plugin.in_chain && !plugin.initializing, |row| {
                                     row.child(badge(i18n::t("plugins.inChain"), BadgeStyle::Green))
                                 }),
                         )
@@ -314,7 +336,7 @@ fn render_plugin_card(
                 .flex_row()
                 .items_center()
                 .gap_1()
-                .child(if plugin.in_chain {
+                .child(if plugin.in_chain || plugin.initializing {
                     chain_navigation_button(SharedString::from(format!("btn-in-chain-{index}")))
                         .on_click(move |_, window, cx| on_navigate(Route::Home, window, cx))
                         .into_any_element()
@@ -325,12 +347,18 @@ fn render_plugin_card(
                         i18n::t("plugins.addToChain"),
                         IconButtonStyle::Outline,
                         false,
+                        chain_busy || scanning,
                     )
                     .on_click(move |_, _, cx| {
-                        if let Err(error) = add_engine.add_to_chain(&plugin_id) {
-                            eprintln!("failed to add plugin to JUCE chain: {error}");
+                        if add_operations.read(cx).is_busy() || scan_state.read(cx).scanning {
+                            return;
                         }
-                        cx.refresh_windows();
+                        chain_operations::add_plugin(
+                            add_operations.clone(),
+                            Arc::clone(&add_engine),
+                            pending_plugin.clone(),
+                            cx,
+                        );
                     })
                     .into_any_element()
                 })
@@ -341,6 +369,7 @@ fn render_plugin_card(
                         i18n::t("plugins.reveal"),
                         IconButtonStyle::Outline,
                         false,
+                        false,
                     )
                     .on_click(move |_, _, _| reveal_plugin(&plugin_path)),
                 )
@@ -350,6 +379,7 @@ fn render_plugin_card(
                         "assets/icons/trash-2.svg",
                         i18n::t("plugins.remove"),
                         IconButtonStyle::Danger,
+                        false,
                         false,
                     )
                     .on_click(move |_, _, cx| {

@@ -3,6 +3,7 @@ pub mod audio_controls;
 pub mod audio_dropdown;
 pub mod badge;
 pub mod card_header;
+pub mod chain_operations;
 pub mod colors;
 pub mod control_style;
 pub mod cursor_tooltip;

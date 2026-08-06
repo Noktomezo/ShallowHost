@@ -5,6 +5,7 @@ use gpui::*;
 
 use crate::config::PluginSettings;
 use crate::engine::Engine;
+use crate::ui::chain_operations::ChainOperationState;
 use crate::ui::routes::{DropdownCallbacks, NavigateCallback};
 
 mod controls;
@@ -19,6 +20,7 @@ pub struct PluginItem {
     pub format: String,
     pub path: String,
     pub in_chain: bool,
+    pub initializing: bool,
 }
 
 #[derive(Default)]
@@ -33,6 +35,7 @@ pub struct PluginsPage {
     scan_paths_open: bool,
     callbacks: DropdownCallbacks,
     scan_state: Entity<PluginScanState>,
+    chain_operations: Entity<ChainOperationState>,
 }
 
 impl PluginsPage {
@@ -42,6 +45,7 @@ impl PluginsPage {
         settings: PluginSettings,
         scan_paths_open: bool,
         scan_state: Entity<PluginScanState>,
+        chain_operations: Entity<ChainOperationState>,
     ) -> Self {
         Self {
             on_navigate: cb.on_navigate.clone(),
@@ -50,13 +54,14 @@ impl PluginsPage {
             scan_paths_open,
             callbacks: cb.clone(),
             scan_state,
+            chain_operations,
         }
     }
 
     pub fn render(self, window: &mut Window, cx: &mut App) -> impl IntoElement {
         let chain_ids = self
             .engine
-            .chain()
+            .cached_chain()
             .map(|items| {
                 items
                     .into_iter()
@@ -64,6 +69,7 @@ impl PluginsPage {
                     .collect::<Vec<_>>()
             })
             .unwrap_or_default();
+        let operations = self.chain_operations.read(cx);
         let mut plugins = self
             .engine
             .plugins()
@@ -71,6 +77,7 @@ impl PluginsPage {
             .into_iter()
             .map(|plugin| PluginItem {
                 in_chain: chain_ids.contains(&plugin.unique_id),
+                initializing: operations.is_adding(&plugin.unique_id),
                 id: plugin.unique_id,
                 name: plugin.name,
                 vendor: plugin.vendor,
@@ -93,6 +100,7 @@ impl PluginsPage {
             plugins,
             Arc::clone(&self.engine),
             self.on_navigate.clone(),
+            self.chain_operations.clone(),
         );
 
         div()
@@ -139,6 +147,7 @@ mod tests {
             format: String::from("VST3"),
             path: String::new(),
             in_chain: false,
+            initializing: false,
         }
     }
 

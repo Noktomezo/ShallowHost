@@ -74,6 +74,7 @@ plugins:
   goToChain: "Go to chain"
   inChain: "In chain"
   initializing: "Initializing..."
+  removing: "Removing..."
   loading: "Loading plugin..."
   scanPathsTitle: "Scan Paths"
   scanPathsDescription: "Configure VST2 and VST3 search directories."

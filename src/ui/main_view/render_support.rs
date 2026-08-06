@@ -36,6 +36,7 @@ impl MainView {
             theme_dropdown_motion: self.theme_dropdown_motion.clone(),
             language_dropdown_motion: self.language_dropdown_motion.clone(),
             plugin_scan_state: self.plugin_scan_state.clone(),
+            chain_operation_state: self.chain_operation_state.clone(),
             updater: self.updater.clone(),
         }
     }

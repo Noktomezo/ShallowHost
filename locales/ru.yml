@@ -74,6 +74,7 @@ plugins:
   goToChain: "Перейти к цепочке"
   inChain: "В цепочке"
   initializing: "Инициализируется..."
+  removing: "Удаляется..."
   loading: "Загрузка плагина..."
   scanPathsTitle: "Пути сканирования"
   scanPathsDescription: "Настройте папки для поиска VST2 и VST3 плагинов."

@@ -8,6 +8,7 @@ use crate::engine::Engine;
 use crate::ui::audio_controls::AudioControls;
 use crate::ui::audio_dropdown::audio_dropdown;
 use crate::ui::card_header::card_heading;
+use crate::ui::chain_operations::ChainOperationState;
 use crate::ui::colors;
 use crate::ui::control_style::ControlTypography;
 use crate::ui::i18n;
@@ -40,6 +41,7 @@ pub struct HomePage {
     mono_changed_at: Option<Instant>,
     meter: AudioMeterState,
     on_change_audio_routing: crate::ui::routes::AudioRoutingCallback,
+    chain_operations: Entity<ChainOperationState>,
 }
 
 impl HomePage {
@@ -50,6 +52,7 @@ impl HomePage {
         is_mono: bool,
         mono_changed_at: Option<Instant>,
         meter: AudioMeterState,
+        chain_operations: Entity<ChainOperationState>,
     ) -> Self {
         Self {
             engine,
@@ -60,17 +63,33 @@ impl HomePage {
             mono_changed_at,
             meter,
             on_change_audio_routing: callbacks.on_change_audio_routing.clone(),
+            chain_operations,
         }
     }
 
     pub fn render(self, _window: &mut Window, cx: &mut App) -> impl IntoElement {
-        let chain = match self.engine.chain() {
+        let mut chain = match self.engine.cached_chain() {
             Ok(chain) => chain,
             Err(error) => {
                 eprintln!("failed to read JUCE chain: {error}");
                 Vec::new()
             }
         };
+        let operation = self.chain_operations.read(cx);
+        for item in &mut chain {
+            item.initializing = item
+                .unique_id
+                .as_deref()
+                .is_some_and(|unique_id| operation.is_adding(unique_id));
+            item.removing = operation.is_clearing() || operation.is_removing(&item.id);
+        }
+        if let Some(pending) = operation.pending_plugin()
+            && !chain
+                .iter()
+                .any(|item| item.unique_id.as_deref() == Some(&pending.unique_id))
+        {
+            chain.push(pending.chain_item());
+        }
 
         SmoothVerticalScroll::new(
             "home-page-scroll",
@@ -86,6 +105,7 @@ impl HomePage {
                     Arc::clone(&self.engine),
                     self.on_navigate.clone(),
                     chain,
+                    self.chain_operations.clone(),
                     cx,
                 )),
         )
@@ -288,6 +308,7 @@ fn icon_button(
     icon_name: &'static str,
     tooltip: &'static str,
     destructive: bool,
+    disabled: bool,
 ) -> Stateful<Div> {
     let id = id.into();
     let hover_group = SharedString::from(format!("home-icon-button-{id:?}"));
@@ -300,22 +321,24 @@ fn icon_button(
         .items_center()
         .justify_center()
         .rounded_md()
-        .cursor_pointer()
         .bg(colors::base_900())
         .border_1()
         .border_color(colors::base_800())
         .text_color(foreground)
-        .hover(move |style| {
-            if destructive {
-                style
-                    .bg(colors::red().opacity(0.15))
-                    .border_color(colors::red().opacity(0.4))
-                    .text_color(colors::red())
-            } else {
-                style.bg(colors::base_850())
-            }
-        })
-        .child(semantic_icon(icon_name, &hover_group, destructive));
+        .child(semantic_icon(icon_name, &hover_group, destructive))
+        .when(disabled, |button| button.cursor_default().opacity(0.5))
+        .when(!disabled, |button| {
+            button.cursor_pointer().hover(move |style| {
+                if destructive {
+                    style
+                        .bg(colors::red().opacity(0.15))
+                        .border_color(colors::red().opacity(0.4))
+                        .text_color(colors::red())
+                } else {
+                    style.bg(colors::base_850())
+                }
+            })
+        });
     crate::ui::cursor_tooltip::attach(button, id, i18n::t(tooltip))
 }
 

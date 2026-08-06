@@ -20,6 +20,7 @@ pub(super) fn icon_button(
     tooltip: impl Into<SharedString>,
     variant: IconButtonStyle,
     spinning: bool,
+    disabled: bool,
 ) -> Stateful<Div> {
     let id = id.into();
     let (background, border, foreground, hover_background, hover_border) = match variant {
@@ -72,13 +73,17 @@ pub(super) fn icon_button(
         .flex()
         .items_center()
         .justify_center()
-        .cursor_pointer()
         .bg(background)
         .border_1()
         .border_color(border)
         .rounded_md()
-        .hover(move |style| style.bg(hover_background).border_color(hover_border))
-        .child(icon);
+        .child(icon)
+        .when(disabled, |button| button.cursor_default().opacity(0.5))
+        .when(!disabled, |button| {
+            button
+                .cursor_pointer()
+                .hover(move |style| style.bg(hover_background).border_color(hover_border))
+        });
     cursor_tooltip::attach(button, id, tooltip)
 }
 

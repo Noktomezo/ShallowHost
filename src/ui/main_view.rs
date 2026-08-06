@@ -10,6 +10,7 @@ use crate::system_integration::SystemIntegration;
 
 use super::audio_controls::AudioControls;
 use super::audio_dropdown::AudioDropdownEvent;
+use super::chain_operations::ChainOperationState;
 use super::colors;
 use super::i18n;
 use super::motion::{DropdownMotion, mix_color};
@@ -43,6 +44,7 @@ pub struct MainView {
     theme_dropdown_motion: Entity<DropdownMotion>,
     language_dropdown_motion: Entity<DropdownMotion>,
     plugin_scan_state: Entity<PluginScanState>,
+    chain_operation_state: Entity<ChainOperationState>,
     updater: Entity<Updater>,
     system_integration: Option<SystemIntegration>,
     system_changed_at: [Option<Instant>; 4],
@@ -124,6 +126,7 @@ impl MainView {
             theme_dropdown_motion: cx.new(|_| DropdownMotion::default()),
             language_dropdown_motion: cx.new(|_| DropdownMotion::default()),
             plugin_scan_state: cx.new(|_| PluginScanState::default()),
+            chain_operation_state: cx.new(|_| ChainOperationState::default()),
             updater: updater.clone(),
             system_integration,
             system_changed_at: [None; 4],

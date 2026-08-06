@@ -9,7 +9,8 @@ use gpui_component::{ElementExt, StyledExt};
 use super::chain_drag::{self, ProjectedRow};
 use super::{action_button, card, card_header, icon, icon_button, separator};
 use crate::engine::{ChainItem, Engine};
-use crate::ui::badge::{BadgeStyle, badge};
+use crate::ui::badge::{BadgeStyle, badge, loading_badge};
+use crate::ui::chain_operations::{self, ChainOperationState};
 use crate::ui::colors;
 use crate::ui::i18n;
 use crate::ui::routes::{NavigateCallback, Route};
@@ -36,17 +37,21 @@ pub(super) fn chain_card(
     engine: Arc<Engine>,
     on_navigate: NavigateCallback,
     chain: Vec<ChainItem>,
+    chain_operations: Entity<ChainOperationState>,
     cx: &App,
 ) -> AnyElement {
     let clear_engine = Arc::clone(&engine);
     let item_engine = Arc::clone(&engine);
     let is_empty = chain.is_empty();
+    let chain_busy = chain_operations.read(cx).is_busy();
     let active_drag = chain_drag::active(cx);
     let layout_transition = chain_drag::layout_transition(cx);
     let drag_preview = chain_drag::preview_layout(cx);
     let projected_rows = chain_drag::projected_rows(&chain, active_drag);
     let list_bounds = Rc::new(Cell::new(None));
     let measured_list_bounds = Rc::clone(&list_bounds);
+    let clear_operations = chain_operations.clone();
+    let item_operations = chain_operations;
 
     card()
         .child(
@@ -68,13 +73,23 @@ pub(super) fn chain_card(
                             }),
                     )
                     .child(
-                        icon_button("chain-clear", "trash-2.svg", "home.clearChain", true)
-                            .on_click(move |_, _, cx| {
-                                if let Err(error) = clear_engine.clear_chain() {
-                                    eprintln!("failed to clear JUCE chain: {error}");
-                                }
-                                cx.refresh_windows();
-                            }),
+                        icon_button(
+                            "chain-clear",
+                            "trash-2.svg",
+                            "home.clearChain",
+                            true,
+                            chain_busy || is_empty,
+                        )
+                        .on_click(move |_, _, cx| {
+                            if clear_operations.read(cx).is_busy() || is_empty {
+                                return;
+                            }
+                            chain_operations::clear_chain(
+                                clear_operations.clone(),
+                                Arc::clone(&clear_engine),
+                                cx,
+                            );
+                        }),
                     ),
             ),
         )
@@ -109,7 +124,9 @@ pub(super) fn chain_card(
                                 item,
                                 Arc::clone(&item_engine),
                                 Rc::clone(&list_bounds),
-                                active_drag.is_some(),
+                                active_drag.is_some() && !chain_busy,
+                                item_operations.clone(),
+                                cx,
                             ),
                             ProjectedRow::Placeholder(item) => {
                                 chain_drag::placeholder(item, Arc::clone(&item_engine))
@@ -131,6 +148,8 @@ fn chain_item(
     engine: Arc<Engine>,
     list_bounds: Rc<Cell<Option<Bounds<Pixels>>>>,
     is_dragging: bool,
+    chain_operations: Entity<ChainOperationState>,
+    cx: &App,
 ) -> AnyElement {
     let gui_engine = Arc::clone(&engine);
     let bypass_engine = Arc::clone(&engine);
@@ -149,6 +168,10 @@ fn chain_item(
     };
     let measured_source_bounds = Rc::clone(&source_bounds);
     let drop_engine = Arc::clone(&engine);
+    let disabled = chain_operations.read(cx).is_busy() || item.initializing || item.removing;
+    let gui_operations = chain_operations.clone();
+    let bypass_operations = chain_operations.clone();
+    let remove_operations = chain_operations;
 
     div()
         .relative()
@@ -157,7 +180,7 @@ fn chain_item(
         .on_prepaint(move |bounds, _, _| measured_source_bounds.set(Some(bounds)))
         .child(chain_item_visual(
             &item,
-            drag_handle(index, drag),
+            drag_handle(index, drag, disabled),
             div()
                 .flex()
                 .items_center()
@@ -168,8 +191,12 @@ fn chain_item(
                         "external-link.svg",
                         "home.openGui",
                         false,
+                        disabled,
                     )
-                    .on_click(move |_, _, _| {
+                    .on_click(move |_, _, cx| {
+                        if gui_operations.read(cx).is_busy() {
+                            return;
+                        }
                         if let Err(error) = gui_engine.open_plugin_gui(&gui_id, "ShallowHost") {
                             eprintln!("failed to open plugin editor: {error}");
                         }
@@ -185,8 +212,12 @@ fn chain_item(
                             "home.bypass"
                         },
                         false,
+                        disabled,
                     )
                     .on_click(move |_, _, cx| {
+                        if bypass_operations.read(cx).is_busy() {
+                            return;
+                        }
                         if let Err(error) = bypass_engine.bypass_plugin(&bypass_id, next_bypassed) {
                             eprintln!("failed to change plugin bypass: {error}");
                         }
@@ -199,12 +230,18 @@ fn chain_item(
                         "trash-2.svg",
                         "home.removeFromChain",
                         true,
+                        disabled,
                     )
                     .on_click(move |_, _, cx| {
-                        if let Err(error) = engine.remove_from_chain(&remove_id) {
-                            eprintln!("failed to remove plugin: {error}");
+                        if remove_operations.read(cx).is_busy() {
+                            return;
                         }
-                        cx.refresh_windows();
+                        chain_operations::remove_plugin(
+                            remove_operations.clone(),
+                            Arc::clone(&engine),
+                            remove_id.clone(),
+                            cx,
+                        );
                     }),
                 ),
         ))
@@ -214,7 +251,7 @@ fn chain_item(
         .into_any_element()
 }
 
-fn drag_handle(index: usize, drag: ChainDrag) -> Stateful<Div> {
+fn drag_handle(index: usize, drag: ChainDrag, disabled: bool) -> Stateful<Div> {
     let id = ElementId::from(SharedString::from(format!("chain-drag-{index}")));
     let handle = div()
         .id(id.clone())
@@ -228,25 +265,29 @@ fn drag_handle(index: usize, drag: ChainDrag) -> Stateful<Div> {
         .border_1()
         .border_color(colors::base_800())
         .rounded_md()
-        .hover(|style| {
-            style
-                .bg(colors::base_850())
-                .border_color(colors::base_700())
-        })
-        .child(icon("grip-vertical.svg", colors::base_500()));
-    crate::ui::cursor_tooltip::attach(handle, id, i18n::t("home.dragHandle")).on_drag(
-        drag,
-        |dragged, _cursor_offset, window, cx| {
-            if let Some(source_bounds) = dragged.source_bounds.get() {
-                dragged
-                    .grab_offset
-                    .set(window.mouse_position() - source_bounds.origin);
-            }
-            chain_drag::begin(dragged, window.mouse_position(), cx);
-            cx.refresh_windows();
-            cx.new(|_| InvisibleDragPreview)
-        },
-    )
+        .child(icon("grip-vertical.svg", colors::base_500()))
+        .when(disabled, |handle| handle.opacity(0.5))
+        .when(!disabled, |handle| {
+            handle.hover(|style| {
+                style
+                    .bg(colors::base_850())
+                    .border_color(colors::base_700())
+            })
+        });
+    let handle = crate::ui::cursor_tooltip::attach(handle, id, i18n::t("home.dragHandle"));
+    if disabled {
+        return handle;
+    }
+    handle.on_drag(drag, |dragged, _cursor_offset, window, cx| {
+        if let Some(source_bounds) = dragged.source_bounds.get() {
+            dragged
+                .grab_offset
+                .set(window.mouse_position() - source_bounds.origin);
+        }
+        chain_drag::begin(dragged, window.mouse_position(), cx);
+        cx.refresh_windows();
+        cx.new(|_| InvisibleDragPreview)
+    })
 }
 
 fn render_drag_preview(preview: chain_drag::DragPreviewLayout) -> AnyElement {
@@ -282,6 +323,9 @@ pub(super) fn chain_item_visual(
         .border_1()
         .border_color(colors::base_800())
         .rounded_md()
+        .when(item.initializing || item.removing, |card| {
+            card.opacity(0.75)
+        })
         .child(
             div()
                 .min_w_0()
@@ -310,18 +354,24 @@ pub(super) fn chain_item_visual(
                                         .child(item.name.clone()),
                                 )
                                 .child(badge(item.format.clone(), BadgeStyle::Purple))
-                                .child(badge(
-                                    i18n::t(if item.bypassed {
-                                        "home.bypassed"
-                                    } else {
-                                        "home.active"
-                                    }),
-                                    if item.bypassed {
-                                        BadgeStyle::Red
-                                    } else {
-                                        BadgeStyle::Green
-                                    },
-                                )),
+                                .child(if item.initializing {
+                                    loading_badge(i18n::t("plugins.initializing"))
+                                } else if item.removing {
+                                    loading_badge(i18n::t("plugins.removing"))
+                                } else {
+                                    badge(
+                                        i18n::t(if item.bypassed {
+                                            "home.bypassed"
+                                        } else {
+                                            "home.active"
+                                        }),
+                                        if item.bypassed {
+                                            BadgeStyle::Red
+                                        } else {
+                                            BadgeStyle::Green
+                                        },
+                                    )
+                                }),
                         )
                         .child(
                             div()
