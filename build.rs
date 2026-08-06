@@ -4,7 +4,10 @@ use std::process::Command;
 
 fn main() {
     println!("cargo:rerun-if-changed=assets/windows/ShallowHost.ico");
-    embed_windows_resources();
+    println!("cargo:rerun-if-changed=assets/windows/ShallowHostDev.ico");
+
+    let profile = env::var("PROFILE").unwrap_or_else(|_| String::from("debug"));
+    embed_windows_resources(&profile);
 
     for source in [
         "cpp/src/host.h",
@@ -28,7 +31,6 @@ fn main() {
         .std("c++20")
         .compile("shallow-host-cxxbridge");
 
-    let profile = env::var("PROFILE").unwrap_or_else(|_| String::from("debug"));
     let configuration = if profile == "release" {
         "Release"
     } else {
@@ -62,15 +64,21 @@ fn main() {
 }
 
 #[cfg(windows)]
-fn embed_windows_resources() {
+fn embed_windows_resources(profile: &str) {
+    let icon = if profile == "release" {
+        "assets/windows/ShallowHost.ico"
+    } else {
+        "assets/windows/ShallowHostDev.ico"
+    };
+
     winresource::WindowsResource::new()
-        .set_icon("assets/windows/ShallowHost.ico")
+        .set_icon(icon)
         .compile()
-        .unwrap_or_else(|error| panic!("failed to embed ShallowHost icon: {error}"));
+        .unwrap_or_else(|error| panic!("failed to embed ShallowHost icon `{icon}`: {error}"));
 }
 
 #[cfg(not(windows))]
-fn embed_windows_resources() {}
+fn embed_windows_resources(_profile: &str) {}
 
 fn run_cmake<const N: usize>(arguments: [&str; N], action: &str) {
     let output = Command::new("cmake")

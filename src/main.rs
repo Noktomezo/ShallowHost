@@ -18,6 +18,11 @@ use gpui_component::{Root, Theme};
 use std::sync::Arc;
 use ui::MainView;
 
+#[cfg(debug_assertions)]
+const APP_TITLE: &str = "ShallowHost (Dev)";
+#[cfg(not(debug_assertions))]
+const APP_TITLE: &str = "ShallowHost";
+
 fn load_fonts(cx: &mut App) {
     cx.text_system()
         .add_fonts(vec![
@@ -84,7 +89,7 @@ fn main() {
                 ..Default::default()
             },
             move |window, cx| {
-                window.set_window_title("ShallowHost");
+                window.set_window_title(APP_TITLE);
                 let engine = Arc::clone(&engine);
                 let view = cx.new(|cx| MainView::new(engine, storage, window, cx));
                 cx.new(|cx| {
