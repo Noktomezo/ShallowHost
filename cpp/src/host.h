@@ -100,7 +100,6 @@ public:
         outPeak = outputPeak.exchange(0.0f, std::memory_order_relaxed);
     }
 };
-
 class SHALLOW_HOST_API ShallowHost : public juce::ChangeListener {
 public:
     static void initialize();
@@ -212,38 +211,3 @@ private:
 
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(ShallowHost)
 };
-
-#ifdef SHALLOW_HOST_DLL_BUILD
-#define SH_EXPORT extern "C" __declspec(dllexport)
-#else
-#define SH_EXPORT extern "C"
-#endif
-
-SH_EXPORT void sh_init();
-SH_EXPORT void sh_shutdown();
-SH_EXPORT void sh_set_data_dir(const char* path);
-SH_EXPORT bool sh_audio_start(const char* driver, const char* input, const char* output, int sample_rate, int buffer_size, int input_mask, int output_mask, bool mono);
-SH_EXPORT bool sh_audio_stop();
-SH_EXPORT void sh_get_audio_levels(float* in_peak, float* out_peak);
-
-SH_EXPORT char* sh_get_audio_devices(const char* driver, const char* device_name);
-SH_EXPORT char* sh_scan_plugins(const char* vst3_paths_json);
-
-SH_EXPORT char* sh_add_to_chain(const char* unique_id);
-SH_EXPORT bool sh_remove_from_chain(const char* node_id);
-SH_EXPORT bool sh_move_plugin(const char* node_id, bool up);
-SH_EXPORT bool sh_reorder_chain(const char* node_id, int to_index);
-SH_EXPORT bool sh_bypass_plugin(const char* node_id, bool bypassed);
-SH_EXPORT char* sh_get_chain();
-
-SH_EXPORT char* sh_get_plugin_parameters(const char* node_id);
-SH_EXPORT bool sh_set_plugin_parameter(const char* node_id, int param_index, float value);
-
-SH_EXPORT bool sh_open_plugin_gui(const char* node_id, const char* title_prefix);
-SH_EXPORT bool sh_close_plugin_gui(const char* node_id);
-
-SH_EXPORT char* sh_save_state();
-SH_EXPORT bool sh_load_state(const char* state);
-SH_EXPORT void sh_set_mono_mode(bool mono);
-
-SH_EXPORT void sh_free_string(char* ptr);

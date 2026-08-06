@@ -37,7 +37,7 @@ GPUI interface and application state (Rust)
                   │
           safe Engine facade
                   │
-            C-compatible FFI
+               cxx bridge
                   │
 JUCE 9 AudioProcessorGraph engine (C++)
                   │

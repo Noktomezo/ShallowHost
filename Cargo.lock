@@ -988,6 +988,32 @@ dependencies = [
 ]
 
 [[package]]
+name = "clap"
+version = "4.6.6"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "473c7e07f409a8d772161724aa8db6a765a2532a70f9667eeb7b49d3d02fbdca"
+dependencies = [
+ "clap_builder",
+]
+
+[[package]]
+name = "clap_builder"
+version = "4.6.6"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "7b48fea5a88e9ae728a2dcbedbfc0e730f7d60da42e1cb049a83c9fb8b789889"
+dependencies = [
+ "anstyle",
+ "clap_lex",
+ "strsim",
+]
+
+[[package]]
+name = "clap_lex"
+version = "1.1.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "c8d4a3bb8b1e0c1050499d1815f5ab16d04f0959b233085fb31653fbfc9d98f9"
+
+[[package]]
 name = "cocoa"
 version = "0.25.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -1417,6 +1443,68 @@ checksum = "2d83cb7e7a873830708d6b02a78cd36a592c6fa14bf267b68725103b85c0d77f"
 dependencies = [
  "link-section",
  "linktime-proc-macro",
+]
+
+[[package]]
+name = "cxx"
+version = "1.0.198"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "6fe442a792c7c736eea18b32a7f8a3b63cf8aafabda6760042dc2fdeda456291"
+dependencies = [
+ "cc",
+ "cxx-build",
+ "cxxbridge-cmd",
+ "cxxbridge-flags",
+ "cxxbridge-macro",
+ "foldhash 0.2.0",
+ "link-cplusplus",
+]
+
+[[package]]
+name = "cxx-build"
+version = "1.0.198"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "e3184a94384c663718698311a78a51ac00c484c10b4eeac06fb0a068c5f64fa2"
+dependencies = [
+ "cc",
+ "codespan-reporting",
+ "indexmap",
+ "proc-macro2",
+ "quote",
+ "scratch",
+ "syn 3.0.3",
+]
+
+[[package]]
+name = "cxxbridge-cmd"
+version = "1.0.198"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "0148d8fd1199329ddf1d157a5e134e51ceff37c6a7ddd38615c399d81cb05d8d"
+dependencies = [
+ "clap",
+ "codespan-reporting",
+ "indexmap",
+ "proc-macro2",
+ "quote",
+ "syn 3.0.3",
+]
+
+[[package]]
+name = "cxxbridge-flags"
+version = "1.0.198"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "52850339faed2eaadd24e286dc1d8268cc6f8a7bd9524d713adc9099566b4c89"
+
+[[package]]
+name = "cxxbridge-macro"
+version = "1.0.198"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "2c77c856545d886c9bd5215409ebb63b925e262135248b50c79e5a5f194ee47c"
+dependencies = [
+ "indexmap",
+ "proc-macro2",
+ "quote",
+ "syn 3.0.3",
 ]
 
 [[package]]
@@ -3770,6 +3858,15 @@ name = "linebender_resource_handle"
 version = "0.1.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "d4a5ff6bcca6c4867b1c4fd4ef63e4db7436ef363e0ad7531d1558856bae64f4"
+
+[[package]]
+name = "link-cplusplus"
+version = "1.0.12"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "7f78c730aaa7d0b9336a299029ea49f9ee53b0ed06e9202e8cb7db9bae7b8c82"
+dependencies = [
+ "cc",
+]
 
 [[package]]
 name = "link-section"
@@ -6177,6 +6274,12 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "94143f37725109f92c262ed2cf5e59bce7498c01bcc1502d7b9afe439a4e9f49"
 
 [[package]]
+name = "scratch"
+version = "1.0.9"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "d68f2ec51b097e4c1a75b681a8bec621909b5e91f15bb7b840c4f2f7b01148b2"
+
+[[package]]
 name = "screencapturekit"
 version = "0.2.8"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -6424,6 +6527,8 @@ name = "shallow-host-gpui"
 version = "0.3.0"
 dependencies = [
  "auto-launch",
+ "cxx",
+ "cxx-build",
  "gpui",
  "gpui-component",
  "gpui-component-assets",
@@ -6700,6 +6805,12 @@ dependencies = [
  "proc-macro2",
  "quote",
 ]
+
+[[package]]
+name = "strsim"
+version = "0.11.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "7da8b5736845d9f2fcb837ea5d9e2628564b3b043a70948a3f0b778838c5fb4f"
 
 [[package]]
 name = "strum"

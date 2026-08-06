@@ -1,167 +1,107 @@
+#include "native_host.h"
 #include "host.h"
-#include <cstring>
-#include <cstdlib>
 
-// Helper to duplicate std::string to C-string using _strdup (Windows standard)
-static char* copyToC(const std::string& str)
-{
-    return _strdup(str.c_str());
-}
+namespace shallow_host::native {
 
-SH_EXPORT void sh_init()
+void init()
 {
     ShallowHost::initialize();
 }
 
-SH_EXPORT void sh_shutdown()
+void shutdown()
 {
     ShallowHost::shutdown();
 }
 
-SH_EXPORT void sh_set_data_dir(const char* path)
+void setDataDir(const std::string& path)
 {
-    if (path)
-    {
-        ShallowHost::getInstance().setAppDataDirectory(std::string(path));
-    }
+    ShallowHost::getInstance().setAppDataDirectory(path);
 }
 
-SH_EXPORT bool sh_audio_start(const char* driver, const char* input, const char* output, int sample_rate, int buffer_size, int input_mask, int output_mask, bool mono)
+bool audioStart(const std::string& driver, const std::string& input, const std::string& output,
+                std::int32_t sampleRate, std::int32_t bufferSize, std::int32_t inputMask,
+                std::int32_t outputMask, bool mono)
 {
     return ShallowHost::getInstance().audioStart(
-        driver ? driver : "",
-        input ? input : "",
-        output ? output : "",
-        sample_rate,
-        buffer_size,
-        input_mask,
-        output_mask,
-        mono
-    );
+        driver.c_str(), input.c_str(), output.c_str(), sampleRate, bufferSize,
+        inputMask, outputMask, mono);
 }
 
-SH_EXPORT bool sh_audio_stop()
+bool audioStop()
 {
     return ShallowHost::getInstance().audioStop();
 }
 
-SH_EXPORT void sh_get_audio_levels(float* in_peak, float* out_peak)
+AudioLevels audioLevels()
 {
-    if (in_peak && out_peak)
-    {
-        ShallowHost::getInstance().getAudioLevels(*in_peak, *out_peak);
-    }
+    AudioLevels levels {};
+    ShallowHost::getInstance().getAudioLevels(levels.input, levels.output);
+    return levels;
 }
 
-SH_EXPORT char* sh_get_audio_devices(const char* driver, const char* device_name)
+std::string audioDevices(const std::string& driver, const std::string& device)
 {
-    return copyToC(ShallowHost::getInstance().getAudioDevicesJson(driver, device_name));
+    return ShallowHost::getInstance().getAudioDevicesJson(driver.c_str(), device.c_str());
 }
 
-SH_EXPORT char* sh_scan_plugins(const char* vst3_paths_json)
+std::string scanPlugins(const std::string& vst3PathsJson)
 {
-    return copyToC(ShallowHost::getInstance().scanPluginsJson(
-        vst3_paths_json ? std::string(vst3_paths_json) : "[]"
-    ));
+    return ShallowHost::getInstance().scanPluginsJson(vst3PathsJson);
 }
 
-SH_EXPORT char* sh_add_to_chain(const char* unique_id)
+std::string addToChain(const std::string& uniqueId)
 {
-    if (!unique_id) return nullptr;
-    return copyToC(ShallowHost::getInstance().addToChain(std::string(unique_id)));
+    return ShallowHost::getInstance().addToChain(uniqueId);
 }
 
-SH_EXPORT char* sh_add_to_chain_with_state(const char* unique_id, const char* state_base64, bool bypassed)
-{
-    if (!unique_id) return nullptr;
-    return copyToC(ShallowHost::getInstance().addToChainWithState(
-        std::string(unique_id),
-        state_base64 ? std::string(state_base64) : "",
-        bypassed
-    ));
-}
-
-SH_EXPORT void sh_clear_chain()
+void clearChain()
 {
     ShallowHost::getInstance().clearChain();
 }
 
-SH_EXPORT bool sh_remove_from_chain(const char* node_id)
+bool removeFromChain(const std::string& nodeId)
 {
-    if (!node_id) return false;
-    return ShallowHost::getInstance().removeFromChain(std::string(node_id));
+    return ShallowHost::getInstance().removeFromChain(nodeId);
 }
 
-SH_EXPORT bool sh_move_plugin(const char* node_id, bool up)
+bool reorderChain(const std::string& nodeId, std::int32_t toIndex)
 {
-    if (!node_id) return false;
-    return ShallowHost::getInstance().movePlugin(std::string(node_id), up);
+    return ShallowHost::getInstance().reorderChain(nodeId, toIndex);
 }
 
-SH_EXPORT bool sh_reorder_chain(const char* node_id, int to_index)
+bool bypassPlugin(const std::string& nodeId, bool bypassed)
 {
-    if (!node_id) return false;
-    return ShallowHost::getInstance().reorderChain(std::string(node_id), to_index);
+    return ShallowHost::getInstance().bypassPlugin(nodeId, bypassed);
 }
 
-SH_EXPORT bool sh_bypass_plugin(const char* node_id, bool bypassed)
+std::string chain()
 {
-    if (!node_id) return false;
-    return ShallowHost::getInstance().bypassPlugin(std::string(node_id), bypassed);
+    return ShallowHost::getInstance().getChainJson();
 }
 
-SH_EXPORT char* sh_get_chain()
+std::string parameters(const std::string& nodeId)
 {
-    return copyToC(ShallowHost::getInstance().getChainJson());
+    return ShallowHost::getInstance().getPluginParametersJson(nodeId);
 }
 
-SH_EXPORT char* sh_get_plugin_parameters(const char* node_id)
+bool openPluginGui(const std::string& nodeId, const std::string& titlePrefix)
 {
-    if (!node_id) return nullptr;
-    return copyToC(ShallowHost::getInstance().getPluginParametersJson(std::string(node_id)));
+    return ShallowHost::getInstance().openPluginGui(nodeId, titlePrefix);
 }
 
-SH_EXPORT bool sh_set_plugin_parameter(const char* node_id, int param_index, float value)
+std::string saveState()
 {
-    if (!node_id) return false;
-    return ShallowHost::getInstance().setPluginParameter(std::string(node_id), param_index, value);
+    return ShallowHost::getInstance().saveStateJson();
 }
 
-SH_EXPORT bool sh_open_plugin_gui(const char* node_id, const char* title_prefix)
+bool loadState(const std::string& state)
 {
-    if (!node_id) return false;
-    return ShallowHost::getInstance().openPluginGui(
-        std::string(node_id),
-        title_prefix ? std::string(title_prefix) : ""
-    );
+    return ShallowHost::getInstance().loadStateJson(state);
 }
 
-SH_EXPORT bool sh_close_plugin_gui(const char* node_id)
-{
-    if (!node_id) return false;
-    return ShallowHost::getInstance().closePluginGui(std::string(node_id));
-}
-
-SH_EXPORT char* sh_save_state()
-{
-    return copyToC(ShallowHost::getInstance().saveStateJson());
-}
-
-SH_EXPORT bool sh_load_state(const char* state)
-{
-    if (!state) return false;
-    return ShallowHost::getInstance().loadStateJson(std::string(state));
-}
-
-SH_EXPORT void sh_set_mono_mode(bool mono)
+void setMonoMode(bool mono)
 {
     ShallowHost::getInstance().setMonoMode(mono);
 }
 
-SH_EXPORT void sh_free_string(char* ptr)
-{
-    if (ptr)
-    {
-        free(ptr);
-    }
-}
+} // namespace shallow_host::native

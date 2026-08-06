@@ -13,8 +13,10 @@ use std::sync::Mutex;
 
 #[derive(Debug)]
 pub enum EngineError {
-    InteriorNul,
-    InvalidUtf8,
+    BridgeFailure {
+        operation: &'static str,
+        message: String,
+    },
     NativeFailure(&'static str),
     ChainIndexOutOfRange(usize),
     InvalidResponse(serde_json::Error),
@@ -32,8 +34,9 @@ pub enum EngineError {
 impl fmt::Display for EngineError {
     fn fmt(&self, formatter: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {
-            Self::InteriorNul => formatter.write_str("text passed to JUCE contains a NUL byte"),
-            Self::InvalidUtf8 => formatter.write_str("JUCE returned text that is not valid UTF-8"),
+            Self::BridgeFailure { operation, message } => {
+                write!(formatter, "JUCE bridge failed to {operation}: {message}")
+            }
             Self::NativeFailure(operation) => {
                 write!(formatter, "JUCE operation failed: {operation}")
             }
@@ -153,7 +156,7 @@ impl Engine {
             chain_state_path: data_dir.join("chain.json"),
         };
         let _guard = engine.lock()?;
-        ffi::init();
+        ffi::init()?;
         ffi::set_data_dir(&data_dir.to_string_lossy())?;
         let cached_plugins = parse_json(&ffi::scan_plugins("[]")?)?;
         drop(_guard);
@@ -166,21 +169,21 @@ impl Engine {
 
     pub fn audio_start(&self, config: &AudioConfig<'_>) -> Result<(), EngineError> {
         let _guard = self.lock()?;
-        ffi::audio_start(config)
+        ffi::audio_start(config)?
             .then_some(())
             .ok_or(EngineError::NativeFailure("start audio"))
     }
 
     pub fn audio_stop(&self) -> Result<(), EngineError> {
         let _guard = self.lock()?;
-        ffi::audio_stop()
+        ffi::audio_stop()?
             .then_some(())
             .ok_or(EngineError::NativeFailure("stop audio"))
     }
 
     pub fn audio_levels(&self) -> Result<(f32, f32), EngineError> {
         let _guard = self.lock()?;
-        Ok(ffi::audio_levels())
+        ffi::audio_levels()
     }
 
     pub fn audio_devices(&self, driver: &str, device: &str) -> Result<AudioDevices, EngineError> {
@@ -236,7 +239,7 @@ impl Engine {
 
     pub fn clear_chain(&self) -> Result<(), EngineError> {
         let _guard = self.lock()?;
-        ffi::clear_chain();
+        ffi::clear_chain()?;
         self.cache_chain_from_native()?;
         drop(_guard);
         self.save_chain_state()
@@ -244,7 +247,7 @@ impl Engine {
 
     pub fn remove_from_chain(&self, node_id: &str) -> Result<(), EngineError> {
         let _guard = self.lock()?;
-        let removed = ffi::remove_from_chain(node_id)
+        let removed = ffi::remove_from_chain(node_id)?
             .then_some(())
             .ok_or(EngineError::NativeFailure("remove plugin from chain"));
         if removed.is_ok() {
@@ -272,7 +275,7 @@ impl Engine {
 
     pub fn bypass_plugin(&self, node_id: &str, bypassed: bool) -> Result<(), EngineError> {
         let _guard = self.lock()?;
-        let changed = ffi::bypass_plugin(node_id, bypassed)
+        let changed = ffi::bypass_plugin(node_id, bypassed)?
             .then_some(())
             .ok_or(EngineError::NativeFailure("change plugin bypass"));
         if changed.is_ok() {
@@ -285,15 +288,14 @@ impl Engine {
 
     pub fn open_plugin_gui(&self, node_id: &str, title: &str) -> Result<(), EngineError> {
         let _guard = self.lock()?;
-        ffi::open_plugin_gui(node_id, title)
+        ffi::open_plugin_gui(node_id, title)?
             .then_some(())
             .ok_or(EngineError::NativeFailure("open plugin editor"))
     }
 
     pub fn set_mono_mode(&self, mono: bool) -> Result<(), EngineError> {
         let _guard = self.lock()?;
-        ffi::set_mono_mode(mono);
-        Ok(())
+        ffi::set_mono_mode(mono)
     }
 
     pub fn parameters(&self, node_id: &str) -> Result<Vec<ParameterInfo>, EngineError> {
@@ -370,7 +372,9 @@ impl Drop for Engine {
                     self.chain_state_path.display()
                 );
             }
-            ffi::shutdown();
+            if let Err(error) = ffi::shutdown() {
+                eprintln!("failed to shut down JUCE: {error}");
+            }
         }
     }
 }

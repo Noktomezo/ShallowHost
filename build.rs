@@ -13,11 +13,20 @@ fn main() {
         "cpp/src/host_chain.cpp",
         "cpp/src/host_params.cpp",
         "cpp/src/ffi.cpp",
+        "cpp/src/native_host.h",
+        "cpp/src/cxx_bridge.h",
+        "cpp/src/cxx_bridge.cpp",
         "cpp/CMakeLists.txt",
         "cpp/patches/juce-vst3-waveshell-class-index.patch",
     ] {
         println!("cargo:rerun-if-changed={source}");
     }
+
+    cxx_build::bridge("src/engine/ffi.rs")
+        .file("cpp/src/cxx_bridge.cpp")
+        .include("cpp/src")
+        .std("c++20")
+        .compile("shallow-host-cxxbridge");
 
     let profile = env::var("PROFILE").unwrap_or_else(|_| String::from("debug"));
     let configuration = if profile == "release" {
