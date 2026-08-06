@@ -5,8 +5,8 @@ use std::time::Instant;
 use super::MainView;
 use crate::ui::audio_controls::ChannelDirection;
 use crate::ui::routes::{
-    AudioMeterState, DropdownCallbacks, Language, PluginPathKind, PluginPathUpdate, RenderContext,
-    Route, SystemSetting, ThemeMode,
+    AudioMeterState, DropdownCallbacks, Language, PluginPathUpdate, RenderContext, Route,
+    SystemSetting, ThemeMode,
 };
 
 impl MainView {
@@ -73,10 +73,9 @@ impl MainView {
         let plugin_path = cx.listener(|this: &mut Self, value: &PluginPathUpdate, _window, cx| {
             this.update_plugin_path(value.clone(), cx);
         });
-        let plugin_path_picker =
-            cx.listener(|this: &mut Self, value: &PluginPathKind, window, cx| {
-                this.pick_plugin_path(*value, window, cx);
-            });
+        let plugin_path_picker = cx.listener(|this: &mut Self, _value: &(), window, cx| {
+            this.pick_plugin_path(window, cx);
+        });
 
         DropdownCallbacks {
             on_change_theme: Rc::new(move |value, window, cx| theme(&value, window, cx)),
@@ -95,8 +94,8 @@ impl MainView {
             on_update_plugin_path: Rc::new(move |value, window, cx| {
                 plugin_path(&value, window, cx);
             }),
-            on_pick_plugin_path: Rc::new(move |value, window, cx| {
-                plugin_path_picker(&value, window, cx);
+            on_pick_plugin_path: Rc::new(move |window, cx| {
+                plugin_path_picker(&(), window, cx);
             }),
             on_change_audio_routing: Rc::new(move |direction, indices, enabled, window, cx| {
                 audio_routing(&(direction, indices, enabled), window, cx);

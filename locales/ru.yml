@@ -36,7 +36,7 @@ home:
   monoMode: "Моно-вход"
   monoModeDescription: "Дублировать первый входной канал на оба канала (L+R)."
   chain: "Цепочка плагинов"
-  chainDescription: "Управление VST2/VST3 плагинами обработки."
+  chainDescription: "Управление плагинами обработки VST3 / CLAP / AU."
   addPlugins: "Добавить плагины"
   chainEmpty: "В цепочке нет плагинов."
   bypass: "Обход"
@@ -62,7 +62,7 @@ home:
 
 plugins:
   title: "Плагины"
-  description: "Сканирование и управление VST2/VST3 плагинами."
+  description: "Сканирование и управление плагинами VST3 / CLAP / AU."
   scan: "Сканировать"
   scanning: "Сканирование..."
   empty: "Плагины ещё не отсканированы."
@@ -77,12 +77,10 @@ plugins:
   removing: "Удаляется..."
   loading: "Загрузка плагина..."
   scanPathsTitle: "Пути сканирования"
-  scanPathsDescription: "Настройте папки для поиска VST2 и VST3 плагинов."
+  scanPathsDescription: "Настройте папки для поиска VST3-плагинов."
   addFolder: "Добавить папку"
   resetDefaults: "Сбросить папки"
-  vst2SearchPaths: "Пути поиска VST2"
   vst3SearchPaths: "Пути поиска VST3"
-  noVst2Paths: "Пути VST2 не настроены"
   noVst3Paths: "Пути VST3 не настроены"
   done: "Готово"
 

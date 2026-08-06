@@ -19,7 +19,7 @@ unsafe extern "C" {
     fn sh_audio_stop() -> bool;
     fn sh_get_audio_levels(input_peak: *mut f32, output_peak: *mut f32);
     fn sh_get_audio_devices(driver: *const c_char, device: *const c_char) -> *mut c_char;
-    fn sh_scan_plugins(vst2_paths: *const c_char, vst3_paths: *const c_char) -> *mut c_char;
+    fn sh_scan_plugins(vst3_paths: *const c_char) -> *mut c_char;
     fn sh_add_to_chain(unique_id: *const c_char) -> *mut c_char;
     fn sh_clear_chain();
     fn sh_remove_from_chain(node_id: *const c_char) -> bool;
@@ -129,14 +129,10 @@ pub fn audio_devices(driver: &str, device: &str) -> Result<String, EngineError> 
     )
 }
 
-pub fn scan_plugins(vst2: &str, vst3: &str) -> Result<String, EngineError> {
-    let vst2 = c_string(vst2)?;
+pub fn scan_plugins(vst3: &str) -> Result<String, EngineError> {
     let vst3 = c_string(vst3)?;
-    // SAFETY: both pointers are valid NUL-terminated JSON strings for the call.
-    owned_string(
-        unsafe { sh_scan_plugins(vst2.as_ptr(), vst3.as_ptr()) },
-        "scan plugins",
-    )
+    // SAFETY: the pointer is a valid NUL-terminated JSON string for the call.
+    owned_string(unsafe { sh_scan_plugins(vst3.as_ptr()) }, "scan plugins")
 }
 
 pub fn add_to_chain(unique_id: &str) -> Result<String, EngineError> {

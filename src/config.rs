@@ -74,14 +74,12 @@ pub struct DriverDeviceSelection {
 #[derive(Clone, Debug, Serialize, Deserialize)]
 #[serde(default)]
 pub struct PluginSettings {
-    pub vst2_paths: Vec<String>,
     pub vst3_paths: Vec<String>,
 }
 
 impl Default for PluginSettings {
     fn default() -> Self {
         Self {
-            vst2_paths: vec![String::from(r"C:\Program Files\VSTPlugins")],
             vst3_paths: vec![String::from(r"C:\Program Files\Common Files\VST3")],
         }
     }

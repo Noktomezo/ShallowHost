@@ -155,7 +155,7 @@ impl Engine {
         let _guard = engine.lock()?;
         ffi::init();
         ffi::set_data_dir(&data_dir.to_string_lossy())?;
-        let cached_plugins = parse_json(&ffi::scan_plugins("[]", "[]")?)?;
+        let cached_plugins = parse_json(&ffi::scan_plugins("[]")?)?;
         drop(_guard);
         *engine
             .plugins
@@ -188,15 +188,10 @@ impl Engine {
         parse_json(&ffi::audio_devices(driver, device)?)
     }
 
-    pub fn scan_plugins(
-        &self,
-        vst2_paths: &[String],
-        vst3_paths: &[String],
-    ) -> Result<Vec<ScannedPlugin>, EngineError> {
-        let vst2 = serde_json::to_string(vst2_paths)?;
+    pub fn scan_plugins(&self, vst3_paths: &[String]) -> Result<Vec<ScannedPlugin>, EngineError> {
         let vst3 = serde_json::to_string(vst3_paths)?;
         let _guard = self.lock()?;
-        let plugins: Vec<ScannedPlugin> = parse_json(&ffi::scan_plugins(&vst2, &vst3)?)?;
+        let plugins: Vec<ScannedPlugin> = parse_json(&ffi::scan_plugins(&vst3)?)?;
         drop(_guard);
         let mut cache = self.plugins.lock().map_err(|_| EngineError::LockPoisoned)?;
         *cache = plugins.clone();

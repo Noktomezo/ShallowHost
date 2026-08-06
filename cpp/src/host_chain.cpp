@@ -2,18 +2,8 @@
 #include <algorithm>
 #include <iostream>
 
-std::string ShallowHost::scanPluginsJson(const std::string& vst2PathsJson, const std::string& vst3PathsJson)
+std::string ShallowHost::scanPluginsJson(const std::string& vst3PathsJson)
 {
-    juce::FileSearchPath vst2Path;
-    juce::var vst2Arr = juce::JSON::parse(juce::String(vst2PathsJson));
-    if (vst2Arr.isArray())
-    {
-        for (int i = 0; i < vst2Arr.getArray()->size(); ++i)
-        {
-            vst2Path.add(juce::File(vst2Arr.getArray()->getReference(i).toString()));
-        }
-    }
-
     juce::FileSearchPath vst3Path;
     juce::var vst3Arr = juce::JSON::parse(juce::String(vst3PathsJson));
     if (vst3Arr.isArray())
@@ -79,7 +69,9 @@ std::string ShallowHost::scanPluginsJson(const std::string& vst2PathsJson, const
         auto* fmt = formatManager.getFormat(fmtIdx);
         if (fmt == nullptr) continue;
 
-        juce::FileSearchPath searchPath = (fmt->getName() == "VST3") ? vst3Path : vst2Path;
+        juce::FileSearchPath searchPath = fmt->getName() == "VST3"
+            ? vst3Path
+            : fmt->getDefaultLocationsToSearch();
         if (searchPath.getNumPaths() == 0) continue;
 
         juce::PluginDirectoryScanner scanner(

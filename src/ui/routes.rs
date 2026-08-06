@@ -29,16 +29,10 @@ pub enum SystemSetting {
     AutoCheckUpdates,
 }
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
-pub enum PluginPathKind {
-    Vst2,
-    Vst3,
-}
-
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub enum PluginPathUpdate {
-    Add(PluginPathKind, String),
-    Remove(PluginPathKind, String),
+    Add(String),
+    Remove(String),
     Reset,
 }
 
@@ -78,7 +72,7 @@ pub type MonoCallback = Rc<dyn Fn(bool, &mut Window, &mut App)>;
 pub type SystemCallback = Rc<dyn Fn(SystemSetting, bool, &mut Window, &mut App)>;
 pub type ScanPathsVisibilityCallback = Rc<dyn Fn(bool, &mut Window, &mut App)>;
 pub type PluginPathCallback = Rc<dyn Fn(PluginPathUpdate, &mut Window, &mut App)>;
-pub type PluginPathPickerCallback = Rc<dyn Fn(PluginPathKind, &mut Window, &mut App)>;
+pub type PluginPathPickerCallback = Rc<dyn Fn(&mut Window, &mut App)>;
 pub type AudioRoutingCallback =
     Rc<dyn Fn(ChannelDirection, Vec<usize>, bool, &mut Window, &mut App)>;
 

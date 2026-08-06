@@ -45,7 +45,6 @@ impl HeaderContext {
     fn render(&self, plugin_count: usize, cx: &App) -> AnyElement {
         let open_scan_paths = self.callbacks.on_set_scan_paths_open.clone();
         let scan_engine = Arc::clone(&self.engine);
-        let vst2_paths = self.settings.vst2_paths.clone();
         let vst3_paths = self.settings.vst3_paths.clone();
         let scanning = self.scan_state.read(cx).scanning;
         let scan_state = self.scan_state.clone();
@@ -125,11 +124,10 @@ impl HeaderContext {
                             });
                             window.refresh();
                             let engine = Arc::clone(&scan_engine);
-                            let vst2 = vst2_paths.clone();
                             let vst3 = vst3_paths.clone();
                             let scan_state = scan_state.clone();
-                            let task = cx
-                                .background_spawn(async move { engine.scan_plugins(&vst2, &vst3) });
+                            let task =
+                                cx.background_spawn(async move { engine.scan_plugins(&vst3) });
                             cx.spawn(async move |cx| {
                                 let result = task.await;
                                 if let Err(error) = result {

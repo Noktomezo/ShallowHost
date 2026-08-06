@@ -10,8 +10,8 @@ use crate::ui::audio_controls::ChannelDirection;
 use crate::ui::chain_operations::PendingPlugin;
 use crate::ui::colors;
 use crate::ui::i18n;
+use crate::ui::routes::PluginPathUpdate;
 use crate::ui::routes::{Language, Route, SystemSetting, ThemeMode};
-use crate::ui::routes::{PluginPathKind, PluginPathUpdate};
 
 impl MainView {
     pub(super) fn start_chain_restore_task(&mut self, cx: &mut Context<Self>) {
@@ -357,21 +357,13 @@ impl MainView {
     pub(super) fn update_plugin_path(&mut self, update: PluginPathUpdate, cx: &mut Context<Self>) {
         let settings = &mut self.storage.config_mut().plugins;
         match update {
-            PluginPathUpdate::Add(kind, path) => {
-                let paths = match kind {
-                    PluginPathKind::Vst2 => &mut settings.vst2_paths,
-                    PluginPathKind::Vst3 => &mut settings.vst3_paths,
-                };
-                if !paths.contains(&path) {
-                    paths.push(path);
+            PluginPathUpdate::Add(path) => {
+                if !settings.vst3_paths.contains(&path) {
+                    settings.vst3_paths.push(path);
                 }
             }
-            PluginPathUpdate::Remove(kind, path) => {
-                let paths = match kind {
-                    PluginPathKind::Vst2 => &mut settings.vst2_paths,
-                    PluginPathKind::Vst3 => &mut settings.vst3_paths,
-                };
-                paths.retain(|existing| existing != &path);
+            PluginPathUpdate::Remove(path) => {
+                settings.vst3_paths.retain(|existing| existing != &path);
             }
             PluginPathUpdate::Reset => *settings = crate::config::PluginSettings::default(),
         }
@@ -379,12 +371,7 @@ impl MainView {
         cx.notify();
     }
 
-    pub(super) fn pick_plugin_path(
-        &mut self,
-        kind: PluginPathKind,
-        window: &mut Window,
-        cx: &mut Context<Self>,
-    ) {
+    pub(super) fn pick_plugin_path(&mut self, window: &mut Window, cx: &mut Context<Self>) {
         let receiver = cx.prompt_for_paths(gpui::PathPromptOptions {
             files: false,
             directories: true,
@@ -401,7 +388,7 @@ impl MainView {
             if view
                 .update_in(cx, |view, _window, cx| {
                     view.update_plugin_path(
-                        PluginPathUpdate::Add(kind, path.to_string_lossy().into_owned()),
+                        PluginPathUpdate::Add(path.to_string_lossy().into_owned()),
                         cx,
                     );
                 })

@@ -36,7 +36,7 @@ home:
   monoMode: "Mono Input"
   monoModeDescription: "Duplicate input channel 1 to both channels (L+R)."
   chain: "Plugin Chain"
-  chainDescription: "Manage VST2/VST3 processing plugins."
+  chainDescription: "Manage VST3 / CLAP / AU processing plugins."
   addPlugins: "Add plugins"
   chainEmpty: "No plugins in the chain."
   bypass: "Bypass"
@@ -62,7 +62,7 @@ home:
 
 plugins:
   title: "Plugins"
-  description: "Scan and manage VST2/VST3 plugins."
+  description: "Scan and manage VST3 / CLAP / AU plugins."
   scan: "Scan"
   scanning: "Scanning..."
   empty: "No plugins scanned yet."
@@ -77,12 +77,10 @@ plugins:
   removing: "Removing..."
   loading: "Loading plugin..."
   scanPathsTitle: "Scan Paths"
-  scanPathsDescription: "Configure VST2 and VST3 search directories."
+  scanPathsDescription: "Configure VST3 search directories."
   addFolder: "Add folder"
   resetDefaults: "Reset to Defaults"
-  vst2SearchPaths: "VST2 Search Paths"
   vst3SearchPaths: "VST3 Search Paths"
-  noVst2Paths: "No VST2 paths configured"
   noVst3Paths: "No VST3 paths configured"
   done: "Done"
 
