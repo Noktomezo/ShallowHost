@@ -31,15 +31,19 @@ fn main() {
         .std("c++20")
         .compile("shallow-host-cxxbridge");
 
-    let configuration = if profile == "release" {
-        "Release"
-    } else {
-        "Debug"
-    };
+    // `cxx-build` uses the release MSVC C++ ABI even for a Cargo debug build.
+    // Building JUCE with CMake's Debug configuration defines `_DEBUG`, which
+    // changes the CRT and STL ABI and makes the two static libraries unlinkable.
+    let native_configuration = "Release";
 
     run_cmake(["-S", "cpp", "-B", "cpp/cargo-build"], "configure JUCE");
     run_cmake(
-        ["--build", "cpp/cargo-build", "--config", configuration],
+        [
+            "--build",
+            "cpp/cargo-build",
+            "--config",
+            native_configuration,
+        ],
         "build JUCE",
     );
 
@@ -48,7 +52,7 @@ fn main() {
     )
     .join("cpp")
     .join("cargo-build")
-    .join(configuration);
+    .join(native_configuration);
 
     println!("cargo:rustc-link-search=native={}", library_dir.display());
     println!("cargo:rustc-link-lib=static=engine");
