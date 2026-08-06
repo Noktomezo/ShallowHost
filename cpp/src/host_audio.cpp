@@ -37,6 +37,8 @@ static juce::String getAudioTypeName(const char* driver)
         if (d.equalsIgnoreCase("asio")) return "ASIO";
         if (d.equalsIgnoreCase("wasapi_exclusive") || d.equalsIgnoreCase("wasapi-exclusive") || d.equalsIgnoreCase("wasapi_ex"))
             return "Windows Audio (Exclusive Mode)";
+        if (d.equalsIgnoreCase("wasapi_low_latency") || d.equalsIgnoreCase("wasapi-low-latency") || d.equalsIgnoreCase("wasapi_ll"))
+            return "Windows Audio (Low Latency Mode)";
         return "Windows Audio";
     }
     return "Windows Audio";

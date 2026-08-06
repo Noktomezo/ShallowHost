@@ -422,6 +422,7 @@ fn driver_choices() -> Vec<DropdownChoice> {
     [
         ("wasapi", "WASAPI"),
         ("wasapi_exclusive", "WASAPI (Exclusive)"),
+        ("wasapi_low_latency", "WASAPI (Low Latency)"),
         ("asio", "ASIO"),
     ]
     .into_iter()

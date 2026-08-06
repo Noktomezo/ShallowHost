@@ -2,7 +2,8 @@ use std::collections::HashMap;
 
 use super::{
     AudioRoutingState, DropdownChoice, buffer_size_parts, choice_index, clear_routing,
-    device_channel_mask, restore_active_channels, retain_valid, selected_choice_device,
+    device_channel_mask, driver_choices, restore_active_channels, retain_valid,
+    selected_choice_device,
 };
 use crate::config::DriverDeviceSelection;
 
@@ -89,4 +90,17 @@ fn preserves_remembered_asio_channels_until_device_channels_are_loaded() {
     retain_valid(&mut routing.active_outputs, 6);
 
     assert_eq!(routing.active_outputs, vec![0, 1, 2, 3, 4, 5]);
+}
+
+#[test]
+fn exposes_all_juce_windows_audio_modes() {
+    let values: Vec<_> = driver_choices()
+        .into_iter()
+        .map(|choice| choice.value.to_string())
+        .collect();
+
+    assert_eq!(
+        values,
+        ["wasapi", "wasapi_exclusive", "wasapi_low_latency", "asio"]
+    );
 }
