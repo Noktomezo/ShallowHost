@@ -47,7 +47,7 @@ jobs:
         run: |
           $baseName = "ShallowHost-pr-${{ github.event.pull_request.number }}-windows-x86_64"
           $manifest = Get-Content Cargo.toml -Raw
-          if ($manifest -notmatch '(?m)^version = "([^"]+)"$') {
+          if ($manifest -notmatch '(?m)^version = "([^"]+)"(?=\r?$)') {
             throw 'Could not read package version from Cargo.toml'
           }
           $version = $Matches[1]

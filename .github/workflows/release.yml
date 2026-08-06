@@ -24,7 +24,7 @@ jobs:
         shell: pwsh
         run: |
           $manifest = Get-Content Cargo.toml -Raw
-          if ($manifest -notmatch '(?m)^version = "([^"]+)"$') {
+          if ($manifest -notmatch '(?m)^version = "([^"]+)"(?=\r?$)') {
             throw 'Could not read package version from Cargo.toml'
           }
           if ($env:GITHUB_REF_NAME -ne "v$($Matches[1])") {

@@ -33,7 +33,7 @@ jobs:
           BUMP_TYPE: ${{ inputs.bump_type }}
         run: |
           $manifest = Get-Content Cargo.toml -Raw
-          if ($manifest -notmatch '(?m)^version = "(\d+)\.(\d+)\.(\d+)"$') {
+          if ($manifest -notmatch '(?m)^version = "(\d+)\.(\d+)\.(\d+)"(?=\r?$)') {
             throw 'Could not read a stable SemVer package version from Cargo.toml'
           }
           $major = [int]$Matches[1]
@@ -46,7 +46,7 @@ jobs:
             default { throw "Unsupported bump type: $env:BUMP_TYPE" }
           }
           $version = "$major.$minor.$patch"
-          $pattern = [regex]::new('(?m)^version = "\d+\.\d+\.\d+"$')
+          $pattern = [regex]::new('(?m)^version = "\d+\.\d+\.\d+"(?=\r?$)')
           $updated = $pattern.Replace($manifest, "version = `"$version`"", 1)
           Set-Content Cargo.toml -Value $updated -NoNewline
           "NEW_VERSION=$version" | Out-File $env:GITHUB_ENV -Append

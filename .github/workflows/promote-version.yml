@@ -43,7 +43,7 @@ jobs:
             throw 'The successfully built PR is not marked as a version bump'
           }
           $manifest = Get-Content Cargo.toml -Raw
-          if ($manifest -notmatch '(?m)^version = "(\d+\.\d+\.\d+)"$') {
+          if ($manifest -notmatch '(?m)^version = "(\d+\.\d+\.\d+)"(?=\r?$)') {
             throw 'Could not read a stable SemVer package version from Cargo.toml'
           }
           $version = $Matches[1]
@@ -71,4 +71,3 @@ jobs:
           fi
           git tag "$tag" "$HEAD_SHA"
           git push origin "$tag"
-
