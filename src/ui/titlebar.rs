@@ -38,7 +38,7 @@ pub fn render_titlebar(
                         .child(titlebar_icon(if sidebar_collapsed {
                             "assets/icons/panel-left-open.svg"
                         } else {
-                            "assets/icons/panel-left.svg"
+                            "assets/icons/panel-left-close.svg"
                         })),
                 ),
         )

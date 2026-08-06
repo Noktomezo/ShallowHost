@@ -6,7 +6,7 @@ use gpui_updater::{UpdateStatus, Updater};
 
 use super::{ToggleRowProps, card, resolve_path, row, separator, toggle_row};
 use crate::config::SystemSettings;
-use crate::ui::badge::{BadgeStyle, badge};
+use crate::ui::badge::{BadgeStyle, badge, loading_badge};
 use crate::ui::card_header::card_heading_with_suffix;
 use crate::ui::colors;
 use crate::ui::control_style::ControlTypography;
@@ -23,7 +23,7 @@ pub(super) fn updates_card(
     let status = updater.read(cx).status().clone();
     let busy = status.is_busy();
     let action_label = action_label(&status);
-    let status_line = status_line(&status);
+    let error_line = error_line(&status);
     let header_badges = update_badges(&status);
     let action_updater = updater.clone();
 
@@ -72,8 +72,8 @@ pub(super) fn updates_card(
                 .flex()
                 .flex_col()
                 .gap_3()
-                .when_some(status_line, |element, (text, color)| {
-                    element.child(div().text_xs().text_color(color).child(text))
+                .when_some(error_line, |element, text| {
+                    element.child(div().text_xs().text_color(colors::red()).child(text))
                 })
                 .child(toggle_row(ToggleRowProps {
                     id: "system-auto-updates",
@@ -110,22 +110,37 @@ fn update_icon(spinning: bool) -> AnyElement {
 }
 
 fn update_badges(status: &UpdateStatus) -> AnyElement {
-    div()
-        .flex_none()
-        .flex()
-        .items_center()
-        .gap_2()
-        .child(badge(
-            format!("v{}", env!("CARGO_PKG_VERSION")),
-            BadgeStyle::Neutral,
-        ))
-        .when(matches!(status, UpdateStatus::UpToDate), |element| {
-            element.child(badge(i18n::t("update.latest"), BadgeStyle::Green))
-        })
-        .when(matches!(status, UpdateStatus::Available(_)), |element| {
-            element.child(badge(i18n::t("update.newerAvailable"), BadgeStyle::Orange))
-        })
-        .into_any_element()
+    let badges = div().flex_none().flex().items_center().gap_2().child(badge(
+        format!("v{}", env!("CARGO_PKG_VERSION")),
+        BadgeStyle::Neutral,
+    ));
+
+    match status {
+        UpdateStatus::Idle | UpdateStatus::Errored(_) => badges,
+        UpdateStatus::Checking => badges.child(loading_badge(i18n::t("update.checking"))),
+        UpdateStatus::UpToDate => badges.child(badge(i18n::t("update.latest"), BadgeStyle::Green)),
+        UpdateStatus::Available(version) => badges.child(badge(
+            message("update.available", "version", &version.to_string()),
+            BadgeStyle::Orange,
+        )),
+        UpdateStatus::Downloading { downloaded, total } => {
+            let detail = match total.filter(|total| *total > 0) {
+                Some(total) => format!("{}%", downloaded.saturating_mul(100) / total),
+                None => format!("{} MB", downloaded / 1_048_576),
+            };
+            badges.child(loading_badge(message(
+                "update.downloading",
+                "progress",
+                &detail,
+            )))
+        }
+        UpdateStatus::Installing => badges.child(loading_badge(i18n::t("update.installing"))),
+        UpdateStatus::Staged(version) => badges.child(badge(
+            message("update.ready", "version", &version.to_string()),
+            BadgeStyle::Green,
+        )),
+    }
+    .into_any_element()
 }
 
 fn action_label(status: &UpdateStatus) -> String {
@@ -136,33 +151,10 @@ fn action_label(status: &UpdateStatus) -> String {
     })
 }
 
-fn status_line(status: &UpdateStatus) -> Option<(String, Rgba)> {
+fn error_line(status: &UpdateStatus) -> Option<String> {
     match status {
-        UpdateStatus::Idle => None,
-        UpdateStatus::Checking => Some((i18n::t("update.checking"), colors::base_500())),
-        UpdateStatus::UpToDate => Some((i18n::t("update.upToDate"), colors::green())),
-        UpdateStatus::Available(version) => Some((
-            message("update.available", "version", &version.to_string()),
-            colors::orange(),
-        )),
-        UpdateStatus::Downloading { downloaded, total } => {
-            let detail = match total.filter(|total| *total > 0) {
-                Some(total) => format!("{}%", downloaded.saturating_mul(100) / total),
-                None => format!("{} MB", downloaded / 1_048_576),
-            };
-            Some((
-                message("update.downloading", "progress", &detail),
-                colors::base_500(),
-            ))
-        }
-        UpdateStatus::Installing => Some((i18n::t("update.installing"), colors::base_500())),
-        UpdateStatus::Staged(version) => Some((
-            message("update.ready", "version", &version.to_string()),
-            colors::green(),
-        )),
-        UpdateStatus::Errored(error) => {
-            Some((message("update.failed", "error", error), colors::red()))
-        }
+        UpdateStatus::Errored(error) => Some(message("update.failed", "error", error)),
+        _ => None,
     }
 }
 
