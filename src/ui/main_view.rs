@@ -202,6 +202,7 @@ impl MainView {
         if this.audio_controls.is_asio(cx) {
             this.audio_controls.refresh_asio_channels(&this.engine, cx);
         }
+        this.audio_controls.remember_device_selection(cx);
         this.audio_controls.apply(&this.engine, cx, this.is_mono);
         this.start_chain_restore_task(cx);
         this.start_meter_task(cx);

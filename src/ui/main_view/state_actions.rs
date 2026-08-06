@@ -172,6 +172,7 @@ impl MainView {
     ) {
         self.audio_controls
             .toggle_channels(direction, indices, enabled, cx);
+        self.audio_controls.remember_device_selection(cx);
         self.apply_and_persist_audio(cx);
     }
 

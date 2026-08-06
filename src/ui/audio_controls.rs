@@ -71,6 +71,8 @@ impl AudioControls {
             DriverDeviceSelection {
                 input: selected_choice_device(&input_items, input_selected),
                 output: selected_choice_device(&output_items, output_selected),
+                active_inputs: settings.active_inputs.clone(),
+                active_outputs: settings.active_outputs.clone(),
             },
         );
 
@@ -211,13 +213,26 @@ impl AudioControls {
             cx.notify();
         });
         self.update_channels(&devices, cx);
+        self.routing.update(cx, |routing, cx| {
+            restore_active_channels(routing, remembered.as_ref());
+            cx.notify();
+        });
     }
 
     pub fn remember_device_selection(&self, cx: &mut App) {
         let driver = selected_value(&self.driver, cx).unwrap_or_else(|| String::from("wasapi"));
+        let (active_inputs, active_outputs) = {
+            let routing = self.routing.read(cx);
+            (
+                routing.active_inputs.clone(),
+                routing.active_outputs.clone(),
+            )
+        };
         let selection = DriverDeviceSelection {
             input: selected_device(&self.input, cx),
             output: selected_device(&self.output, cx),
+            active_inputs,
+            active_outputs,
         };
         self.device_selections.update(cx, |selections, _| {
             selections.insert(driver, selection);
@@ -340,6 +355,19 @@ fn clear_routing(routing: &mut AudioRoutingState) {
     routing.active_outputs.clear();
     routing.input_changed_at.clear();
     routing.output_changed_at.clear();
+}
+
+fn restore_active_channels(
+    routing: &mut AudioRoutingState,
+    selection: Option<&DriverDeviceSelection>,
+) {
+    if let Some(selection) = selection {
+        routing.active_inputs.clone_from(&selection.active_inputs);
+        routing.active_outputs.clone_from(&selection.active_outputs);
+    } else {
+        routing.active_inputs.clear();
+        routing.active_outputs.clear();
+    }
 }
 
 fn dropdown_entity(

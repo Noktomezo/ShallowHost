@@ -67,6 +67,8 @@ impl Default for AudioSettings {
 pub struct DriverDeviceSelection {
     pub input: Option<String>,
     pub output: Option<String>,
+    pub active_inputs: Vec<usize>,
+    pub active_outputs: Vec<usize>,
 }
 
 #[derive(Clone, Debug, Serialize, Deserialize)]

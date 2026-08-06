@@ -2,8 +2,9 @@ use std::collections::HashMap;
 
 use super::{
     AudioRoutingState, DropdownChoice, buffer_size_parts, choice_index, clear_routing,
-    device_channel_mask, selected_choice_device,
+    device_channel_mask, restore_active_channels, retain_valid, selected_choice_device,
 };
+use crate::config::DriverDeviceSelection;
 
 #[test]
 fn formats_approximate_buffer_latency() {
@@ -65,4 +66,27 @@ fn restores_only_an_exact_remembered_device() {
         selected_choice_device(&choices, 1),
         Some(String::from("Device A"))
     );
+}
+
+#[test]
+fn preserves_remembered_asio_channels_until_device_channels_are_loaded() {
+    let mut routing = AudioRoutingState {
+        input_channels: Vec::new(),
+        output_channels: vec![String::from("Temporary 1"), String::from("Temporary 2")],
+        active_inputs: vec![0, 1],
+        active_outputs: vec![0, 1],
+        input_changed_at: HashMap::new(),
+        output_changed_at: HashMap::new(),
+    };
+    let remembered = DriverDeviceSelection {
+        input: Some(String::from("ASIO Device")),
+        output: Some(String::from("ASIO Device")),
+        active_inputs: vec![0, 1],
+        active_outputs: vec![0, 1, 2, 3, 4, 5],
+    };
+
+    restore_active_channels(&mut routing, Some(&remembered));
+    retain_valid(&mut routing.active_outputs, 6);
+
+    assert_eq!(routing.active_outputs, vec![0, 1, 2, 3, 4, 5]);
 }
