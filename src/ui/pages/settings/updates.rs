@@ -2,7 +2,7 @@ use std::time::{Duration, Instant};
 
 use gpui::prelude::*;
 use gpui::*;
-use gpui_updater::{UpdateStatus, Updater, Version};
+use gpui_updater::{UpdateStatus, Updater};
 
 use super::{ToggleRowProps, card, resolve_path, row, separator, toggle_row};
 use crate::config::SystemSettings;
@@ -20,12 +20,9 @@ pub(super) fn updates_card(
     updater: Entity<Updater>,
     cx: &mut App,
 ) -> AnyElement {
-    let mock_preview = crate::updater::is_mock_preview();
-    let status = if mock_preview {
-        UpdateStatus::Available(Version::new(99, 0, 0))
-    } else {
-        updater.read(cx).status().clone()
-    };
+    let mocked_status = crate::updater::mock_status();
+    let mock_preview = mocked_status.is_some();
+    let status = mocked_status.unwrap_or_else(|| updater.read(cx).status().clone());
     let error_line = error_line(&status);
     let header_badges = update_badges(&status);
     let primary_action = primary_action(&status, updater.clone(), mock_preview);

@@ -1,14 +1,32 @@
+use std::sync::atomic::{AtomicBool, Ordering};
+use std::time::Duration;
+
 use gpui::{App, AppContext as _, Entity};
-use gpui_updater::{EngineConfig, StaticManifestSource, Updater, Verification, Version};
+use gpui_updater::{
+    EngineConfig, StaticManifestSource, UpdateStatus, Updater, Verification, Version,
+};
 
 const RELEASE_OWNER: &str = "Noktomezo";
 const RELEASE_REPOSITORY: &str = "ShallowHost";
 const MINISIGN_PUBLIC_KEY: &str = "RWSeWrBbDqi6SGEfcTvdy+8CgdwKGxVK30mNPRJC953JSPStzZYl2RbU";
 const MOCK_UPDATE_ENV: &str = "SHALLOWHOST_MOCK_UPDATE";
+const MOCK_CHECK_DURATION: Duration = Duration::from_secs(2);
+static MOCK_CHECKING: AtomicBool = AtomicBool::new(false);
 
 #[must_use]
 pub fn is_mock_preview() -> bool {
     cfg!(debug_assertions) && std::env::var_os(MOCK_UPDATE_ENV).is_some()
+}
+
+#[must_use]
+pub fn mock_status() -> Option<UpdateStatus> {
+    is_mock_preview().then(|| {
+        if MOCK_CHECKING.load(Ordering::Acquire) {
+            UpdateStatus::Checking
+        } else {
+            UpdateStatus::Available(Version::new(99, 0, 0))
+        }
+    })
 }
 
 fn release_manifest_url() -> String {
@@ -47,6 +65,16 @@ pub fn new_entity(cx: &mut App) -> Entity<Updater> {
 
 pub fn start_check(updater: &Entity<Updater>, cx: &mut App) {
     if is_mock_preview() {
+        if MOCK_CHECKING.swap(true, Ordering::AcqRel) {
+            return;
+        }
+        cx.refresh_windows();
+        cx.spawn(async move |cx| {
+            cx.background_executor().timer(MOCK_CHECK_DURATION).await;
+            MOCK_CHECKING.store(false, Ordering::Release);
+            cx.update(App::refresh_windows);
+        })
+        .detach();
         return;
     }
     updater.update(cx, Updater::check);
