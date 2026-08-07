@@ -207,7 +207,12 @@ impl MainView {
                     )
                 {
                     this.restart_after_update = false;
-                    crate::updater::restart(&updater, cx);
+                    let updater = updater.clone();
+                    cx.spawn(async move |_, cx| {
+                        cx.background_executor().timer(Duration::from_secs(1)).await;
+                        cx.update(|cx| crate::updater::restart(&updater, cx));
+                    })
+                    .detach();
                 }
                 cx.notify();
             }));

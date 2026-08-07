@@ -124,6 +124,7 @@ update:
   install: "Download and install"
   downloading: "Downloading… %{progress}"
   installing: "Installing update…"
+  restarting: "Restarting…"
   ready: "Version %{version} is ready to launch."
   restart: "Restart"
   failed: "Update failed: %{error}"

@@ -2,6 +2,7 @@ use gpui::prelude::*;
 use gpui::*;
 use gpui_updater::UpdateStatus;
 use std::rc::Rc;
+use std::time::Duration;
 
 use super::{colors, resolve_asset_path};
 
@@ -109,19 +110,18 @@ fn titlebar_update_button(status: &UpdateStatus, on_update: UpdateCallback) -> O
         UpdateStatus::Downloading { downloaded, total } => total
             .filter(|total| *total > 0)
             .map_or(0.0, |total| download_progress(*downloaded, total)),
-        UpdateStatus::Installing => 1.0,
         _ => 0.0,
     };
-    let is_loading = matches!(
-        status,
-        UpdateStatus::Downloading { .. } | UpdateStatus::Installing
-    );
-    if !is_available && !is_loading {
+    let is_downloading = matches!(status, UpdateStatus::Downloading { .. });
+    let is_restarting = matches!(status, UpdateStatus::Installing | UpdateStatus::Staged(_));
+    if !is_available && !is_downloading && !is_restarting {
         return None;
     }
 
-    let icon = if is_loading {
+    let icon = if is_downloading {
         circular_progress(progress)
+    } else if is_restarting {
+        restarting_icon()
     } else {
         svg()
             .external_path(resolve_asset_path("assets/icons/cloud-download.svg"))
@@ -130,35 +130,25 @@ fn titlebar_update_button(status: &UpdateStatus, on_update: UpdateCallback) -> O
             .into_any_element()
     };
 
-    let button = div()
-        .id("titlebar-update-btn")
-        .size(px(32.0))
-        .flex()
-        .items_center()
-        .justify_center()
-        .rounded_sm()
-        .bg(colors::orange().opacity(0.15))
-        .border_1()
-        .border_color(colors::orange().opacity(0.4))
-        .text_color(colors::orange())
+    let button = base_button("titlebar-update-btn", false)
         .when(is_available, |button| {
             button
-                .cursor_pointer()
-                .hover(|style| style.bg(colors::orange().opacity(0.22)))
                 .on_mouse_down(MouseButton::Left, |_, window, cx| {
                     window.prevent_default();
                     cx.stop_propagation();
                 })
                 .on_click(move |_, window, cx| on_update(window, cx))
         })
-        .when(is_loading, |button| button.cursor_default())
+        .when(!is_available, |button| button.cursor_default())
         .child(icon);
 
     Some(
         crate::ui::cursor_tooltip::attach(
             button,
             ElementId::Name("titlebar-update-tooltip".into()),
-            crate::ui::i18n::t(if is_loading {
+            crate::ui::i18n::t(if is_restarting {
+                "update.restarting"
+            } else if is_downloading {
                 "update.installing"
             } else {
                 "update.install"
@@ -166,6 +156,23 @@ fn titlebar_update_button(status: &UpdateStatus, on_update: UpdateCallback) -> O
         )
         .into_any_element(),
     )
+}
+
+fn restarting_icon() -> AnyElement {
+    svg()
+        .external_path(resolve_asset_path("assets/icons/refresh-cw.svg"))
+        .size_4()
+        .text_color(colors::orange())
+        .with_animation(
+            "titlebar-update-restarting",
+            Animation::new(Duration::from_millis(850)).repeat(),
+            |icon, delta| {
+                icon.with_transformation(Transformation::rotate(Radians(
+                    std::f32::consts::TAU * delta,
+                )))
+            },
+        )
+        .into_any_element()
 }
 
 fn download_progress(downloaded: u64, total: u64) -> f32 {

@@ -11,7 +11,9 @@ const RELEASE_REPOSITORY: &str = "ShallowHost";
 const MINISIGN_PUBLIC_KEY: &str = "RWSeWrBbDqi6SGEfcTvdy+8CgdwKGxVK30mNPRJC953JSPStzZYl2RbU";
 const MOCK_UPDATE_ENV: &str = "SHALLOWHOST_MOCK_UPDATE";
 const MOCK_CHECK_DURATION: Duration = Duration::from_secs(2);
+const MOCK_RESTART_DURATION: Duration = Duration::from_secs(1);
 static MOCK_CHECKING: AtomicBool = AtomicBool::new(false);
+static MOCK_RESTARTING: AtomicBool = AtomicBool::new(false);
 const MOCK_DOWNLOAD_IDLE: u8 = u8::MAX;
 const MOCK_DOWNLOAD_STEPS: u8 = 40;
 static MOCK_DOWNLOAD_PROGRESS: AtomicU8 = AtomicU8::new(MOCK_DOWNLOAD_IDLE);
@@ -26,6 +28,8 @@ pub fn mock_status() -> Option<UpdateStatus> {
     is_mock_preview().then(|| {
         if MOCK_CHECKING.load(Ordering::Acquire) {
             UpdateStatus::Checking
+        } else if MOCK_RESTARTING.load(Ordering::Acquire) {
+            UpdateStatus::Staged(Version::new(99, 0, 0))
         } else if let progress = MOCK_DOWNLOAD_PROGRESS.load(Ordering::Acquire)
             && progress != MOCK_DOWNLOAD_IDLE
         {
@@ -119,7 +123,11 @@ fn start_mock_download(cx: &mut App) {
             MOCK_DOWNLOAD_PROGRESS.store(mock_download_percent(step), Ordering::Release);
             cx.update(App::refresh_windows);
         }
+        MOCK_RESTARTING.store(true, Ordering::Release);
         MOCK_DOWNLOAD_PROGRESS.store(MOCK_DOWNLOAD_IDLE, Ordering::Release);
+        cx.update(App::refresh_windows);
+        cx.background_executor().timer(MOCK_RESTART_DURATION).await;
+        MOCK_RESTARTING.store(false, Ordering::Release);
         cx.update(App::refresh_windows);
     })
     .detach();

@@ -200,10 +200,7 @@ fn update_badges(status: &UpdateStatus) -> AnyElement {
             )))
         }
         UpdateStatus::Installing => badges.child(loading_badge(i18n::t("update.installing"))),
-        UpdateStatus::Staged(version) => badges.child(badge(
-            message("update.ready", "version", &version.to_string()),
-            BadgeStyle::Green,
-        )),
+        UpdateStatus::Staged(_) => badges.child(loading_badge(i18n::t("update.restarting"))),
     }
     .into_any_element()
 }

@@ -124,6 +124,7 @@ update:
   install: "Скачать и установить"
   downloading: "Загрузка… %{progress}"
   installing: "Устанавливаем обновление…"
+  restarting: "Перезапускаем…"
   ready: "Версия %{version} готова к запуску."
   restart: "Перезапустить"
   failed: "Не удалось обновиться: %{error}"
