@@ -19,6 +19,10 @@ use std::sync::Arc;
 use ui::MainView;
 
 #[cfg(debug_assertions)]
+const APP_ID: &str = "Noktomezo.ShallowHost.Dev";
+#[cfg(not(debug_assertions))]
+const APP_ID: &str = "Noktomezo.ShallowHost";
+#[cfg(debug_assertions)]
 const APP_TITLE: &str = "ShallowHost (Dev)";
 #[cfg(not(debug_assertions))]
 const APP_TITLE: &str = "ShallowHost";
@@ -50,6 +54,7 @@ fn main() {
         .with_assets(gpui_component_assets::Assets);
 
     app.run(|cx: &mut App| {
+        cx.set_app_identity(APP_ID, APP_TITLE);
         load_fonts(cx);
         gpui_component::init(cx);
         ui::init(cx);
