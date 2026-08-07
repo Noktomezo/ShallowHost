@@ -17,7 +17,6 @@ jobs:
   bump:
     runs-on: windows-latest
     permissions:
-      actions: write
       contents: write
       pull-requests: write
     steps:
@@ -82,15 +81,3 @@ jobs:
           labels: |
             version-bump
             automated-pr
-
-      - name: Dispatch PR build
-        if: steps.create-pr.outputs.pull-request-number != ''
-        env:
-          GH_TOKEN: ${{ secrets.RELEASE_TOKEN }}
-          PR_NUMBER: ${{ steps.create-pr.outputs.pull-request-number }}
-          VERSION: ${{ env.NEW_VERSION }}
-        shell: pwsh
-        run: |
-          gh workflow run pr-build.yml `
-            --ref "chore/version-bump-v$env:VERSION" `
-            -f "pr_number=$env:PR_NUMBER"

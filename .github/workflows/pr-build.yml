@@ -4,43 +4,21 @@ on:
   pull_request:
     branches:
       - main
-  workflow_dispatch:
-    inputs:
-      pr_number:
-        description: Version bump pull request number
-        required: true
-        type: string
 
 concurrency:
-  group: pr-build-${{ github.event.pull_request.number || inputs.pr_number }}
+  group: pr-build-${{ github.event.pull_request.number }}
   cancel-in-progress: true
 
 jobs:
   build:
-    if: >-
-      github.event_name == 'workflow_dispatch' ||
-      startsWith(github.event.pull_request.head.ref, 'chore/version-bump-v')
+    if: startsWith(github.event.pull_request.head.ref, 'chore/version-bump-v')
     runs-on: windows-latest
     permissions:
       contents: read
-      statuses: write
     env:
-      PR_NUMBER: ${{ github.event.pull_request.number || inputs.pr_number }}
+      PR_NUMBER: ${{ github.event.pull_request.number }}
     steps:
       - uses: actions/checkout@v4
-
-      - name: Mark dispatched PR build as pending
-        if: github.event_name == 'workflow_dispatch'
-        env:
-          GH_TOKEN: ${{ github.token }}
-          RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
-        shell: pwsh
-        run: |
-          gh api --method POST "repos/$env:GITHUB_REPOSITORY/statuses/$env:GITHUB_SHA" `
-            -f state=pending `
-            -f context='PR Build / build' `
-            -f description='Windows build is running' `
-            -f target_url="$env:RUN_URL"
 
       - name: Install Rust
         uses: dtolnay/rust-toolchain@stable
@@ -101,17 +79,3 @@ jobs:
             dist/*.zip
             dist/*.msi
           if-no-files-found: error
-
-      - name: Publish dispatched PR build result
-        if: always() && github.event_name == 'workflow_dispatch'
-        env:
-          GH_TOKEN: ${{ github.token }}
-          RESULT: ${{ job.status == 'success' && 'success' || 'failure' }}
-          RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
-        shell: pwsh
-        run: |
-          gh api --method POST "repos/$env:GITHUB_REPOSITORY/statuses/$env:GITHUB_SHA" `
-            -f state="$env:RESULT" `
-            -f context='PR Build / build' `
-            -f description="Windows build finished: $env:RESULT" `
-            -f target_url="$env:RUN_URL"
