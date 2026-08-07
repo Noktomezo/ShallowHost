@@ -111,7 +111,7 @@ jobs:
         shell: pwsh
         run: |
           $response = gh api `
-            "repos/$env:REPOSITORY/actions/workflows/pr-build.yml/runs?event=workflow_dispatch&status=completed&head_sha=$env:HEAD_SHA&per_page=100" |
+            "repos/$env:REPOSITORY/actions/workflows/pr-build.yml/runs?status=completed&head_sha=$env:HEAD_SHA&per_page=100" |
             ConvertFrom-Json
           $run = @($response.workflow_runs | Where-Object { $_.conclusion -eq 'success' }) |
             Sort-Object created_at -Descending |
