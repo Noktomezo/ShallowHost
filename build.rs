@@ -69,14 +69,20 @@ fn main() {
 
 #[cfg(windows)]
 fn embed_windows_resources(profile: &str) {
-    let icon = if profile == "release" {
-        "assets/windows/ShallowHost.ico"
+    let (icon, display_name) = if profile == "release" {
+        ("assets/windows/ShallowHost.ico", "ShallowHost")
     } else {
-        "assets/windows/ShallowHostDev.ico"
+        ("assets/windows/ShallowHostDev.ico", "ShallowHost (Dev)")
     };
 
-    winresource::WindowsResource::new()
+    let mut resource = winresource::WindowsResource::new();
+    resource
         .set_icon(icon)
+        .set("ProductName", display_name)
+        .set("FileDescription", display_name)
+        .set("InternalName", display_name)
+        .set("OriginalFilename", "ShallowHost.exe");
+    resource
         .compile()
         .unwrap_or_else(|error| panic!("failed to embed ShallowHost icon `{icon}`: {error}"));
 }
