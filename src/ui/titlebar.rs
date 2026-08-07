@@ -17,7 +17,7 @@ pub type CloseCallback = Rc<dyn Fn(&mut Window, &mut App)>;
 
 pub fn render_titlebar(
     is_maximized: bool,
-    sidebar_collapsed: bool,
+    sidebar_progress: f32,
     update_status: &UpdateStatus,
     on_toggle_sidebar: ToggleSidebarCallback,
     on_update: UpdateCallback,
@@ -47,11 +47,7 @@ pub fn render_titlebar(
                             cx.stop_propagation();
                         })
                         .on_click(move |_, window, cx| on_toggle_sidebar(window, cx))
-                        .child(titlebar_icon(if sidebar_collapsed {
-                            "assets/icons/panel-left-open.svg"
-                        } else {
-                            "assets/icons/panel-left-close.svg"
-                        })),
+                        .child(sidebar_toggle_icon(sidebar_progress)),
                 ),
         )
         .child(
@@ -257,6 +253,29 @@ fn titlebar_icon(path: &'static str) -> Svg {
         .external_path(resolve_asset_path(path))
         .size_4()
         .text_color(colors::base_200())
+}
+
+fn sidebar_toggle_icon(sidebar_progress: f32) -> Div {
+    let expanded = sidebar_progress.clamp(0.0, 1.0);
+    div()
+        .relative()
+        .size_4()
+        .child(
+            svg()
+                .external_path(resolve_asset_path("assets/icons/panel-left-close.svg"))
+                .size_4()
+                .text_color(colors::base_200())
+                .opacity(expanded),
+        )
+        .child(
+            svg()
+                .absolute()
+                .inset_0()
+                .external_path(resolve_asset_path("assets/icons/panel-left-open.svg"))
+                .size_4()
+                .text_color(colors::base_200())
+                .opacity(1.0 - expanded),
+        )
 }
 
 fn destructive_titlebar_icon(path: &'static str, cx: &App) -> Div {

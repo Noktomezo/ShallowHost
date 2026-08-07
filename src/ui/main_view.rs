@@ -429,7 +429,7 @@ impl Render for MainView {
             crate::updater::mock_status().unwrap_or_else(|| self.updater.read(cx).status().clone());
         let titlebar = render_titlebar(
             is_maximized,
-            collapsed,
+            sidebar_progress,
             &update_status,
             Rc::new(move |window, cx| sidebar_toggle_listener(&(), window, cx)),
             Rc::new(move |window, cx| update_listener(&(), window, cx)),
