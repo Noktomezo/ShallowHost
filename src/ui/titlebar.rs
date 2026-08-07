@@ -1,18 +1,24 @@
 use gpui::prelude::*;
 use gpui::*;
+use gpui_updater::UpdateStatus;
 use std::rc::Rc;
+use std::time::Duration;
 
 use super::{colors, resolve_asset_path};
 
 pub type ToggleSidebarCallback = Rc<dyn Fn(&mut Window, &mut App)>;
+pub type UpdateCallback = Rc<dyn Fn(&mut Window, &mut App)>;
 pub type CloseCallback = Rc<dyn Fn(&mut Window, &mut App)>;
 
 pub fn render_titlebar(
     is_maximized: bool,
     sidebar_collapsed: bool,
+    update_status: &UpdateStatus,
     on_toggle_sidebar: ToggleSidebarCallback,
+    on_update: UpdateCallback,
     on_close: CloseCallback,
 ) -> AnyElement {
+    let update_button = titlebar_update_button(update_status, on_update);
     div()
         .id("titlebar")
         .h(px(40.0))
@@ -52,9 +58,10 @@ pub fn render_titlebar(
             div()
                 .flex()
                 .items_center()
-                .gap(px(4.0))
+                .gap_0()
                 .pr(px(4.0))
                 .flex_shrink_0()
+                .children(update_button)
                 .child(
                     base_button("win-minimize-btn", false)
                         .window_control_area(WindowControlArea::Min)
@@ -95,6 +102,77 @@ pub fn render_titlebar(
                 ),
         )
         .into_any_element()
+}
+
+fn titlebar_update_button(status: &UpdateStatus, on_update: UpdateCallback) -> Option<AnyElement> {
+    let is_available = matches!(status, UpdateStatus::Available(_));
+    let is_loading = matches!(
+        status,
+        UpdateStatus::Downloading { .. } | UpdateStatus::Installing
+    );
+    if !is_available && !is_loading {
+        return None;
+    }
+
+    let icon = svg()
+        .external_path(resolve_asset_path(if is_loading {
+            "assets/icons/circle-dashed.svg"
+        } else {
+            "assets/icons/cloud-download.svg"
+        }))
+        .size_4()
+        .text_color(colors::orange());
+    let icon = if is_loading {
+        icon.with_animation(
+            "titlebar-update-progress",
+            Animation::new(Duration::from_millis(850)).repeat(),
+            |icon, delta| {
+                icon.with_transformation(Transformation::rotate(Radians(
+                    std::f32::consts::TAU * delta,
+                )))
+            },
+        )
+        .into_any_element()
+    } else {
+        icon.into_any_element()
+    };
+
+    let button = div()
+        .id("titlebar-update-btn")
+        .size(px(32.0))
+        .flex()
+        .items_center()
+        .justify_center()
+        .rounded_sm()
+        .bg(colors::orange().opacity(0.15))
+        .border_1()
+        .border_color(colors::orange().opacity(0.4))
+        .text_color(colors::orange())
+        .when(is_available, |button| {
+            button
+                .cursor_pointer()
+                .hover(|style| style.bg(colors::orange().opacity(0.22)))
+                .on_mouse_down(MouseButton::Left, |_, window, cx| {
+                    window.prevent_default();
+                    cx.stop_propagation();
+                })
+                .on_click(move |_, window, cx| on_update(window, cx))
+        })
+        .when(is_loading, |button| button.cursor_default())
+        .child(icon);
+
+    Some(
+        crate::ui::cursor_tooltip::attach(
+            button,
+            ElementId::Name("titlebar-update-tooltip".into()),
+            crate::ui::i18n::t(if is_loading {
+                "update.installing"
+            } else {
+                "update.install"
+            }),
+        )
+        .into_any_element(),
+    )
 }
 
 fn base_button(id: &'static str, destructive: bool) -> Stateful<Div> {

@@ -49,6 +49,7 @@ pub struct MainView {
     plugin_scan_state: Entity<PluginScanState>,
     chain_operation_state: Entity<ChainOperationState>,
     updater: Entity<Updater>,
+    restart_after_update: bool,
     system_integration: Option<SystemIntegration>,
     system_changed_at: [Option<Instant>; 4],
     input_level: f32,
@@ -132,6 +133,7 @@ impl MainView {
             plugin_scan_state: cx.new(|_| PluginScanState::default()),
             chain_operation_state: cx.new(|_| ChainOperationState::default()),
             updater: updater.clone(),
+            restart_after_update: false,
             system_integration,
             system_changed_at: [None; 4],
             input_level: 0.0,
@@ -197,7 +199,18 @@ impl MainView {
         ));
 
         this._subscriptions
-            .push(cx.observe(&updater, |_, _, cx| cx.notify()));
+            .push(cx.observe(&updater, |this, updater, cx| {
+                if this.restart_after_update
+                    && matches!(
+                        updater.read(cx).status(),
+                        gpui_updater::UpdateStatus::Staged(_)
+                    )
+                {
+                    this.restart_after_update = false;
+                    crate::updater::restart(&updater, cx);
+                }
+                cx.notify();
+            }));
         if initial_config.system.auto_check_updates {
             crate::updater::start_check(&updater, cx);
         }
@@ -389,10 +402,18 @@ impl Render for MainView {
         let close_listener = cx.listener(|this: &mut Self, _: &(), window, cx| {
             this.close_or_hide(window, cx);
         });
+        let update_listener = cx.listener(|this: &mut Self, _: &(), _window, cx| {
+            this.restart_after_update = !crate::updater::is_mock_preview();
+            crate::updater::download_and_install(&this.updater, cx);
+        });
+        let update_status =
+            crate::updater::mock_status().unwrap_or_else(|| self.updater.read(cx).status().clone());
         let titlebar = render_titlebar(
             is_maximized,
             collapsed,
+            &update_status,
             Rc::new(move |window, cx| sidebar_toggle_listener(&(), window, cx)),
+            Rc::new(move |window, cx| update_listener(&(), window, cx)),
             Rc::new(move |window, cx| close_listener(&(), window, cx)),
         );
 

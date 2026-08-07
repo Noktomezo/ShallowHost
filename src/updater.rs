@@ -1,4 +1,4 @@
-use std::sync::atomic::{AtomicBool, Ordering};
+use std::sync::atomic::{AtomicBool, AtomicU8, Ordering};
 use std::time::Duration;
 
 use gpui::{App, AppContext as _, Entity};
@@ -12,6 +12,8 @@ const MINISIGN_PUBLIC_KEY: &str = "RWSeWrBbDqi6SGEfcTvdy+8CgdwKGxVK30mNPRJC953JS
 const MOCK_UPDATE_ENV: &str = "SHALLOWHOST_MOCK_UPDATE";
 const MOCK_CHECK_DURATION: Duration = Duration::from_secs(2);
 static MOCK_CHECKING: AtomicBool = AtomicBool::new(false);
+const MOCK_DOWNLOAD_IDLE: u8 = u8::MAX;
+static MOCK_DOWNLOAD_PROGRESS: AtomicU8 = AtomicU8::new(MOCK_DOWNLOAD_IDLE);
 
 #[must_use]
 pub fn is_mock_preview() -> bool {
@@ -23,6 +25,13 @@ pub fn mock_status() -> Option<UpdateStatus> {
     is_mock_preview().then(|| {
         if MOCK_CHECKING.load(Ordering::Acquire) {
             UpdateStatus::Checking
+        } else if let progress = MOCK_DOWNLOAD_PROGRESS.load(Ordering::Acquire)
+            && progress != MOCK_DOWNLOAD_IDLE
+        {
+            UpdateStatus::Downloading {
+                downloaded: u64::from(progress),
+                total: Some(100),
+            }
         } else {
             UpdateStatus::Available(Version::new(99, 0, 0))
         }
@@ -81,11 +90,38 @@ pub fn start_check(updater: &Entity<Updater>, cx: &mut App) {
 }
 
 pub fn download_and_install(updater: &Entity<Updater>, cx: &mut App) {
+    if is_mock_preview() {
+        start_mock_download(cx);
+        return;
+    }
     updater.update(cx, Updater::download_and_install);
 }
 
 pub fn restart(updater: &Entity<Updater>, cx: &mut App) {
     updater.update(cx, |updater, cx| updater.restart(cx));
+}
+
+fn start_mock_download(cx: &mut App) {
+    if MOCK_DOWNLOAD_PROGRESS
+        .compare_exchange(MOCK_DOWNLOAD_IDLE, 0, Ordering::AcqRel, Ordering::Acquire)
+        .is_err()
+    {
+        return;
+    }
+
+    cx.refresh_windows();
+    cx.spawn(async move |cx| {
+        for progress in 1..=40_u8 {
+            cx.background_executor()
+                .timer(Duration::from_millis(50))
+                .await;
+            MOCK_DOWNLOAD_PROGRESS.store(progress.saturating_mul(100) / 40, Ordering::Release);
+            cx.update(App::refresh_windows);
+        }
+        MOCK_DOWNLOAD_PROGRESS.store(MOCK_DOWNLOAD_IDLE, Ordering::Release);
+        cx.update(App::refresh_windows);
+    })
+    .detach();
 }
 
 #[cfg(test)]
