@@ -109,7 +109,7 @@ fn primary_action(status: &UpdateStatus, updater: Entity<Updater>) -> Option<Any
 }
 
 fn check_action(status: &UpdateStatus, updater: Entity<Updater>) -> AnyElement {
-    let busy = status.is_busy();
+    let busy = check_is_disabled(status);
     let button = div()
         .id("update-check-action")
         .size(px(34.0))
@@ -139,6 +139,10 @@ fn check_action(status: &UpdateStatus, updater: Entity<Updater>) -> AnyElement {
         i18n::t("update.check"),
     )
     .into_any_element()
+}
+
+fn check_is_disabled(status: &UpdateStatus) -> bool {
+    status.is_busy() || matches!(status, UpdateStatus::Staged(_))
 }
 
 fn update_icon(spinning: bool) -> AnyElement {
@@ -201,4 +205,21 @@ fn error_line(status: &UpdateStatus) -> Option<String> {
 
 fn message(key: &str, placeholder: &str, value: &str) -> String {
     i18n::t(key).replace(&format!("%{{{placeholder}}}"), value)
+}
+
+#[cfg(test)]
+mod tests {
+    use gpui_updater::{UpdateStatus, Version};
+
+    use super::check_is_disabled;
+
+    #[test]
+    fn update_check_stays_disabled_through_restart_but_recovers_after_errors() {
+        assert!(check_is_disabled(&UpdateStatus::Staged(Version::new(
+            1, 2, 3
+        ))));
+        assert!(!check_is_disabled(&UpdateStatus::Errored(
+            "network error".to_owned()
+        )));
+    }
 }
