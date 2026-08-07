@@ -1,7 +1,5 @@
 use gpui::{App, AppContext as _, Entity};
-use gpui_updater::{
-    EngineConfig, StaticManifestSource, UpdateStatus, Updater, Verification, Version,
-};
+use gpui_updater::{EngineConfig, StaticManifestSource, Updater, Verification, Version};
 
 const RELEASE_OWNER: &str = "Noktomezo";
 const RELEASE_REPOSITORY: &str = "ShallowHost";
@@ -54,13 +52,12 @@ pub fn start_check(updater: &Entity<Updater>, cx: &mut App) {
     updater.update(cx, Updater::check);
 }
 
-pub fn run_primary_action(updater: &Entity<Updater>, cx: &mut App) {
-    updater.update(cx, |updater, cx| match updater.status() {
-        UpdateStatus::Available(_) => updater.download_and_install(cx),
-        UpdateStatus::Staged(_) => updater.restart(cx),
-        status if !status.is_busy() => updater.check(cx),
-        _ => {}
-    });
+pub fn download_and_install(updater: &Entity<Updater>, cx: &mut App) {
+    updater.update(cx, Updater::download_and_install);
+}
+
+pub fn restart(updater: &Entity<Updater>, cx: &mut App) {
+    updater.update(cx, |updater, cx| updater.restart(cx));
 }
 
 #[cfg(test)]

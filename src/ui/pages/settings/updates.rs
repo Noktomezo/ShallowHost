@@ -26,11 +26,10 @@ pub(super) fn updates_card(
     } else {
         updater.read(cx).status().clone()
     };
-    let busy = status.is_busy();
-    let action_label = action_label(&status);
     let error_line = error_line(&status);
     let header_badges = update_badges(&status);
-    let action_updater = updater.clone();
+    let primary_action = primary_action(&status, updater.clone(), mock_preview);
+    let check_action = check_action(&status, updater, mock_preview);
 
     card()
         .child(
@@ -44,32 +43,12 @@ pub(super) fn updates_card(
                 ))
                 .child(
                     div()
-                        .id("update-primary-action")
-                        .h(px(34.0))
-                        .px_3()
+                        .flex_none()
                         .flex()
                         .items_center()
                         .gap_2()
-                        .rounded_md()
-                        .flex_none()
-                        .bg(colors::base_900())
-                        .border_1()
-                        .border_color(colors::base_800())
-                        .control_text()
-                        .text_color(colors::base_200())
-                        .when(busy, |element| element.cursor_default().opacity(0.6))
-                        .when(!busy, |element| {
-                            element
-                                .cursor_pointer()
-                                .hover(|style| style.bg(colors::base_850()))
-                                .on_click(move |_, _, cx| {
-                                    if !mock_preview {
-                                        crate::updater::run_primary_action(&action_updater, cx);
-                                    }
-                                })
-                        })
-                        .child(update_icon(busy))
-                        .child(action_label),
+                        .children(primary_action)
+                        .child(check_action),
                 ),
         )
         .child(separator())
@@ -94,6 +73,90 @@ pub(super) fn updates_card(
                 })),
         )
         .into_any_element()
+}
+
+fn primary_action(
+    status: &UpdateStatus,
+    updater: Entity<Updater>,
+    mock_preview: bool,
+) -> Option<AnyElement> {
+    let (label, icon_path, restart) = match status {
+        UpdateStatus::Available(_) => ("update.install", "assets/icons/cloud-download.svg", false),
+        UpdateStatus::Staged(_) => ("update.restart", "assets/icons/circle-power.svg", true),
+        _ => return None,
+    };
+
+    Some(
+        div()
+            .id("update-primary-action")
+            .h(px(34.0))
+            .px_3()
+            .flex()
+            .items_center()
+            .gap_2()
+            .rounded_md()
+            .flex_none()
+            .cursor_pointer()
+            .bg(colors::orange())
+            .border_1()
+            .border_color(colors::orange())
+            .control_text()
+            .text_color(colors::accent_foreground())
+            .hover(|style| style.border_color(colors::accent_foreground().opacity(0.45)))
+            .on_click(move |_, _, cx| {
+                if mock_preview {
+                    return;
+                }
+                if restart {
+                    crate::updater::restart(&updater, cx);
+                } else {
+                    crate::updater::download_and_install(&updater, cx);
+                }
+            })
+            .child(
+                svg()
+                    .external_path(resolve_path(icon_path))
+                    .size_4()
+                    .text_color(colors::accent_foreground()),
+            )
+            .child(i18n::t(label))
+            .into_any_element(),
+    )
+}
+
+fn check_action(status: &UpdateStatus, updater: Entity<Updater>, mock_preview: bool) -> AnyElement {
+    let busy = status.is_busy();
+    let button = div()
+        .id("update-check-action")
+        .size(px(34.0))
+        .flex()
+        .items_center()
+        .justify_center()
+        .rounded_md()
+        .flex_none()
+        .bg(colors::base_900())
+        .border_1()
+        .border_color(colors::base_800())
+        .text_color(colors::base_200())
+        .when(busy, |element| element.cursor_default().opacity(0.6))
+        .when(!busy, |element| {
+            element
+                .cursor_pointer()
+                .hover(|style| style.bg(colors::base_850()))
+                .on_click(move |_, _, cx| {
+                    if !mock_preview {
+                        crate::updater::start_check(&updater, cx);
+                    }
+                })
+        })
+        .child(update_icon(matches!(status, UpdateStatus::Checking)));
+
+    crate::ui::cursor_tooltip::attach(
+        button,
+        ElementId::Name("update-check-tooltip".into()),
+        i18n::t("update.check"),
+    )
+    .into_any_element()
 }
 
 fn update_icon(spinning: bool) -> AnyElement {
@@ -148,14 +211,6 @@ fn update_badges(status: &UpdateStatus) -> AnyElement {
         )),
     }
     .into_any_element()
-}
-
-fn action_label(status: &UpdateStatus) -> String {
-    i18n::t(match status {
-        UpdateStatus::Available(_) => "update.install",
-        UpdateStatus::Staged(_) => "update.restart",
-        _ => "update.check",
-    })
 }
 
 fn error_line(status: &UpdateStatus) -> Option<String> {
