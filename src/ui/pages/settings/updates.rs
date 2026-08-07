@@ -26,7 +26,7 @@ pub(super) fn updates_card(
     let error_line = error_line(&status);
     let header_badges = update_badges(&status);
     let primary_action = primary_action(&status, updater.clone(), mock_preview);
-    let check_action = check_action(&status, updater, mock_preview);
+    let check_action = check_action(&status, updater);
 
     card()
         .child(
@@ -121,7 +121,7 @@ fn primary_action(
     )
 }
 
-fn check_action(status: &UpdateStatus, updater: Entity<Updater>, mock_preview: bool) -> AnyElement {
+fn check_action(status: &UpdateStatus, updater: Entity<Updater>) -> AnyElement {
     let busy = status.is_busy();
     let button = div()
         .id("update-check-action")
@@ -141,9 +141,7 @@ fn check_action(status: &UpdateStatus, updater: Entity<Updater>, mock_preview: b
                 .cursor_pointer()
                 .hover(|style| style.bg(colors::base_850()))
                 .on_click(move |_, _, cx| {
-                    if !mock_preview {
-                        crate::updater::start_check(&updater, cx);
-                    }
+                    crate::updater::start_check(&updater, cx);
                 })
         })
         .child(update_icon(matches!(status, UpdateStatus::Checking)));
