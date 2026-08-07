@@ -8,7 +8,7 @@
     <picture><source media="(prefers-color-scheme: dark)" srcset="https://www.shieldcn.dev/github/release/Noktomezo/ShallowHost.svg?size=xs&amp;mode=dark&amp;theme=neutral"><img alt="Release" src="https://www.shieldcn.dev/github/release/Noktomezo/ShallowHost.svg?size=xs&amp;mode=light&amp;theme=neutral"></picture>
     <picture><source media="(prefers-color-scheme: dark)" srcset="https://www.shieldcn.dev/github/license/Noktomezo/ShallowHost.svg?variant=ghost&amp;size=xs&amp;mode=dark&amp;theme=neutral"><img alt="License" src="https://www.shieldcn.dev/github/license/Noktomezo/ShallowHost.svg?variant=ghost&amp;size=xs&amp;mode=light&amp;theme=neutral"></picture>
     <picture><source media="(prefers-color-scheme: dark)" srcset="https://www.shieldcn.dev/github/stars/Noktomezo/ShallowHost.svg?variant=secondary&amp;size=xs&amp;mode=dark&amp;theme=neutral"><img alt="Stars" src="https://www.shieldcn.dev/github/stars/Noktomezo/ShallowHost.svg?variant=secondary&amp;size=xs&amp;mode=light&amp;theme=neutral"></picture>
-    <picture><source media="(prefers-color-scheme: dark)" srcset="https://www.shieldcn.dev/github/last-commit/Noktomezo/ShallowHost.svg?variant=secondary&amp;size=xs&amp;mode=dark&amp;theme=neutral"><img alt="Last commit" src="https://www.shieldcn.dev/github/last-commit/Noktomezo/ShallowHost.svg?variant=secondary&amp;size=xs&amp;mode=light&amp;theme=neutral"></picture>
+    <picture><source media="(prefers-color-scheme: dark)" srcset=""><img alt="Last commit" src=""></picture>
   </p>
 </div>
 
@@ -29,6 +29,14 @@ A native Windows host for scanning, loading, and running VST3 effects in a real-
 - 🔄 **Signed auto-updater** — verifies release checksums and minisign signatures before installation
 - 📌 **System integration** — tray controls, close-to-tray behavior, and autostart on sign-in
 - 🌍 **i18n and themes** — Russian/English localization, system theme detection, and optional acrylic shell
+
+## 📸 Screenshots
+
+<div align="center" styles="display: flex; flex-direction: row;">
+  <img width="75%" alt="ShallowHost_kvmkez9VJV" src="https://github.com/user-attachments/assets/97382120-45d5-40eb-adf7-f11ac1084d40" />
+  <img width="75%" alt="ShallowHost_G3zdsMmyVf" src="https://github.com/user-attachments/assets/0256705c-7fb6-4533-a7a0-c4a492118dc4" />
+</div>
+
 
 ## 🏗️ Architecture
 
