@@ -13,6 +13,7 @@ const MOCK_UPDATE_ENV: &str = "SHALLOWHOST_MOCK_UPDATE";
 const MOCK_CHECK_DURATION: Duration = Duration::from_secs(2);
 static MOCK_CHECKING: AtomicBool = AtomicBool::new(false);
 const MOCK_DOWNLOAD_IDLE: u8 = u8::MAX;
+const MOCK_DOWNLOAD_STEPS: u8 = 40;
 static MOCK_DOWNLOAD_PROGRESS: AtomicU8 = AtomicU8::new(MOCK_DOWNLOAD_IDLE);
 
 #[must_use]
@@ -111,11 +112,11 @@ fn start_mock_download(cx: &mut App) {
 
     cx.refresh_windows();
     cx.spawn(async move |cx| {
-        for progress in 1..=40_u8 {
+        for step in 1..=MOCK_DOWNLOAD_STEPS {
             cx.background_executor()
                 .timer(Duration::from_millis(50))
                 .await;
-            MOCK_DOWNLOAD_PROGRESS.store(progress.saturating_mul(100) / 40, Ordering::Release);
+            MOCK_DOWNLOAD_PROGRESS.store(mock_download_percent(step), Ordering::Release);
             cx.update(App::refresh_windows);
         }
         MOCK_DOWNLOAD_PROGRESS.store(MOCK_DOWNLOAD_IDLE, Ordering::Release);
@@ -124,9 +125,21 @@ fn start_mock_download(cx: &mut App) {
     .detach();
 }
 
+fn mock_download_percent(step: u8) -> u8 {
+    let percent = u16::from(step).saturating_mul(100) / u16::from(MOCK_DOWNLOAD_STEPS);
+    u8::try_from(percent.min(100)).unwrap_or(100)
+}
+
 #[cfg(test)]
 mod tests {
-    use super::{release_asset_patterns, release_manifest_url};
+    use super::{mock_download_percent, release_asset_patterns, release_manifest_url};
+
+    #[test]
+    fn mock_download_progress_spans_the_full_percentage_range() {
+        assert_eq!(mock_download_percent(0), 0);
+        assert_eq!(mock_download_percent(20), 50);
+        assert_eq!(mock_download_percent(40), 100);
+    }
 
     #[test]
     fn updater_selects_a_windows_msi_for_the_current_architecture() {
