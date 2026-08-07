@@ -4,7 +4,12 @@ use gpui_updater::UpdateStatus;
 use std::rc::Rc;
 use std::time::Duration;
 
-use super::{badge::progress_ring, colors, resolve_asset_path};
+use super::{
+    badge::progress_ring,
+    colors,
+    motion::{UPDATE_PULSE_MOTION, update_pulse_opacity},
+    resolve_asset_path,
+};
 
 pub type ToggleSidebarCallback = Rc<dyn Fn(&mut Window, &mut App)>;
 pub type UpdateCallback = Rc<dyn Fn(&mut Window, &mut App)>;
@@ -127,6 +132,11 @@ fn titlebar_update_button(status: &UpdateStatus, on_update: UpdateCallback) -> O
             .external_path(resolve_asset_path("assets/icons/cloud-download.svg"))
             .size_4()
             .text_color(colors::orange())
+            .with_animation(
+                "titlebar-update-available-pulse",
+                Animation::new(UPDATE_PULSE_MOTION).repeat(),
+                |icon, delta| icon.opacity(update_pulse_opacity(delta)),
+            )
             .into_any_element()
     };
 

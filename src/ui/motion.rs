@@ -5,6 +5,12 @@ pub const CONTROL_MOTION: Duration = Duration::from_millis(150);
 pub const MENU_MOTION: Duration = Duration::from_millis(140);
 pub const MODE_MOTION: Duration = Duration::from_millis(300);
 pub const TOOLTIP_MOTION: Duration = Duration::from_millis(130);
+pub const UPDATE_PULSE_MOTION: Duration = Duration::from_millis(1_400);
+
+pub fn update_pulse_opacity(progress: f32) -> f32 {
+    let wave = (1.0 - (std::f32::consts::TAU * progress.clamp(0.0, 1.0)).cos()) / 2.0;
+    0.7 + 0.3 * wave
+}
 
 #[derive(Default)]
 pub struct DropdownMotion {
@@ -193,7 +199,7 @@ pub fn mix_color(from: Rgba, to: Rgba, progress: f32) -> Rgba {
 
 #[cfg(test)]
 mod tests {
-    use super::{DropdownMotion, ItemTransition, mix_color};
+    use super::{DropdownMotion, ItemTransition, mix_color, update_pulse_opacity};
     use gpui::rgba;
     use std::time::Instant;
 
@@ -207,6 +213,13 @@ mod tests {
             mix_color(rgba(0x000000ff), rgba(0xffffffff), 2.0),
             rgba(0xffffffff)
         );
+    }
+
+    #[test]
+    fn update_pulse_returns_smooth_loop_endpoints() {
+        assert!((update_pulse_opacity(0.0) - 0.7).abs() < f32::EPSILON);
+        assert!((update_pulse_opacity(0.5) - 1.0).abs() < f32::EPSILON);
+        assert!((update_pulse_opacity(1.0) - 0.7).abs() < f32::EPSILON);
     }
 
     #[test]

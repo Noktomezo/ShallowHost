@@ -11,6 +11,7 @@ use crate::ui::card_header::card_heading_with_suffix;
 use crate::ui::colors;
 use crate::ui::control_style::ControlTypography;
 use crate::ui::i18n;
+use crate::ui::motion::{UPDATE_PULSE_MOTION, update_pulse_opacity};
 use crate::ui::routes::{SystemCallback, SystemSetting};
 
 pub(super) fn updates_card(
@@ -175,10 +176,17 @@ fn update_badges(status: &UpdateStatus) -> AnyElement {
         UpdateStatus::Idle | UpdateStatus::Errored(_) => badges,
         UpdateStatus::Checking => badges.child(loading_badge(i18n::t("update.checking"))),
         UpdateStatus::UpToDate => badges.child(badge(i18n::t("update.latest"), BadgeStyle::Green)),
-        UpdateStatus::Available(version) => badges.child(badge(
-            message("update.available", "version", &version.to_string()),
-            BadgeStyle::Orange,
-        )),
+        UpdateStatus::Available(version) => badges.child(
+            badge(
+                message("update.available", "version", &version.to_string()),
+                BadgeStyle::Orange,
+            )
+            .with_animation(
+                "update-available-badge-pulse",
+                Animation::new(UPDATE_PULSE_MOTION).repeat(),
+                |badge, delta| badge.opacity(update_pulse_opacity(delta)),
+            ),
+        ),
         UpdateStatus::Downloading { downloaded, total } => match total.filter(|total| *total > 0) {
             Some(total) => {
                 let percent = downloaded.saturating_mul(100) / total;
