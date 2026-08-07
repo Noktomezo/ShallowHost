@@ -2,7 +2,6 @@ use gpui::prelude::*;
 use gpui::*;
 use gpui_updater::UpdateStatus;
 use std::rc::Rc;
-use std::time::Duration;
 
 use super::{colors, resolve_asset_path};
 
@@ -106,6 +105,13 @@ pub fn render_titlebar(
 
 fn titlebar_update_button(status: &UpdateStatus, on_update: UpdateCallback) -> Option<AnyElement> {
     let is_available = matches!(status, UpdateStatus::Available(_));
+    let progress = match status {
+        UpdateStatus::Downloading { downloaded, total } => total
+            .filter(|total| *total > 0)
+            .map_or(0.0, |total| download_progress(*downloaded, total)),
+        UpdateStatus::Installing => 1.0,
+        _ => 0.0,
+    };
     let is_loading = matches!(
         status,
         UpdateStatus::Downloading { .. } | UpdateStatus::Installing
@@ -114,27 +120,14 @@ fn titlebar_update_button(status: &UpdateStatus, on_update: UpdateCallback) -> O
         return None;
     }
 
-    let icon = svg()
-        .external_path(resolve_asset_path(if is_loading {
-            "assets/icons/circle-dashed.svg"
-        } else {
-            "assets/icons/cloud-download.svg"
-        }))
-        .size_4()
-        .text_color(colors::orange());
     let icon = if is_loading {
-        icon.with_animation(
-            "titlebar-update-progress",
-            Animation::new(Duration::from_millis(850)).repeat(),
-            |icon, delta| {
-                icon.with_transformation(Transformation::rotate(Radians(
-                    std::f32::consts::TAU * delta,
-                )))
-            },
-        )
-        .into_any_element()
+        circular_progress(progress)
     } else {
-        icon.into_any_element()
+        svg()
+            .external_path(resolve_asset_path("assets/icons/cloud-download.svg"))
+            .size_4()
+            .text_color(colors::orange())
+            .into_any_element()
     };
 
     let button = div()
@@ -173,6 +166,60 @@ fn titlebar_update_button(status: &UpdateStatus, on_update: UpdateCallback) -> O
         )
         .into_any_element(),
     )
+}
+
+fn download_progress(downloaded: u64, total: u64) -> f32 {
+    let percent = downloaded.saturating_mul(100) / total;
+    let percent = u8::try_from(percent.min(100)).unwrap_or(100);
+    f32::from(percent) / 100.0
+}
+
+fn circular_progress(progress: f32) -> AnyElement {
+    let progress = progress.clamp(0.0, 1.0);
+    canvas(
+        |_, _, _| {},
+        move |bounds, _, window, _| {
+            let center = point(
+                bounds.origin.x + bounds.size.width / 2.0,
+                bounds.origin.y + bounds.size.height / 2.0,
+            );
+            let radius = px(6.0);
+            let top = point(center.x, center.y - radius);
+            let bottom = point(center.x, center.y + radius);
+            let radii = point(radius, radius);
+
+            let mut track = PathBuilder::stroke(px(2.0));
+            track.move_to(top);
+            track.arc_to(radii, px(0.0), false, true, bottom);
+            track.arc_to(radii, px(0.0), false, true, top);
+            if let Ok(track) = track.build() {
+                window.paint_path(track, colors::orange().opacity(0.25));
+            }
+
+            if progress <= f32::EPSILON {
+                return;
+            }
+
+            let mut arc = PathBuilder::stroke(px(2.0));
+            arc.move_to(top);
+            if progress >= 1.0 - f32::EPSILON {
+                arc.arc_to(radii, px(0.0), false, true, bottom);
+                arc.arc_to(radii, px(0.0), false, true, top);
+            } else {
+                let angle = -std::f32::consts::FRAC_PI_2 + std::f32::consts::TAU * progress;
+                let end = point(
+                    center.x + radius * angle.cos(),
+                    center.y + radius * angle.sin(),
+                );
+                arc.arc_to(radii, px(0.0), progress > 0.5, true, end);
+            }
+            if let Ok(arc) = arc.build() {
+                window.paint_path(arc, colors::orange());
+            }
+        },
+    )
+    .size_4()
+    .into_any_element()
 }
 
 fn base_button(id: &'static str, destructive: bool) -> Stateful<Div> {
@@ -286,3 +333,15 @@ fn restore_active_window() {
 
 #[cfg(not(target_os = "windows"))]
 fn restore_active_window() {}
+
+#[cfg(test)]
+mod tests {
+    use super::download_progress;
+
+    #[test]
+    fn download_progress_is_normalized_and_capped() {
+        assert_eq!(download_progress(0, 100), 0.0);
+        assert_eq!(download_progress(50, 100), 0.5);
+        assert_eq!(download_progress(150, 100), 1.0);
+    }
+}
