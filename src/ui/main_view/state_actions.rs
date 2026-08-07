@@ -10,6 +10,7 @@ use crate::ui::audio_controls::ChannelDirection;
 use crate::ui::chain_operations::PendingPlugin;
 use crate::ui::colors;
 use crate::ui::i18n;
+use crate::ui::motion::CONTROL_MOTION;
 use crate::ui::routes::PluginPathUpdate;
 use crate::ui::routes::{Language, Route, SystemSetting, ThemeMode};
 
@@ -173,7 +174,21 @@ impl MainView {
         self.audio_controls
             .toggle_channels(direction, indices, enabled, cx);
         self.audio_controls.remember_device_selection(cx);
-        self.apply_and_persist_audio(cx);
+        self.persist_audio(cx);
+        self.audio_routing_revision = self.audio_routing_revision.wrapping_add(1);
+        let revision = self.audio_routing_revision;
+        self._audio_routing_task = cx.spawn(async move |this, cx| {
+            cx.background_executor().timer(CONTROL_MOTION).await;
+            let _intentionally_ignored = this.update(&mut *cx, |this, cx| {
+                if this.audio_routing_revision != revision {
+                    return;
+                }
+                this.reset_inactive_meter_levels(cx);
+                this.audio_controls.apply(&this.engine, cx, this.is_mono);
+                cx.notify();
+            });
+        });
+        cx.notify();
     }
 
     pub(super) fn update_meter_levels(&mut self, input: f32, output: f32) {

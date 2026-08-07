@@ -65,6 +65,8 @@ pub struct MainView {
     _meter_task: Task<()>,
     _system_task: Task<()>,
     _chain_restore_task: Task<()>,
+    _audio_routing_task: Task<()>,
+    audio_routing_revision: u64,
     update_check_task: Option<Task<()>>,
 }
 
@@ -149,6 +151,8 @@ impl MainView {
             _meter_task: Task::ready(()),
             _system_task: Task::ready(()),
             _chain_restore_task: Task::ready(()),
+            _audio_routing_task: Task::ready(()),
+            audio_routing_revision: 0,
             update_check_task: None,
         };
 
