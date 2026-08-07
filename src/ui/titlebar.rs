@@ -4,7 +4,7 @@ use gpui_updater::UpdateStatus;
 use std::rc::Rc;
 use std::time::Duration;
 
-use super::{colors, resolve_asset_path};
+use super::{badge::progress_ring, colors, resolve_asset_path};
 
 pub type ToggleSidebarCallback = Rc<dyn Fn(&mut Window, &mut App)>;
 pub type UpdateCallback = Rc<dyn Fn(&mut Window, &mut App)>;
@@ -119,7 +119,7 @@ fn titlebar_update_button(status: &UpdateStatus, on_update: UpdateCallback) -> O
     }
 
     let icon = if is_downloading {
-        circular_progress(progress)
+        progress_ring(progress)
     } else if is_restarting {
         restarting_icon()
     } else {
@@ -179,54 +179,6 @@ fn download_progress(downloaded: u64, total: u64) -> f32 {
     let percent = downloaded.saturating_mul(100) / total;
     let percent = u8::try_from(percent.min(100)).unwrap_or(100);
     f32::from(percent) / 100.0
-}
-
-fn circular_progress(progress: f32) -> AnyElement {
-    let progress = progress.clamp(0.0, 1.0);
-    canvas(
-        |_, _, _| {},
-        move |bounds, _, window, _| {
-            let center = point(
-                bounds.origin.x + bounds.size.width / 2.0,
-                bounds.origin.y + bounds.size.height / 2.0,
-            );
-            let radius = px(6.0);
-            let top = point(center.x, center.y - radius);
-            let bottom = point(center.x, center.y + radius);
-            let radii = point(radius, radius);
-
-            let mut track = PathBuilder::stroke(px(2.0));
-            track.move_to(top);
-            track.arc_to(radii, px(0.0), false, true, bottom);
-            track.arc_to(radii, px(0.0), false, true, top);
-            if let Ok(track) = track.build() {
-                window.paint_path(track, colors::orange().opacity(0.25));
-            }
-
-            if progress <= f32::EPSILON {
-                return;
-            }
-
-            let mut arc = PathBuilder::stroke(px(2.0));
-            arc.move_to(top);
-            if progress >= 1.0 - f32::EPSILON {
-                arc.arc_to(radii, px(0.0), false, true, bottom);
-                arc.arc_to(radii, px(0.0), false, true, top);
-            } else {
-                let angle = -std::f32::consts::FRAC_PI_2 + std::f32::consts::TAU * progress;
-                let end = point(
-                    center.x + radius * angle.cos(),
-                    center.y + radius * angle.sin(),
-                );
-                arc.arc_to(radii, px(0.0), progress > 0.5, true, end);
-            }
-            if let Ok(arc) = arc.build() {
-                window.paint_path(arc, colors::orange());
-            }
-        },
-    )
-    .size_4()
-    .into_any_element()
 }
 
 fn base_button(id: &'static str, destructive: bool) -> Stateful<Div> {

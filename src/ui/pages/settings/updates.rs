@@ -6,7 +6,7 @@ use gpui_updater::{UpdateStatus, Updater};
 
 use super::{ToggleRowProps, card, resolve_path, row, separator, toggle_row};
 use crate::config::SystemSettings;
-use crate::ui::badge::{BadgeStyle, badge, loading_badge};
+use crate::ui::badge::{BadgeStyle, badge, loading_badge, progress_badge};
 use crate::ui::card_header::card_heading_with_suffix;
 use crate::ui::colors;
 use crate::ui::control_style::ControlTypography;
@@ -179,17 +179,22 @@ fn update_badges(status: &UpdateStatus) -> AnyElement {
             message("update.available", "version", &version.to_string()),
             BadgeStyle::Orange,
         )),
-        UpdateStatus::Downloading { downloaded, total } => {
-            let detail = match total.filter(|total| *total > 0) {
-                Some(total) => format!("{}%", downloaded.saturating_mul(100) / total),
-                None => format!("{} MB", downloaded / 1_048_576),
-            };
-            badges.child(loading_badge(message(
+        UpdateStatus::Downloading { downloaded, total } => match total.filter(|total| *total > 0) {
+            Some(total) => {
+                let percent = downloaded.saturating_mul(100) / total;
+                let detail = format!("{}%", percent);
+                let progress = u8::try_from(percent.min(100)).unwrap_or(100);
+                badges.child(progress_badge(
+                    message("update.downloading", "progress", &detail),
+                    f32::from(progress) / 100.0,
+                ))
+            }
+            None => badges.child(loading_badge(message(
                 "update.downloading",
                 "progress",
-                &detail,
-            )))
-        }
+                &format!("{} MB", downloaded / 1_048_576),
+            ))),
+        },
         UpdateStatus::Installing => badges.child(loading_badge(i18n::t("update.installing"))),
         UpdateStatus::Staged(_) => badges.child(loading_badge(i18n::t("update.restarting"))),
     }
