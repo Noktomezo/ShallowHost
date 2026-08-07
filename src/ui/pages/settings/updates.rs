@@ -21,11 +21,10 @@ pub(super) fn updates_card(
     cx: &mut App,
 ) -> AnyElement {
     let mocked_status = crate::updater::mock_status();
-    let mock_preview = mocked_status.is_some();
     let status = mocked_status.unwrap_or_else(|| updater.read(cx).status().clone());
     let error_line = error_line(&status);
     let header_badges = update_badges(&status);
-    let primary_action = primary_action(&status, updater.clone(), mock_preview);
+    let primary_action = primary_action(&status, updater.clone());
     let check_action = check_action(&status, updater);
 
     card()
@@ -72,14 +71,9 @@ pub(super) fn updates_card(
         .into_any_element()
 }
 
-fn primary_action(
-    status: &UpdateStatus,
-    updater: Entity<Updater>,
-    mock_preview: bool,
-) -> Option<AnyElement> {
-    let (label, icon_path, restart) = match status {
-        UpdateStatus::Available(_) => ("update.install", "assets/icons/cloud-download.svg", false),
-        UpdateStatus::Staged(_) => ("update.restart", "assets/icons/circle-power.svg", true),
+fn primary_action(status: &UpdateStatus, updater: Entity<Updater>) -> Option<AnyElement> {
+    let (label, icon_path) = match status {
+        UpdateStatus::Available(_) => ("update.install", "assets/icons/cloud-download.svg"),
         _ => return None,
     };
 
@@ -101,14 +95,7 @@ fn primary_action(
             .text_color(colors::accent_foreground())
             .hover(|style| style.border_color(colors::accent_foreground().opacity(0.45)))
             .on_click(move |_, _, cx| {
-                if mock_preview {
-                    return;
-                }
-                if restart {
-                    crate::updater::restart(&updater, cx);
-                } else {
-                    crate::updater::download_and_install(&updater, cx);
-                }
+                crate::updater::download_and_install(&updater, cx);
             })
             .child(
                 svg()

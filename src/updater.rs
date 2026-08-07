@@ -14,6 +14,7 @@ const MOCK_CHECK_DURATION: Duration = Duration::from_secs(2);
 const MOCK_RESTART_DURATION: Duration = Duration::from_secs(1);
 static MOCK_CHECKING: AtomicBool = AtomicBool::new(false);
 static MOCK_RESTARTING: AtomicBool = AtomicBool::new(false);
+static RESTART_AFTER_UPDATE: AtomicBool = AtomicBool::new(false);
 const MOCK_DOWNLOAD_IDLE: u8 = u8::MAX;
 const MOCK_DOWNLOAD_STEPS: u8 = 40;
 static MOCK_DOWNLOAD_PROGRESS: AtomicU8 = AtomicU8::new(MOCK_DOWNLOAD_IDLE);
@@ -99,7 +100,13 @@ pub fn download_and_install(updater: &Entity<Updater>, cx: &mut App) {
         start_mock_download(cx);
         return;
     }
+    RESTART_AFTER_UPDATE.store(true, Ordering::Release);
     updater.update(cx, Updater::download_and_install);
+}
+
+#[must_use]
+pub fn take_restart_after_update() -> bool {
+    RESTART_AFTER_UPDATE.swap(false, Ordering::AcqRel)
 }
 
 pub fn restart(updater: &Entity<Updater>, cx: &mut App) {
