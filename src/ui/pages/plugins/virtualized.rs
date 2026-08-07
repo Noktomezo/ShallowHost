@@ -102,6 +102,7 @@ impl HeaderContext {
                             IconButtonStyle::Outline,
                             false,
                             false,
+                            cx,
                         )
                         .on_click(move |_, window, cx| open_scan_paths(true, window, cx)),
                     )
@@ -113,6 +114,7 @@ impl HeaderContext {
                             IconButtonStyle::Primary,
                             scanning,
                             scanning,
+                            cx,
                         )
                         .on_click(move |_, window, cx| {
                             if scan_state.read(cx).scanning {
@@ -335,7 +337,7 @@ fn render_plugin_card(
                 .items_center()
                 .gap_1()
                 .child(if plugin.in_chain || plugin.initializing {
-                    chain_navigation_button(SharedString::from(format!("btn-in-chain-{index}")))
+                    chain_navigation_button(SharedString::from(format!("btn-in-chain-{index}")), cx)
                         .on_click(move |_, window, cx| on_navigate(Route::Home, window, cx))
                         .into_any_element()
                 } else {
@@ -346,6 +348,7 @@ fn render_plugin_card(
                         IconButtonStyle::Outline,
                         false,
                         chain_busy || scanning,
+                        cx,
                     )
                     .on_click(move |_, _, cx| {
                         if add_operations.read(cx).is_busy() || scan_state.read(cx).scanning {
@@ -368,6 +371,7 @@ fn render_plugin_card(
                         IconButtonStyle::Outline,
                         false,
                         false,
+                        cx,
                     )
                     .on_click(move |_, _, _| reveal_plugin(&plugin_path)),
                 )
@@ -379,6 +383,7 @@ fn render_plugin_card(
                         IconButtonStyle::Danger,
                         false,
                         false,
+                        cx,
                     )
                     .on_click(move |_, _, cx| {
                         if let Err(error) = remove_engine.remove_cached_plugin(&remove_id) {

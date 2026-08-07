@@ -5,6 +5,7 @@ use gpui::*;
 
 use crate::ui::control_style::ControlTypography;
 use crate::ui::cursor_tooltip;
+use crate::ui::motion::mix_color;
 use crate::ui::{colors, i18n, resolve_asset_path};
 
 #[derive(Clone, Copy)]
@@ -21,8 +22,15 @@ pub(super) fn icon_button(
     variant: IconButtonStyle,
     spinning: bool,
     disabled: bool,
+    cx: &App,
 ) -> Stateful<Div> {
     let id = id.into();
+    let hover_key = SharedString::from(format!("plugins-button-{id:?}"));
+    let hover = if disabled {
+        0.0
+    } else {
+        crate::ui::hover_motion::progress(&hover_key, cx)
+    };
     let (background, border, foreground, hover_background, hover_border) = match variant {
         IconButtonStyle::Outline => (
             colors::base_900(),
@@ -73,21 +81,20 @@ pub(super) fn icon_button(
         .flex()
         .items_center()
         .justify_center()
-        .bg(background)
+        .bg(mix_color(background, hover_background, hover))
         .border_1()
-        .border_color(border)
+        .border_color(mix_color(border, hover_border, hover))
         .rounded_md()
         .child(icon)
         .when(disabled, |button| button.cursor_default().opacity(0.5))
-        .when(!disabled, |button| {
-            button
-                .cursor_pointer()
-                .hover(move |style| style.bg(hover_background).border_color(hover_border))
-        });
-    cursor_tooltip::attach(button, id, tooltip)
+        .when(!disabled, |button| button.cursor_pointer());
+    cursor_tooltip::attach_with_hover_motion(button, id, hover_key, tooltip)
 }
 
-pub(super) fn chain_navigation_button(id: impl Into<ElementId>) -> Stateful<Div> {
+pub(super) fn chain_navigation_button(id: impl Into<ElementId>, cx: &App) -> Stateful<Div> {
+    let id = id.into();
+    let hover_key = SharedString::from(format!("plugins-chain-button-{id:?}"));
+    let hover = crate::ui::hover_motion::progress(&hover_key, cx);
     div()
         .id(id)
         .h(px(34.0))
@@ -100,11 +107,17 @@ pub(super) fn chain_navigation_button(id: impl Into<ElementId>) -> Stateful<Div>
         .cursor_pointer()
         .bg(colors::orange())
         .border_1()
-        .border_color(colors::orange())
+        .border_color(mix_color(
+            colors::orange(),
+            colors::accent_foreground().opacity(0.45),
+            hover,
+        ))
         .rounded_md()
         .control_text()
         .text_color(colors::accent_foreground())
-        .hover(move |style| style.border_color(colors::accent_foreground().opacity(0.45)))
+        .on_hover(move |hovered, window, cx| {
+            crate::ui::hover_motion::set_hovered(hover_key.clone(), *hovered, window, cx);
+        })
         .child(i18n::t("plugins.goToChain"))
         .child(
             svg()

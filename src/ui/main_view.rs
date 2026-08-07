@@ -434,6 +434,7 @@ impl Render for MainView {
             Rc::new(move |window, cx| sidebar_toggle_listener(&(), window, cx)),
             Rc::new(move |window, cx| update_listener(&(), window, cx)),
             Rc::new(move |window, cx| close_listener(&(), window, cx)),
+            cx,
         );
 
         div()

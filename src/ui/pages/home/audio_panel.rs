@@ -62,6 +62,7 @@ pub(super) fn render_asio_channels(
             meter.output_level,
             meter.output_peak,
             callback.clone(),
+            cx,
         ))
         .child(channel_panel(
             "home.activeInputChannels",
@@ -70,6 +71,7 @@ pub(super) fn render_asio_channels(
             meter.input_level,
             meter.input_peak,
             callback,
+            cx,
         ))
         .into_any_element()
 }
@@ -81,6 +83,7 @@ pub(super) fn channel_panel(
     level: f32,
     peak: bool,
     callback: AudioRoutingCallback,
+    cx: &App,
 ) -> AnyElement {
     let (channels, active) = match direction {
         ChannelDirection::Input => (&routing.input_channels, &routing.active_inputs),
@@ -140,6 +143,9 @@ pub(super) fn channel_panel(
                     };
                     let checkbox_id =
                         SharedString::from(format!("channel-{direction_name}-{row}-checkbox"));
+                    let hover_key =
+                        SharedString::from(format!("channel-{direction_name}-{row}-hover"));
+                    let hover = crate::ui::hover_motion::progress(&hover_key, cx);
                     div()
                         .id(SharedString::from(format!(
                             "channel-{direction_name}-{row}"
@@ -151,11 +157,24 @@ pub(super) fn channel_panel(
                         .gap_2()
                         .rounded_sm()
                         .cursor_pointer()
-                        .hover(|style| style.bg(colors::base_850()))
+                        .bg(colors::base_850().opacity(hover))
+                        .on_hover(move |hovered, window, cx| {
+                            crate::ui::hover_motion::set_hovered(
+                                hover_key.clone(),
+                                *hovered,
+                                window,
+                                cx,
+                            );
+                        })
                         .on_click(move |_, window, cx| {
                             callback(direction, indices.clone(), !checked, window, cx);
                         })
-                        .child(channel_checkbox(checkbox_id, checked, animate_checkbox))
+                        .child(channel_checkbox(
+                            checkbox_id,
+                            checked,
+                            animate_checkbox,
+                            hover,
+                        ))
                         .child(
                             div()
                                 .min_w_0()
@@ -169,7 +188,7 @@ pub(super) fn channel_panel(
         .into_any_element()
 }
 
-fn channel_checkbox(id: SharedString, checked: bool, animate: bool) -> AnyElement {
+fn channel_checkbox(id: SharedString, checked: bool, animate: bool, hover: f32) -> AnyElement {
     let state = u64::from(checked);
     let box_animation_id = ElementId::NamedInteger(id.clone(), state);
     let check_animation_id =
@@ -218,8 +237,16 @@ fn channel_checkbox(id: SharedString, checked: bool, animate: bool) -> AnyElemen
                 move |element, delta| {
                     let progress = if checked { delta } else { 1.0 - delta };
                     element
-                        .border_color(mix_color(colors::base_700(), colors::orange(), progress))
-                        .bg(mix_color(colors::base_900(), colors::orange(), progress))
+                        .border_color(mix_color(
+                            mix_color(colors::base_700(), colors::base_500(), hover),
+                            colors::orange(),
+                            progress,
+                        ))
+                        .bg(mix_color(
+                            mix_color(colors::base_900(), colors::base_850(), hover),
+                            colors::orange(),
+                            progress,
+                        ))
                 },
             )
             .into_any_element()
@@ -228,12 +255,12 @@ fn channel_checkbox(id: SharedString, checked: bool, animate: bool) -> AnyElemen
             .border_color(if checked {
                 colors::orange()
             } else {
-                colors::base_700()
+                mix_color(colors::base_700(), colors::base_500(), hover)
             })
             .bg(if checked {
                 colors::orange()
             } else {
-                colors::base_900()
+                mix_color(colors::base_900(), colors::base_850(), hover)
             })
             .into_any_element()
     }

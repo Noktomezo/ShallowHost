@@ -63,6 +63,24 @@ pub fn attach(
         })
 }
 
+pub fn attach_with_hover_motion(
+    element: Stateful<Div>,
+    source: ElementId,
+    hover_key: SharedString,
+    text: impl Into<SharedString>,
+) -> Stateful<Div> {
+    let text = text.into();
+    let pressed_source = source.clone();
+    element
+        .on_hover(move |hovered, window, cx| {
+            super::hover_motion::set_hovered(hover_key.clone(), *hovered, window, cx);
+            set_hovered(source.clone(), text.clone(), *hovered, window, cx);
+        })
+        .on_mouse_down(MouseButton::Left, move |_, window, cx| {
+            hide_source(&pressed_source, window, cx);
+        })
+}
+
 pub fn set_hovered(
     source: ElementId,
     text: SharedString,

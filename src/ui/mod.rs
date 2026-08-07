@@ -8,6 +8,7 @@ pub mod colors;
 pub mod control_style;
 pub mod cursor_tooltip;
 pub mod dropdown_overlay;
+pub mod hover_motion;
 pub mod i18n;
 pub mod main_view;
 pub mod motion;
@@ -23,6 +24,7 @@ pub use assets::resolve_asset_path;
 pub use main_view::MainView;
 
 pub fn init(cx: &mut gpui::App) {
+    hover_motion::init(cx);
     cursor_tooltip::init(cx);
     pages::home::init(cx);
 }

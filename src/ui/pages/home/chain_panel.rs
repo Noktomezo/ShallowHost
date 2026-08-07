@@ -7,7 +7,7 @@ use gpui::*;
 use gpui_component::{ElementExt, StyledExt};
 
 use super::chain_drag::{self, ProjectedRow};
-use super::{action_button, card, card_header, icon, icon_button, separator};
+use super::{action_button, button_motion_key, card, card_header, icon, icon_button, separator};
 use crate::engine::{ChainItem, Engine};
 use crate::ui::badge::{BadgeStyle, badge, loading_badge};
 use crate::ui::chain_operations::{self, ChainOperationState};
@@ -67,7 +67,7 @@ pub(super) fn chain_card(
                     .items_center()
                     .gap_2()
                     .child(
-                        action_button("chain-add", "home.goToPlugins", "arrow-right.svg", true)
+                        action_button("chain-add", "home.goToPlugins", "arrow-right.svg", true, cx)
                             .on_click(move |_, window, cx| {
                                 on_navigate(Route::Plugins, window, cx);
                             }),
@@ -78,7 +78,9 @@ pub(super) fn chain_card(
                             "trash-2.svg",
                             "home.clearChain",
                             true,
+                            None,
                             chain_busy || is_empty,
+                            cx,
                         )
                         .on_click(move |_, _, cx| {
                             if clear_operations.read(cx).is_busy() || is_empty {
@@ -172,6 +174,8 @@ fn chain_item(
     let gui_operations = chain_operations.clone();
     let bypass_operations = chain_operations.clone();
     let remove_operations = chain_operations;
+    let bypass_button_id = ElementId::from(SharedString::from(format!("bypass-{index}")));
+    let bypass_motion_key = button_motion_key(&bypass_button_id);
 
     div()
         .relative()
@@ -191,7 +195,9 @@ fn chain_item(
                         "external-link.svg",
                         "home.openGui",
                         false,
+                        None,
                         disabled,
+                        cx,
                     )
                     .on_click(move |_, _, cx| {
                         if gui_operations.read(cx).is_busy() {
@@ -204,23 +210,36 @@ fn chain_item(
                 )
                 .child(
                     icon_button(
-                        format!("bypass-{index}"),
-                        "circle-off.svg",
+                        bypass_button_id,
+                        if item.bypassed {
+                            "circle-check.svg"
+                        } else {
+                            "circle-off.svg"
+                        },
                         if item.bypassed {
                             "home.unbypass"
                         } else {
                             "home.bypass"
                         },
                         false,
+                        Some(item.bypassed),
                         disabled,
+                        cx,
                     )
-                    .on_click(move |_, _, cx| {
+                    .on_click(move |_, window, cx| {
                         if bypass_operations.read(cx).is_busy() {
                             return;
                         }
                         if let Err(error) = bypass_engine.bypass_plugin(&bypass_id, next_bypassed) {
                             eprintln!("failed to change plugin bypass: {error}");
+                            return;
                         }
+                        crate::ui::hover_motion::set_active(
+                            bypass_motion_key.clone(),
+                            next_bypassed,
+                            window,
+                            cx,
+                        );
                         cx.refresh_windows();
                     }),
                 )
@@ -230,7 +249,9 @@ fn chain_item(
                         "trash-2.svg",
                         "home.removeFromChain",
                         true,
+                        None,
                         disabled,
+                        cx,
                     )
                     .on_click(move |_, _, cx| {
                         if remove_operations.read(cx).is_busy() {

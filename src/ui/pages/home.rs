@@ -12,6 +12,7 @@ use crate::ui::chain_operations::ChainOperationState;
 use crate::ui::colors;
 use crate::ui::control_style::ControlTypography;
 use crate::ui::i18n;
+use crate::ui::motion::mix_color;
 use crate::ui::routes::{AudioMeterState, DropdownCallbacks, NavigateCallback};
 use crate::ui::smooth_scroll::SmoothVerticalScroll;
 
@@ -265,7 +266,10 @@ fn action_button(
     label: &'static str,
     icon_name: &'static str,
     primary: bool,
+    cx: &App,
 ) -> Stateful<Div> {
+    let hover_key = SharedString::from(format!("home-action-{id}"));
+    let hover = crate::ui::hover_motion::progress(&hover_key, cx);
     let background = if primary {
         colors::orange()
     } else {
@@ -285,20 +289,24 @@ fn action_button(
         .gap_2()
         .rounded_md()
         .cursor_pointer()
-        .bg(background)
+        .bg(if primary {
+            background
+        } else {
+            mix_color(background, colors::base_850(), hover)
+        })
         .border_1()
         .border_color(if primary {
-            colors::orange()
+            mix_color(
+                colors::orange(),
+                colors::accent_foreground().opacity(0.45),
+                hover,
+            )
         } else {
             colors::base_800()
         })
         .text_color(foreground)
-        .hover(move |style| {
-            if primary {
-                style.border_color(colors::accent_foreground().opacity(0.45))
-            } else {
-                style.bg(colors::base_850())
-            }
+        .on_hover(move |hovered, window, cx| {
+            crate::ui::hover_motion::set_hovered(hover_key.clone(), *hovered, window, cx);
         })
         .child(div().control_text().child(i18n::t(label)))
         .child(icon(icon_name, foreground))
@@ -309,73 +317,90 @@ fn icon_button(
     icon_name: &'static str,
     tooltip: &'static str,
     destructive: bool,
+    active: Option<bool>,
     disabled: bool,
+    cx: &App,
 ) -> Stateful<Div> {
     let id = id.into();
-    let hover_group = SharedString::from(format!("home-icon-button-{id:?}"));
-    let foreground = colors::base_200();
+    let hover_key = button_motion_key(&id);
+    let hover = if disabled {
+        0.0
+    } else {
+        crate::ui::hover_motion::progress(&hover_key, cx)
+    };
+    let state = active.map_or(0.0, |active| {
+        crate::ui::hover_motion::state_progress(&hover_key, active, cx)
+    });
+    let resting_foreground = mix_color(colors::base_200(), colors::orange(), state);
+    let hover_foreground = if destructive {
+        colors::red()
+    } else if active.is_some() {
+        colors::orange()
+    } else {
+        colors::base_100()
+    };
+    let foreground = mix_color(resting_foreground, hover_foreground, hover);
+    let hover_background = if destructive {
+        colors::red().opacity(0.15)
+    } else if active.is_some() {
+        colors::orange().opacity(0.16)
+    } else {
+        colors::base_850()
+    };
+    let hover_border = if destructive {
+        colors::red().opacity(0.4)
+    } else if active.is_some() {
+        colors::orange().opacity(0.7)
+    } else {
+        colors::base_700()
+    };
     let button = div()
         .id(id.clone())
-        .group(hover_group.clone())
         .size(px(34.0))
         .flex()
         .items_center()
         .justify_center()
         .rounded_md()
-        .bg(colors::base_900())
+        .bg(mix_color(colors::base_900(), hover_background, hover))
         .border_1()
-        .border_color(colors::base_800())
+        .border_color(mix_color(colors::base_800(), hover_border, hover))
         .text_color(foreground)
-        .child(semantic_icon(icon_name, &hover_group, destructive))
+        .child(if active.is_some() {
+            stateful_bypass_icon(state, foreground)
+        } else {
+            icon(icon_name, foreground)
+        })
         .when(disabled, |button| button.cursor_default().opacity(0.5))
-        .when(!disabled, |button| {
-            button.cursor_pointer().hover(move |style| {
-                if destructive {
-                    style
-                        .bg(colors::red().opacity(0.15))
-                        .border_color(colors::red().opacity(0.4))
-                        .text_color(colors::red())
-                } else {
-                    style.bg(colors::base_850())
-                }
-            })
-        });
-    crate::ui::cursor_tooltip::attach(button, id, i18n::t(tooltip))
+        .when(!disabled, |button| button.cursor_pointer());
+    crate::ui::cursor_tooltip::attach_with_hover_motion(button, id, hover_key, i18n::t(tooltip))
 }
 
-fn semantic_icon(
-    icon_name: &'static str,
-    hover_group: &SharedString,
-    destructive: bool,
-) -> AnyElement {
-    let path = crate::ui::resolve_asset_path(&format!("assets/icons/{icon_name}"));
+fn button_motion_key(id: &ElementId) -> SharedString {
+    SharedString::from(format!("home-button-{id:?}"))
+}
+
+fn stateful_bypass_icon(progress: f32, color: Rgba) -> AnyElement {
     div()
         .relative()
         .size_4()
         .child(
-            div()
+            svg()
+                .external_path(crate::ui::resolve_asset_path("assets/icons/circle-off.svg"))
+                .size_4()
+                .text_color(color)
+                .opacity(1.0 - progress),
+        )
+        .child(
+            svg()
                 .absolute()
                 .inset_0()
-                .when(destructive, |icon| {
-                    icon.group_hover(hover_group.clone(), |style| style.invisible())
-                })
-                .child(
-                    svg()
-                        .external_path(path.clone())
-                        .size_4()
-                        .text_color(colors::base_200()),
-                ),
+                .external_path(crate::ui::resolve_asset_path(
+                    "assets/icons/circle-check.svg",
+                ))
+                .size_4()
+                .text_color(color)
+                .opacity(progress),
         )
-        .when(destructive, |icons| {
-            icons.child(
-                div()
-                    .absolute()
-                    .inset_0()
-                    .invisible()
-                    .group_hover(hover_group.clone(), |style| style.visible())
-                    .child(svg().external_path(path).size_4().text_color(colors::red())),
-            )
-        })
         .into_any_element()
 }
 

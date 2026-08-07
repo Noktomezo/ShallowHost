@@ -22,8 +22,9 @@ pub fn render_titlebar(
     on_toggle_sidebar: ToggleSidebarCallback,
     on_update: UpdateCallback,
     on_close: CloseCallback,
+    cx: &App,
 ) -> AnyElement {
-    let update_button = titlebar_update_button(update_status, on_update);
+    let update_button = titlebar_update_button(update_status, on_update, cx);
     div()
         .id("titlebar")
         .h(px(40.0))
@@ -40,7 +41,7 @@ pub fn render_titlebar(
                 .justify_center()
                 .flex_shrink_0()
                 .child(
-                    base_button("sidebar-toggle-btn", false)
+                    base_button("sidebar-toggle-btn", false, cx)
                         .on_mouse_down(MouseButton::Left, move |_, window, cx| {
                             window.prevent_default();
                             cx.stop_propagation();
@@ -68,7 +69,7 @@ pub fn render_titlebar(
                 .flex_shrink_0()
                 .children(update_button)
                 .child(
-                    base_button("win-minimize-btn", false)
+                    base_button("win-minimize-btn", false, cx)
                         .window_control_area(WindowControlArea::Min)
                         .on_mouse_down(MouseButton::Left, |_, window, cx| {
                             window.prevent_default();
@@ -78,7 +79,7 @@ pub fn render_titlebar(
                         .child(titlebar_icon("assets/icons/window-minimize.svg")),
                 )
                 .child(
-                    base_button("win-maximize-btn", false)
+                    base_button("win-maximize-btn", false, cx)
                         .window_control_area(WindowControlArea::Max)
                         .on_mouse_down(MouseButton::Left, |_, window, cx| {
                             window.prevent_default();
@@ -96,20 +97,27 @@ pub fn render_titlebar(
                         })),
                 )
                 .child(
-                    base_button("win-close-btn", true)
+                    base_button("win-close-btn", true, cx)
                         .window_control_area(WindowControlArea::Close)
                         .on_mouse_down(MouseButton::Left, move |_, window, cx| {
                             window.prevent_default();
                             cx.stop_propagation();
                             on_close(window, cx);
                         })
-                        .child(destructive_titlebar_icon("assets/icons/window-close.svg")),
+                        .child(destructive_titlebar_icon(
+                            "assets/icons/window-close.svg",
+                            cx,
+                        )),
                 ),
         )
         .into_any_element()
 }
 
-fn titlebar_update_button(status: &UpdateStatus, on_update: UpdateCallback) -> Option<AnyElement> {
+fn titlebar_update_button(
+    status: &UpdateStatus,
+    on_update: UpdateCallback,
+    cx: &App,
+) -> Option<AnyElement> {
     let is_available = matches!(status, UpdateStatus::Available(_));
     let progress = match status {
         UpdateStatus::Downloading { downloaded, total } => total
@@ -140,7 +148,9 @@ fn titlebar_update_button(status: &UpdateStatus, on_update: UpdateCallback) -> O
             .into_any_element()
     };
 
-    let button = base_button("titlebar-update-btn", false)
+    let id = ElementId::Name("titlebar-update-btn".into());
+    let hover_key = SharedString::from("titlebar-button-titlebar-update-btn");
+    let button = base_button_visual(id.clone(), false, &hover_key, cx)
         .when(is_available, |button| {
             button
                 .on_mouse_down(MouseButton::Left, |_, window, cx| {
@@ -153,9 +163,10 @@ fn titlebar_update_button(status: &UpdateStatus, on_update: UpdateCallback) -> O
         .child(icon);
 
     Some(
-        crate::ui::cursor_tooltip::attach(
+        crate::ui::cursor_tooltip::attach_with_hover_motion(
             button,
             ElementId::Name("titlebar-update-tooltip".into()),
+            hover_key,
             crate::ui::i18n::t(if is_restarting {
                 "update.restarting"
             } else if is_downloading {
@@ -191,7 +202,22 @@ fn download_progress(downloaded: u64, total: u64) -> f32 {
     f32::from(percent) / 100.0
 }
 
-fn base_button(id: &'static str, destructive: bool) -> Stateful<Div> {
+fn base_button(id: &'static str, destructive: bool, cx: &App) -> Stateful<Div> {
+    let hover_key = SharedString::from(format!("titlebar-button-{id}"));
+    base_button_visual(ElementId::Name(id.into()), destructive, &hover_key, cx).on_hover(
+        move |hovered, window, cx| {
+            crate::ui::hover_motion::set_hovered(hover_key.clone(), *hovered, window, cx);
+        },
+    )
+}
+
+fn base_button_visual(
+    id: ElementId,
+    destructive: bool,
+    hover_key: &SharedString,
+    cx: &App,
+) -> Stateful<Div> {
+    let hover = crate::ui::hover_motion::progress(hover_key, cx);
     div()
         .id(id)
         .when(destructive, |button| button.group("titlebar-destructive"))
@@ -201,16 +227,20 @@ fn base_button(id: &'static str, destructive: bool) -> Stateful<Div> {
         .justify_center()
         .rounded_md()
         .cursor_pointer()
-        .text_color(colors::base_200())
-        .hover(move |style| {
-            if destructive {
-                style
-                    .bg(colors::red().opacity(0.15))
-                    .text_color(colors::red())
-            } else {
-                style.bg(rgba(0xffffff12)).text_color(colors::base_100())
-            }
+        .bg(if destructive {
+            colors::red().opacity(0.15 * hover)
+        } else {
+            rgba(0xffffff12).opacity(hover)
         })
+        .text_color(super::motion::mix_color(
+            colors::base_200(),
+            if destructive {
+                colors::red()
+            } else {
+                colors::base_100()
+            },
+            hover,
+        ))
         .active(move |style| {
             if destructive {
                 style
@@ -229,8 +259,10 @@ fn titlebar_icon(path: &'static str) -> Svg {
         .text_color(colors::base_200())
 }
 
-fn destructive_titlebar_icon(path: &'static str) -> Div {
+fn destructive_titlebar_icon(path: &'static str, cx: &App) -> Div {
     let path = resolve_asset_path(path);
+    let hover =
+        crate::ui::hover_motion::progress(&SharedString::from("titlebar-button-win-close-btn"), cx);
     div()
         .relative()
         .size_4()
@@ -239,12 +271,12 @@ fn destructive_titlebar_icon(path: &'static str) -> Div {
                 .id("titlebar-destructive-hover-icon")
                 .absolute()
                 .inset_0()
-                .group_hover("titlebar-destructive", |style| style.invisible())
                 .child(
                     svg()
                         .external_path(path.clone())
                         .size_4()
-                        .text_color(colors::base_200()),
+                        .text_color(colors::base_200())
+                        .opacity(1.0 - hover),
                 ),
         )
         .child(
@@ -252,14 +284,13 @@ fn destructive_titlebar_icon(path: &'static str) -> Div {
                 .id("titlebar-destructive-active-icon")
                 .absolute()
                 .inset_0()
-                .invisible()
-                .group_hover("titlebar-destructive", |style| style.visible())
                 .group_active("titlebar-destructive", |style| style.invisible())
                 .child(
                     svg()
                         .external_path(path.clone())
                         .size_4()
-                        .text_color(colors::red()),
+                        .text_color(colors::red())
+                        .opacity(hover),
                 ),
         )
         .child(

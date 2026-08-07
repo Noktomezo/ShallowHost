@@ -11,7 +11,7 @@ use crate::ui::card_header::card_heading_with_suffix;
 use crate::ui::colors;
 use crate::ui::control_style::ControlTypography;
 use crate::ui::i18n;
-use crate::ui::motion::{UPDATE_PULSE_MOTION, update_pulse_opacity};
+use crate::ui::motion::{UPDATE_PULSE_MOTION, mix_color, update_pulse_opacity};
 use crate::ui::routes::{SystemCallback, SystemSetting};
 
 pub(super) fn updates_card(
@@ -25,8 +25,8 @@ pub(super) fn updates_card(
     let status = mocked_status.unwrap_or_else(|| updater.read(cx).status().clone());
     let error_line = error_line(&status);
     let header_badges = update_badges(&status);
-    let primary_action = primary_action(&status, updater.clone());
-    let check_action = check_action(&status, updater);
+    let primary_action = primary_action(&status, updater.clone(), cx);
+    let check_action = check_action(&status, updater, cx);
 
     card()
         .child(
@@ -72,12 +72,14 @@ pub(super) fn updates_card(
         .into_any_element()
 }
 
-fn primary_action(status: &UpdateStatus, updater: Entity<Updater>) -> Option<AnyElement> {
+fn primary_action(status: &UpdateStatus, updater: Entity<Updater>, cx: &App) -> Option<AnyElement> {
     let (label, icon_path) = match status {
         UpdateStatus::Available(_) => ("update.install", "assets/icons/cloud-download.svg"),
         _ => return None,
     };
 
+    let hover_key = SharedString::from("settings-update-primary");
+    let hover = crate::ui::hover_motion::progress(&hover_key, cx);
     Some(
         div()
             .id("update-primary-action")
@@ -91,10 +93,16 @@ fn primary_action(status: &UpdateStatus, updater: Entity<Updater>) -> Option<Any
             .cursor_pointer()
             .bg(colors::orange())
             .border_1()
-            .border_color(colors::orange())
+            .border_color(mix_color(
+                colors::orange(),
+                colors::accent_foreground().opacity(0.45),
+                hover,
+            ))
             .control_text()
             .text_color(colors::accent_foreground())
-            .hover(|style| style.border_color(colors::accent_foreground().opacity(0.45)))
+            .on_hover(move |hovered, window, cx| {
+                crate::ui::hover_motion::set_hovered(hover_key.clone(), *hovered, window, cx);
+            })
             .on_click(move |_, _, cx| {
                 crate::updater::download_and_install(&updater, cx);
             })
@@ -109,8 +117,14 @@ fn primary_action(status: &UpdateStatus, updater: Entity<Updater>) -> Option<Any
     )
 }
 
-fn check_action(status: &UpdateStatus, updater: Entity<Updater>) -> AnyElement {
+fn check_action(status: &UpdateStatus, updater: Entity<Updater>, cx: &App) -> AnyElement {
     let busy = check_is_disabled(status);
+    let hover_key = SharedString::from("settings-update-check");
+    let hover = if busy {
+        0.0
+    } else {
+        crate::ui::hover_motion::progress(&hover_key, cx)
+    };
     let button = div()
         .id("update-check-action")
         .size(px(34.0))
@@ -119,24 +133,22 @@ fn check_action(status: &UpdateStatus, updater: Entity<Updater>) -> AnyElement {
         .justify_center()
         .rounded_md()
         .flex_none()
-        .bg(colors::base_900())
+        .bg(mix_color(colors::base_900(), colors::base_850(), hover))
         .border_1()
         .border_color(colors::base_800())
         .text_color(colors::base_200())
         .when(busy, |element| element.cursor_default().opacity(0.6))
         .when(!busy, |element| {
-            element
-                .cursor_pointer()
-                .hover(|style| style.bg(colors::base_850()))
-                .on_click(move |_, _, cx| {
-                    crate::updater::start_check(&updater, cx);
-                })
+            element.cursor_pointer().on_click(move |_, _, cx| {
+                crate::updater::start_check(&updater, cx);
+            })
         })
         .child(update_icon(matches!(status, UpdateStatus::Checking)));
 
-    crate::ui::cursor_tooltip::attach(
+    crate::ui::cursor_tooltip::attach_with_hover_motion(
         button,
         ElementId::Name("update-check-tooltip".into()),
+        hover_key,
         i18n::t("update.check"),
     )
     .into_any_element()
