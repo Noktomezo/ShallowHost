@@ -122,6 +122,7 @@ update:
   upToDate: "You’re running the latest version."
   available: "Version %{version} is available."
   install: "Download and install"
+  availableTooltip: "An update is available. Download and install?"
   downloading: "Downloading… %{progress}"
   installing: "Installing update…"
   restarting: "Restarting…"

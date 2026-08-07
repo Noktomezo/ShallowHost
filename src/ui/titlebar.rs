@@ -161,7 +161,7 @@ fn titlebar_update_button(status: &UpdateStatus, on_update: UpdateCallback) -> O
             } else if is_downloading {
                 "update.installing"
             } else {
-                "update.install"
+                "update.availableTooltip"
             }),
         )
         .into_any_element(),

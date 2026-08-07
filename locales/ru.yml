@@ -122,6 +122,7 @@ update:
   upToDate: "Установлена последняя версия."
   available: "Доступна версия %{version}."
   install: "Скачать и установить"
+  availableTooltip: "Доступно обновление. Скачать и установить?"
   downloading: "Загрузка… %{progress}"
   installing: "Устанавливаем обновление…"
   restarting: "Перезапускаем…"
