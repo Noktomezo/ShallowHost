@@ -67,6 +67,7 @@ jobs:
         run: |
           dotnet tool install --global wix --version 6.0.2
           wix extension add --global WixToolset.Util.wixext/6.0.2
+          wix extension add --global WixToolset.UI.wixext/6.0.2
 
       - name: Package Windows distributions
         shell: pwsh
@@ -85,6 +86,7 @@ jobs:
           wix build packaging/windows/ShallowHost.wxs `
             -arch x64 `
             -ext WixToolset.Util.wixext `
+            -ext WixToolset.UI.wixext `
             -d Version="$version" `
             -d ExeFile="$((Resolve-Path 'target/release/ShallowHost.exe').Path)" `
             -d AssetsDir="$((Resolve-Path 'assets').Path)" `

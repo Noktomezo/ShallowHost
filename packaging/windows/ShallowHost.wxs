@@ -1,7 +1,8 @@
 <?xml version="1.0" encoding="utf-8"?>
 
-<!-- Built with WiX Toolset v6 and WixToolset.Util.wixext. -->
+<!-- Built with WiX Toolset v6, WixToolset.UI.wixext, and WixToolset.Util.wixext. -->
 <Wix xmlns="http://wixtoolset.org/schemas/v4/wxs"
+     xmlns:ui="http://wixtoolset.org/schemas/v4/wxs/ui"
      xmlns:util="http://wixtoolset.org/schemas/v4/wxs/util">
   <Package Name="ShallowHost"
            Manufacturer="Noktomezo"
@@ -67,5 +68,22 @@
     <Icon Id="ShallowHostIco" SourceFile="$(var.IconFile)" />
     <Property Id="ARPPRODUCTICON" Value="ShallowHostIco" />
     <Property Id="ARPHELPLINK" Value="https://github.com/Noktomezo/ShallowHost" />
+
+    <ui:WixUI Id="WixUI_InstallDir" InstallDirectory="INSTALLFOLDER" />
+
+    <Property Id="WIXUI_EXITDIALOGOPTIONALCHECKBOX" Value="1" />
+    <Property Id="WIXUI_EXITDIALOGOPTIONALCHECKBOXTEXT" Value="Launch ShallowHost" />
+    <Property Id="WixShellExecTarget" Value="[#ShallowHostExe]" />
+    <CustomAction Id="LaunchShallowHost"
+                  BinaryRef="Wix4UtilCA_X64"
+                  DllEntry="WixShellExec"
+                  Impersonate="yes" />
+    <UI>
+      <Publish Dialog="ExitDialog"
+               Control="Finish"
+               Event="DoAction"
+               Value="LaunchShallowHost"
+               Condition="WIXUI_EXITDIALOGOPTIONALCHECKBOX = 1 AND NOT Installed" />
+    </UI>
   </Package>
 </Wix>
