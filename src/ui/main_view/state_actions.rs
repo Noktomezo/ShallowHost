@@ -343,8 +343,13 @@ impl MainView {
         }
         self.system_changed_at[setting.motion_index()] = Some(Instant::now());
         self.save_config();
-        if setting == SystemSetting::AutoCheckUpdates && enabled {
-            crate::updater::start_check(&self.updater, cx);
+        if setting == SystemSetting::AutoCheckUpdates {
+            if enabled {
+                crate::updater::start_check(&self.updater, cx);
+                self.start_update_check_task(cx);
+            } else {
+                self.stop_update_check_task();
+            }
         }
         cx.notify();
     }

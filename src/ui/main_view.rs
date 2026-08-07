@@ -65,6 +65,7 @@ pub struct MainView {
     _meter_task: Task<()>,
     _system_task: Task<()>,
     _chain_restore_task: Task<()>,
+    update_check_task: Option<Task<()>>,
 }
 
 impl MainView {
@@ -148,6 +149,7 @@ impl MainView {
             _meter_task: Task::ready(()),
             _system_task: Task::ready(()),
             _chain_restore_task: Task::ready(()),
+            update_check_task: None,
         };
 
         this._subscriptions.push(cx.subscribe(
@@ -214,6 +216,7 @@ impl MainView {
             }));
         if initial_config.system.auto_check_updates {
             crate::updater::start_check(&updater, cx);
+            this.start_update_check_task(cx);
         }
 
         if this.audio_controls.is_asio(cx) {
@@ -232,6 +235,22 @@ impl MainView {
             eprintln!("failed to hide autostart window: {error}");
         }
         this
+    }
+
+    fn start_update_check_task(&mut self, cx: &mut Context<Self>) {
+        let updater = self.updater.clone();
+        self.update_check_task = Some(cx.spawn(async move |_, cx| {
+            loop {
+                cx.background_executor()
+                    .timer(crate::updater::UPDATE_CHECK_INTERVAL)
+                    .await;
+                cx.update(|cx| crate::updater::start_check(&updater, cx));
+            }
+        }));
+    }
+
+    fn stop_update_check_task(&mut self) {
+        self.update_check_task = None;
     }
 
     fn render_nav_item(

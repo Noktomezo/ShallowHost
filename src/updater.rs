@@ -12,6 +12,7 @@ const MINISIGN_PUBLIC_KEY: &str = "RWSeWrBbDqi6SGEfcTvdy+8CgdwKGxVK30mNPRJC953JS
 const MOCK_UPDATE_ENV: &str = "SHALLOWHOST_MOCK_UPDATE";
 const MOCK_CHECK_DURATION: Duration = Duration::from_secs(2);
 const MOCK_RESTART_DURATION: Duration = Duration::from_secs(1);
+pub const UPDATE_CHECK_INTERVAL: Duration = Duration::from_secs(30);
 static MOCK_CHECKING: AtomicBool = AtomicBool::new(false);
 static MOCK_RESTARTING: AtomicBool = AtomicBool::new(false);
 static RESTART_AFTER_UPDATE: AtomicBool = AtomicBool::new(false);
@@ -79,6 +80,10 @@ pub fn new_entity(cx: &mut App) -> Entity<Updater> {
 }
 
 pub fn start_check(updater: &Entity<Updater>, cx: &mut App) {
+    let status = mock_status().unwrap_or_else(|| updater.read(cx).status().clone());
+    if !can_start_check(&status) {
+        return;
+    }
     if is_mock_preview() {
         if MOCK_CHECKING.swap(true, Ordering::AcqRel) {
             return;
@@ -93,6 +98,11 @@ pub fn start_check(updater: &Entity<Updater>, cx: &mut App) {
         return;
     }
     updater.update(cx, Updater::check);
+}
+
+#[must_use]
+pub fn can_start_check(status: &UpdateStatus) -> bool {
+    !status.is_busy() && !matches!(status, UpdateStatus::Staged(_))
 }
 
 pub fn download_and_install(updater: &Entity<Updater>, cx: &mut App) {
@@ -147,7 +157,24 @@ fn mock_download_percent(step: u8) -> u8 {
 
 #[cfg(test)]
 mod tests {
-    use super::{mock_download_percent, release_asset_patterns, release_manifest_url};
+    use super::{
+        can_start_check, mock_download_percent, release_asset_patterns, release_manifest_url,
+    };
+    use gpui_updater::{UpdateStatus, Version};
+
+    #[test]
+    fn update_checks_skip_active_update_states() {
+        assert!(can_start_check(&UpdateStatus::UpToDate));
+        assert!(!can_start_check(&UpdateStatus::Checking));
+        assert!(!can_start_check(&UpdateStatus::Downloading {
+            downloaded: 50,
+            total: Some(100),
+        }));
+        assert!(!can_start_check(&UpdateStatus::Installing));
+        assert!(!can_start_check(&UpdateStatus::Staged(Version::new(
+            1, 2, 3
+        ))));
+    }
 
     #[test]
     fn mock_download_progress_spans_the_full_percentage_range() {
