@@ -6,6 +6,7 @@ use std::time::{Duration, Instant};
 
 use crate::config::ConfigStore;
 use crate::engine::Engine;
+use crate::single_instance::SingleInstance;
 use crate::system_integration::SystemIntegration;
 
 use super::audio_controls::AudioControls;
@@ -49,6 +50,7 @@ pub struct MainView {
     plugin_scan_state: Entity<PluginScanState>,
     chain_operation_state: Entity<ChainOperationState>,
     updater: Entity<Updater>,
+    single_instance: SingleInstance,
     system_integration: Option<SystemIntegration>,
     system_changed_at: [Option<Instant>; 4],
     input_level: f32,
@@ -74,6 +76,7 @@ impl MainView {
     pub fn new(
         engine: Arc<Engine>,
         storage: ConfigStore,
+        single_instance: SingleInstance,
         window: &mut Window,
         cx: &mut Context<Self>,
     ) -> Self {
@@ -135,6 +138,7 @@ impl MainView {
             plugin_scan_state: cx.new(|_| PluginScanState::default()),
             chain_operation_state: cx.new(|_| ChainOperationState::default()),
             updater: updater.clone(),
+            single_instance,
             system_integration,
             system_changed_at: [None; 4],
             input_level: 0.0,

@@ -64,9 +64,6 @@ impl MainView {
     }
 
     pub(super) fn start_system_task(&mut self, cx: &mut Context<Self>) {
-        if self.system_integration.is_none() {
-            return;
-        }
         self._system_task = cx.spawn(async move |view, cx| {
             loop {
                 cx.background_executor()
@@ -74,20 +71,30 @@ impl MainView {
                     .await;
                 if view
                     .update_in(&mut *cx, |view, window, cx| {
+                        let activation_requested = match view.single_instance.activation_requested()
+                        {
+                            Ok(requested) => requested,
+                            Err(error) => {
+                                eprintln!("failed to poll the single-instance signal: {error}");
+                                false
+                            }
+                        };
                         let action = view
                             .system_integration
                             .as_ref()
                             .and_then(|integration| integration.poll_tray_action());
+                        let should_show =
+                            activation_requested || matches!(action, Some(TrayAction::Show));
                         match action {
-                            Some(TrayAction::Show) => {
+                            Some(TrayAction::Quit) => cx.quit(),
+                            _ if should_show => {
                                 if let Err(error) = show_window(window) {
-                                    eprintln!("failed to show window from tray: {error}");
+                                    eprintln!("failed to restore the existing window: {error}");
                                 } else {
                                     cx.activate(true);
                                 }
                             }
-                            Some(TrayAction::Quit) => cx.quit(),
-                            None => {}
+                            _ => {}
                         }
                     })
                     .is_err()

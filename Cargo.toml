@@ -48,7 +48,7 @@ cxx-build = "1.0.198"
 auto-launch = "0.5.0"
 raw-window-handle = "0.6.2"
 tray-icon = "0.24.2"
-windows-sys = { version = "0.61.2", features = ["Win32_Foundation", "Win32_UI_WindowsAndMessaging"] }
+windows-sys = { version = "0.61.2", features = ["Win32_Foundation", "Win32_System_Threading", "Win32_UI_WindowsAndMessaging"] }
 
 [target.'cfg(windows)'.build-dependencies]
 # Embeds the original Tauri icon into the Windows executable resource table.

@@ -7,6 +7,7 @@ i18n!("locales", fallback = "ru");
 
 mod config;
 mod engine;
+mod single_instance;
 mod system_integration;
 mod ui;
 mod updater;
@@ -15,6 +16,7 @@ use config::ConfigStore;
 use engine::Engine;
 use gpui::*;
 use gpui_component::{Root, Theme};
+use single_instance::{AcquireResult, SingleInstance};
 use std::sync::Arc;
 use ui::MainView;
 
@@ -50,10 +52,19 @@ fn load_fonts(cx: &mut App) {
 }
 
 fn main() {
+    let single_instance = match SingleInstance::acquire(APP_ID) {
+        Ok(AcquireResult::Primary(instance)) => instance,
+        Ok(AcquireResult::Secondary) => return,
+        Err(error) => {
+            eprintln!("failed to initialize the single-instance guard: {error}");
+            return;
+        }
+    };
+
     let app = Application::with_platform(gpui_platform::current_platform(false))
         .with_assets(gpui_component_assets::Assets);
 
-    app.run(|cx: &mut App| {
+    app.run(move |cx: &mut App| {
         cx.set_app_identity(APP_ID, APP_TITLE);
         load_fonts(cx);
         gpui_component::init(cx);
@@ -96,7 +107,7 @@ fn main() {
             move |window, cx| {
                 window.set_window_title(APP_TITLE);
                 let engine = Arc::clone(&engine);
-                let view = cx.new(|cx| MainView::new(engine, storage, window, cx));
+                let view = cx.new(|cx| MainView::new(engine, storage, single_instance, window, cx));
                 cx.new(|cx| {
                     Root::new(view, window, cx)
                         // The app view owns the opaque/50%-tinted surfaces. Keeping Root clear
