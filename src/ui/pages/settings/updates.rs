@@ -5,14 +5,14 @@ use gpui::*;
 use gpui_updater::{UpdateStatus, Updater};
 
 use super::{ToggleRowProps, card, resolve_path, row, separator, toggle_row};
-use crate::config::SystemSettings;
-use crate::ui::badge::{BadgeStyle, badge, loading_badge, progress_badge};
-use crate::ui::card_header::card_heading_with_suffix;
-use crate::ui::colors;
-use crate::ui::control_style::ControlTypography;
-use crate::ui::i18n;
-use crate::ui::motion::{UPDATE_PULSE_MOTION, mix_color, update_pulse_opacity};
-use crate::ui::routes::{SystemCallback, SystemSetting};
+use crate::infrastructure::config::SystemSettings;
+use crate::ui::components::badge::{BadgeStyle, badge, loading_badge, progress_badge};
+use crate::ui::components::card_header::card_heading_with_suffix;
+use crate::ui::foundation::colors;
+use crate::ui::foundation::control_style::ControlTypography;
+use crate::ui::foundation::i18n;
+use crate::ui::foundation::motion::{UPDATE_PULSE_MOTION, mix_color, update_pulse_opacity};
+use crate::ui::shell::routes::{SystemCallback, SystemSetting};
 
 pub(super) fn updates_card(
     settings: &SystemSettings,
@@ -21,7 +21,7 @@ pub(super) fn updates_card(
     updater: Entity<Updater>,
     cx: &mut App,
 ) -> AnyElement {
-    let mocked_status = crate::updater::mock_status();
+    let mocked_status = crate::infrastructure::updater::mock_status();
     let status = mocked_status.unwrap_or_else(|| updater.read(cx).status().clone());
     let error_line = error_line(&status);
     let header_badges = update_badges(&status);
@@ -79,7 +79,7 @@ fn primary_action(status: &UpdateStatus, updater: Entity<Updater>, cx: &App) -> 
     };
 
     let hover_key = SharedString::from("settings-update-primary");
-    let hover = crate::ui::hover_motion::progress(&hover_key, cx);
+    let hover = crate::ui::foundation::hover_motion::progress(&hover_key, cx);
     Some(
         div()
             .id("update-primary-action")
@@ -101,10 +101,15 @@ fn primary_action(status: &UpdateStatus, updater: Entity<Updater>, cx: &App) -> 
             .control_text()
             .text_color(colors::accent_foreground())
             .on_hover(move |hovered, window, cx| {
-                crate::ui::hover_motion::set_hovered(hover_key.clone(), *hovered, window, cx);
+                crate::ui::foundation::hover_motion::set_hovered(
+                    hover_key.clone(),
+                    *hovered,
+                    window,
+                    cx,
+                );
             })
             .on_click(move |_, _, cx| {
-                crate::updater::download_and_install(&updater, cx);
+                crate::infrastructure::updater::download_and_install(&updater, cx);
             })
             .child(
                 svg()
@@ -123,7 +128,7 @@ fn check_action(status: &UpdateStatus, updater: Entity<Updater>, cx: &App) -> An
     let hover = if busy {
         0.0
     } else {
-        crate::ui::hover_motion::progress(&hover_key, cx)
+        crate::ui::foundation::hover_motion::progress(&hover_key, cx)
     };
     let button = div()
         .id("update-check-action")
@@ -140,12 +145,12 @@ fn check_action(status: &UpdateStatus, updater: Entity<Updater>, cx: &App) -> An
         .when(busy, |element| element.cursor_default().opacity(0.6))
         .when(!busy, |element| {
             element.cursor_pointer().on_click(move |_, _, cx| {
-                crate::updater::start_check(&updater, cx);
+                crate::infrastructure::updater::start_check(&updater, cx);
             })
         })
         .child(update_icon(matches!(status, UpdateStatus::Checking)));
 
-    crate::ui::cursor_tooltip::attach_with_hover_motion(
+    crate::ui::components::cursor_tooltip::attach_with_hover_motion(
         button,
         ElementId::Name("update-check-tooltip".into()),
         hover_key,

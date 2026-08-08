@@ -3,10 +3,11 @@ use std::time::Duration;
 use gpui::prelude::*;
 use gpui::*;
 
-use crate::ui::control_style::ControlTypography;
-use crate::ui::cursor_tooltip;
-use crate::ui::motion::mix_color;
-use crate::ui::{colors, i18n, resolve_asset_path};
+use crate::ui::components::cursor_tooltip;
+use crate::ui::foundation::control_style::ControlTypography;
+use crate::ui::foundation::motion::mix_color;
+use crate::ui::foundation::{colors, i18n};
+use crate::ui::resolve_asset_path;
 
 #[derive(Clone, Copy)]
 pub(super) enum IconButtonStyle {
@@ -29,7 +30,7 @@ pub(super) fn icon_button(
     let hover = if disabled {
         0.0
     } else {
-        crate::ui::hover_motion::progress(&hover_key, cx)
+        crate::ui::foundation::hover_motion::progress(&hover_key, cx)
     };
     let (background, border, foreground, hover_background, hover_border) = match variant {
         IconButtonStyle::Outline => (
@@ -95,7 +96,7 @@ pub(super) fn chain_navigation_button(id: impl Into<ElementId>, cx: &App) -> Sta
     let id = id.into();
     let hover_key = SharedString::from(format!("plugins-chain-button-{id:?}"));
     let pressed_hover_key = hover_key.clone();
-    let hover = crate::ui::hover_motion::progress(&hover_key, cx);
+    let hover = crate::ui::foundation::hover_motion::progress(&hover_key, cx);
     div()
         .id(id)
         .h(px(34.0))
@@ -117,10 +118,15 @@ pub(super) fn chain_navigation_button(id: impl Into<ElementId>, cx: &App) -> Sta
         .control_text()
         .text_color(colors::accent_foreground())
         .on_hover(move |hovered, window, cx| {
-            crate::ui::hover_motion::set_hovered(hover_key.clone(), *hovered, window, cx);
+            crate::ui::foundation::hover_motion::set_hovered(
+                hover_key.clone(),
+                *hovered,
+                window,
+                cx,
+            );
         })
         .on_mouse_down(MouseButton::Left, move |_, window, cx| {
-            crate::ui::hover_motion::clear_hover(&pressed_hover_key, window, cx);
+            crate::ui::foundation::hover_motion::clear_hover(&pressed_hover_key, window, cx);
         })
         .child(i18n::t("plugins.goToChain"))
         .child(

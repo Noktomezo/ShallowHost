@@ -25,7 +25,7 @@ fn main() {
         println!("cargo:rerun-if-changed={source}");
     }
 
-    cxx_build::bridge("src/engine/ffi.rs")
+    cxx_build::bridge("src/infrastructure/engine/ffi.rs")
         .file("cpp/src/cxx_bridge.cpp")
         .include("cpp/src")
         .std("c++20")

@@ -6,14 +6,14 @@ use gpui_component::StyledExt;
 
 use super::controls::{IconButtonStyle, chain_navigation_button, icon_button};
 use super::{PluginItem, PluginScanState};
-use crate::config::PluginSettings;
-use crate::engine::Engine;
-use crate::ui::badge::{BadgeStyle, badge, loading_badge};
-use crate::ui::chain_operations::{self, ChainOperationState, PendingPlugin};
-use crate::ui::colors;
-use crate::ui::i18n;
-use crate::ui::routes::{DropdownCallbacks, NavigateCallback, Route};
-use crate::ui::smooth_scroll::{PageScrollbar, SmoothListScroll};
+use crate::infrastructure::config::PluginSettings;
+use crate::infrastructure::engine::Engine;
+use crate::ui::components::badge::{BadgeStyle, badge, loading_badge};
+use crate::ui::components::smooth_scroll::{PageScrollbar, SmoothListScroll};
+use crate::ui::foundation::colors;
+use crate::ui::foundation::i18n;
+use crate::ui::shell::routes::{DropdownCallbacks, NavigateCallback, Route};
+use crate::ui::state::chain_operations::{self, ChainOperationState, PendingPlugin};
 
 // 40 px content + 32 px card padding + 12 px inter-row spacing.
 const ESTIMATED_ROW_HEIGHT: Pixels = px(84.0);

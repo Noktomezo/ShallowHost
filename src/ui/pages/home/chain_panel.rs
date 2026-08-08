@@ -8,12 +8,12 @@ use gpui_component::{ElementExt, StyledExt};
 
 use super::chain_drag::{self, ProjectedRow};
 use super::{action_button, button_motion_key, card, card_header, icon, icon_button, separator};
-use crate::engine::{ChainItem, Engine};
-use crate::ui::badge::{BadgeStyle, badge, loading_badge};
-use crate::ui::chain_operations::{self, ChainOperationState};
-use crate::ui::colors;
-use crate::ui::i18n;
-use crate::ui::routes::{NavigateCallback, Route};
+use crate::infrastructure::engine::{ChainItem, Engine};
+use crate::ui::components::badge::{BadgeStyle, badge, loading_badge};
+use crate::ui::foundation::colors;
+use crate::ui::foundation::i18n;
+use crate::ui::shell::routes::{NavigateCallback, Route};
+use crate::ui::state::chain_operations::{self, ChainOperationState};
 
 #[derive(Clone)]
 pub(super) struct ChainDrag {
@@ -235,7 +235,7 @@ fn chain_item(
                             eprintln!("failed to change plugin bypass: {error}");
                             return;
                         }
-                        crate::ui::hover_motion::set_active(
+                        crate::ui::foundation::hover_motion::set_active(
                             bypass_motion_key.clone(),
                             next_bypassed,
                             window,
@@ -296,7 +296,8 @@ fn drag_handle(index: usize, drag: ChainDrag, disabled: bool) -> Stateful<Div> {
                     .border_color(colors::base_700())
             })
         });
-    let handle = crate::ui::cursor_tooltip::attach(handle, id, i18n::t("home.dragHandle"));
+    let handle =
+        crate::ui::components::cursor_tooltip::attach(handle, id, i18n::t("home.dragHandle"));
     if disabled {
         return handle;
     }

@@ -3,10 +3,10 @@ use std::sync::Arc;
 use gpui::prelude::*;
 use gpui::*;
 
-use crate::config::PluginSettings;
-use crate::engine::Engine;
-use crate::ui::chain_operations::ChainOperationState;
-use crate::ui::routes::{DropdownCallbacks, NavigateCallback};
+use crate::infrastructure::config::PluginSettings;
+use crate::infrastructure::engine::Engine;
+use crate::ui::shell::routes::{DropdownCallbacks, NavigateCallback};
+use crate::ui::state::chain_operations::ChainOperationState;
 
 mod controls;
 mod scan_paths_dialog;

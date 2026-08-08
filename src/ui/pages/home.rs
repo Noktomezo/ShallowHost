@@ -4,17 +4,17 @@ use gpui_component::StyledExt;
 use std::sync::Arc;
 use std::time::Instant;
 
-use crate::engine::Engine;
-use crate::ui::audio_controls::AudioControls;
-use crate::ui::audio_dropdown::audio_dropdown;
-use crate::ui::card_header::card_heading;
-use crate::ui::chain_operations::ChainOperationState;
-use crate::ui::colors;
-use crate::ui::control_style::ControlTypography;
-use crate::ui::i18n;
-use crate::ui::motion::mix_color;
-use crate::ui::routes::{AudioMeterState, DropdownCallbacks, NavigateCallback};
-use crate::ui::smooth_scroll::SmoothVerticalScroll;
+use crate::infrastructure::engine::Engine;
+use crate::ui::components::audio_dropdown::audio_dropdown;
+use crate::ui::components::card_header::card_heading;
+use crate::ui::components::smooth_scroll::SmoothVerticalScroll;
+use crate::ui::foundation::colors;
+use crate::ui::foundation::control_style::ControlTypography;
+use crate::ui::foundation::i18n;
+use crate::ui::foundation::motion::mix_color;
+use crate::ui::shell::routes::{AudioMeterState, DropdownCallbacks, NavigateCallback};
+use crate::ui::state::audio_controls::AudioControls;
+use crate::ui::state::chain_operations::ChainOperationState;
 
 mod audio_panel;
 mod chain_drag;
@@ -36,12 +36,12 @@ pub(crate) fn update_chain_drag_mouse(position: Point<Pixels>, cx: &mut App) -> 
 pub struct HomePage {
     engine: Arc<Engine>,
     on_navigate: NavigateCallback,
-    on_set_mono: crate::ui::routes::MonoCallback,
+    on_set_mono: crate::ui::shell::routes::MonoCallback,
     audio: AudioControls,
     is_mono: bool,
     mono_changed_at: Option<Instant>,
     meter: AudioMeterState,
-    on_change_audio_routing: crate::ui::routes::AudioRoutingCallback,
+    on_change_audio_routing: crate::ui::shell::routes::AudioRoutingCallback,
     chain_operations: Entity<ChainOperationState>,
 }
 
@@ -270,7 +270,7 @@ fn action_button(
 ) -> Stateful<Div> {
     let hover_key = SharedString::from(format!("home-action-{id}"));
     let pressed_hover_key = hover_key.clone();
-    let hover = crate::ui::hover_motion::progress(&hover_key, cx);
+    let hover = crate::ui::foundation::hover_motion::progress(&hover_key, cx);
     let background = if primary {
         colors::orange()
     } else {
@@ -307,10 +307,15 @@ fn action_button(
         })
         .text_color(foreground)
         .on_hover(move |hovered, window, cx| {
-            crate::ui::hover_motion::set_hovered(hover_key.clone(), *hovered, window, cx);
+            crate::ui::foundation::hover_motion::set_hovered(
+                hover_key.clone(),
+                *hovered,
+                window,
+                cx,
+            );
         })
         .on_mouse_down(MouseButton::Left, move |_, window, cx| {
-            crate::ui::hover_motion::clear_hover(&pressed_hover_key, window, cx);
+            crate::ui::foundation::hover_motion::clear_hover(&pressed_hover_key, window, cx);
         })
         .child(div().control_text().child(i18n::t(label)))
         .child(icon(icon_name, foreground))
@@ -330,10 +335,10 @@ fn icon_button(
     let hover = if disabled {
         0.0
     } else {
-        crate::ui::hover_motion::progress(&hover_key, cx)
+        crate::ui::foundation::hover_motion::progress(&hover_key, cx)
     };
     let state = active.map_or(0.0, |active| {
-        crate::ui::hover_motion::state_progress(&hover_key, active, cx)
+        crate::ui::foundation::hover_motion::state_progress(&hover_key, active, cx)
     });
     let resting_foreground = mix_color(colors::base_200(), colors::orange(), state);
     let hover_foreground = if destructive {
@@ -376,7 +381,12 @@ fn icon_button(
         })
         .when(disabled, |button| button.cursor_default().opacity(0.5))
         .when(!disabled, |button| button.cursor_pointer());
-    crate::ui::cursor_tooltip::attach_with_hover_motion(button, id, hover_key, i18n::t(tooltip))
+    crate::ui::components::cursor_tooltip::attach_with_hover_motion(
+        button,
+        id,
+        hover_key,
+        i18n::t(tooltip),
+    )
 }
 
 fn button_motion_key(id: &ElementId) -> SharedString {

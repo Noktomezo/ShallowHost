@@ -1,4 +1,4 @@
-#include "shallow-host-gpui/src/engine/ffi.rs.h"
+#include "shallow-host-gpui/src/infrastructure/engine/ffi.rs.h"
 #include "native_host.h"
 
 #include <string>

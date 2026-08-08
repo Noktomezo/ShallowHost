@@ -4,9 +4,11 @@ use std::time::Duration;
 
 use super::appearance::{AppearanceOption, local_icon};
 use super::resolve_path;
-use crate::ui::colors;
-use crate::ui::control_style::ControlTypography;
-use crate::ui::motion::{CONTROL_MOTION, DropdownMotion, mix_color, set_dropdown_hovered};
+use crate::ui::foundation::colors;
+use crate::ui::foundation::control_style::ControlTypography;
+use crate::ui::foundation::motion::{
+    CONTROL_MOTION, DropdownMotion, mix_color, set_dropdown_hovered,
+};
 
 const CONTROL_HEIGHT: Pixels = px(34.0);
 const CONTROL_WIDTH: Pixels = px(220.0);

@@ -3,10 +3,11 @@ use gpui::*;
 use gpui_component::StyledExt;
 use gpui_component::scroll::ScrollableElement;
 
-use crate::config::PluginSettings;
-use crate::ui::control_style::ControlTypography;
-use crate::ui::routes::{DropdownCallbacks, PluginPathUpdate};
-use crate::ui::{colors, i18n, resolve_asset_path};
+use crate::infrastructure::config::PluginSettings;
+use crate::ui::foundation::control_style::ControlTypography;
+use crate::ui::foundation::{colors, i18n};
+use crate::ui::resolve_asset_path;
+use crate::ui::shell::routes::{DropdownCallbacks, PluginPathUpdate};
 
 pub(super) fn render_scan_paths_dialog(
     settings: &PluginSettings,

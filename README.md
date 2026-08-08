@@ -53,12 +53,13 @@ JUCE 9 AudioProcessorGraph engine (C++)
      VST3 · Windows Audio · ASIO
 ```
 
-- `src/ui/` contains GPUI pages, controls, animation, and interaction state.
-- `src/engine/` is the safe Rust facade over the native host.
-- `cpp/` contains the JUCE engine, C ABI, and the WaveShell compatibility patch.
-- `src/config.rs` owns portable `config.toml` and cache paths.
-- `src/system_integration.rs` contains Windows tray and autostart integration.
-- `src/updater.rs` connects GPUI to the signed GitHub release updater.
+- `src/app.rs` is the composition root: application startup, fonts, and the main window.
+- `src/domain/` contains UI-independent value types and application preferences.
+- `src/infrastructure/` owns configuration, the safe `cxx` engine facade, single-instance handling, Windows integration, and updates.
+- `src/ui/foundation/` contains shared assets, colors, localization, and motion primitives.
+- `src/ui/components/` contains reusable GPUI controls, overlays, meters, and scrolling.
+- `src/ui/state/`, `src/ui/shell/`, and `src/ui/pages/` contain interaction state, the application shell, and feature pages respectively.
+- `cpp/` contains the JUCE engine and the WaveShell compatibility patch behind the `cxx` bridge.
 
 ## 🚀 Development
 

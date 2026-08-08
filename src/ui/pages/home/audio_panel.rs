@@ -3,13 +3,13 @@ use gpui::*;
 use gpui_component::StyledExt;
 use gpui_component::scroll::ScrollableElement;
 
-use crate::ui::audio_controls::{AudioControls, AudioRoutingState, ChannelDirection};
-use crate::ui::colors;
-use crate::ui::control_style::ControlTypography;
-use crate::ui::i18n;
-use crate::ui::motion::{CONTROL_MOTION, mix_color};
-use crate::ui::routes::{AudioMeterState, AudioRoutingCallback};
-use crate::ui::volume_meter::volume_meter;
+use crate::ui::components::volume_meter::volume_meter;
+use crate::ui::foundation::colors;
+use crate::ui::foundation::control_style::ControlTypography;
+use crate::ui::foundation::i18n;
+use crate::ui::foundation::motion::{CONTROL_MOTION, mix_color};
+use crate::ui::shell::routes::{AudioMeterState, AudioRoutingCallback};
+use crate::ui::state::audio_controls::{AudioControls, AudioRoutingState, ChannelDirection};
 
 pub(super) fn page_header() -> AnyElement {
     div()
@@ -145,7 +145,7 @@ pub(super) fn channel_panel(
                         SharedString::from(format!("channel-{direction_name}-{row}-checkbox"));
                     let hover_key =
                         SharedString::from(format!("channel-{direction_name}-{row}-hover"));
-                    let hover = crate::ui::hover_motion::progress(&hover_key, cx);
+                    let hover = crate::ui::foundation::hover_motion::progress(&hover_key, cx);
                     div()
                         .id(SharedString::from(format!(
                             "channel-{direction_name}-{row}"
@@ -159,7 +159,7 @@ pub(super) fn channel_panel(
                         .cursor_pointer()
                         .bg(colors::base_850().opacity(hover))
                         .on_hover(move |hovered, window, cx| {
-                            crate::ui::hover_motion::set_hovered(
+                            crate::ui::foundation::hover_motion::set_hovered(
                                 hover_key.clone(),
                                 *hovered,
                                 window,

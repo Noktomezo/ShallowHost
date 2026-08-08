@@ -1,3 +1,4 @@
 /target
+/.worktrees
 /cpp/build
 /cpp/cargo-build

@@ -2,11 +2,11 @@ use gpui::prelude::*;
 use gpui::*;
 use std::time::Instant;
 
-use crate::ui::colors;
-use crate::ui::control_style::ControlTypography;
-use crate::ui::i18n;
-use crate::ui::motion::{MODE_MOTION, changed_recently, mix_color};
-use crate::ui::routes::MonoCallback;
+use crate::ui::foundation::colors;
+use crate::ui::foundation::control_style::ControlTypography;
+use crate::ui::foundation::i18n;
+use crate::ui::foundation::motion::{MODE_MOTION, changed_recently, mix_color};
+use crate::ui::shell::routes::MonoCallback;
 
 pub(super) fn mode_selector(
     is_mono: bool,

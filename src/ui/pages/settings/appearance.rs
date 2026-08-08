@@ -5,16 +5,16 @@ use std::rc::Rc;
 use std::time::Instant;
 
 use super::{Language, ThemeMode, card, resolve_path, row, separator, setting_copy};
-use crate::ui::card_header::card_heading;
-use crate::ui::colors;
-use crate::ui::control_style::ControlTypography;
-use crate::ui::dropdown_overlay::adaptive_dropdown;
-use crate::ui::motion::{
+use crate::ui::components::card_header::card_heading;
+use crate::ui::components::dropdown_overlay::adaptive_dropdown;
+use crate::ui::components::toggle_switch::toggle_switch;
+use crate::ui::foundation::colors;
+use crate::ui::foundation::control_style::ControlTypography;
+use crate::ui::foundation::motion::{
     CONTROL_MOTION, DropdownMotion, MENU_MOTION, mix_color, set_dropdown_item_hovered,
     set_dropdown_open,
 };
-use crate::ui::routes::{LanguageCallback, ThemeCallback, TransparencyCallback};
-use crate::ui::toggle_switch::toggle_switch;
+use crate::ui::shell::routes::{LanguageCallback, ThemeCallback, TransparencyCallback};
 
 const CONTROL_HEIGHT: Pixels = px(34.0);
 const CONTROL_WIDTH: Pixels = px(220.0);

@@ -1,39 +1,27 @@
 use gpui::prelude::*;
 use gpui::*;
 use gpui_component::StyledExt;
-use serde::{Deserialize, Serialize};
 use std::time::Instant;
 
-use crate::config::SystemSettings;
-use crate::ui::card_header::card_heading;
-use crate::ui::colors;
-use crate::ui::i18n;
-use crate::ui::motion::DropdownMotion;
-use crate::ui::routes::{
+use crate::domain::preferences::{Language, ThemeMode};
+use crate::infrastructure::config::SystemSettings;
+use crate::ui::components::card_header::card_heading;
+use crate::ui::components::smooth_scroll::SmoothVerticalScroll;
+use crate::ui::components::toggle_switch::toggle_switch;
+use crate::ui::foundation::colors;
+use crate::ui::foundation::i18n;
+use crate::ui::foundation::motion::DropdownMotion;
+use crate::ui::shell::routes::{
     DropdownCallbacks, LanguageCallback, RenderContext, SystemCallback, SystemSetting,
     ThemeCallback, TransparencyCallback,
 };
-use crate::ui::smooth_scroll::SmoothVerticalScroll;
-use crate::ui::toggle_switch::toggle_switch;
 use gpui_updater::Updater;
 
 mod appearance;
 mod appearance_trigger;
 mod updates;
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Serialize, Deserialize)]
-#[serde(rename_all = "snake_case")]
-pub enum ThemeMode {
-    System,
-    Light,
-    Dark,
-}
-
 impl ThemeMode {
-    pub const fn all() -> &'static [Self] {
-        &[Self::System, Self::Light, Self::Dark]
-    }
-
     pub fn label(self) -> String {
         i18n::t(match self {
             Self::System => "settings.themeSystem",
@@ -51,19 +39,7 @@ impl ThemeMode {
     }
 }
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Serialize, Deserialize)]
-#[serde(rename_all = "snake_case")]
-pub enum Language {
-    System,
-    Russian,
-    English,
-}
-
 impl Language {
-    pub const fn all() -> &'static [Self] {
-        &[Self::System, Self::Russian, Self::English]
-    }
-
     pub fn label(self) -> String {
         i18n::t(match self {
             Self::System => "settings.langSystem",
