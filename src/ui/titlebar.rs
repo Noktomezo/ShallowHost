@@ -95,11 +95,11 @@ pub fn render_titlebar(
                 .child(
                     base_button("win-close-btn", true, cx)
                         .window_control_area(WindowControlArea::Close)
-                        .on_mouse_down(MouseButton::Left, move |_, window, cx| {
+                        .on_mouse_down(MouseButton::Left, |_, window, cx| {
                             window.prevent_default();
                             cx.stop_propagation();
-                            on_close(window, cx);
                         })
+                        .on_click(move |_, window, cx| on_close(window, cx))
                         .child(destructive_titlebar_icon(
                             "assets/icons/window-close.svg",
                             cx,

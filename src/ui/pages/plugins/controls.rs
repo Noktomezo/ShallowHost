@@ -94,6 +94,7 @@ pub(super) fn icon_button(
 pub(super) fn chain_navigation_button(id: impl Into<ElementId>, cx: &App) -> Stateful<Div> {
     let id = id.into();
     let hover_key = SharedString::from(format!("plugins-chain-button-{id:?}"));
+    let pressed_hover_key = hover_key.clone();
     let hover = crate::ui::hover_motion::progress(&hover_key, cx);
     div()
         .id(id)
@@ -117,6 +118,9 @@ pub(super) fn chain_navigation_button(id: impl Into<ElementId>, cx: &App) -> Sta
         .text_color(colors::accent_foreground())
         .on_hover(move |hovered, window, cx| {
             crate::ui::hover_motion::set_hovered(hover_key.clone(), *hovered, window, cx);
+        })
+        .on_mouse_down(MouseButton::Left, move |_, window, cx| {
+            crate::ui::hover_motion::clear_hover(&pressed_hover_key, window, cx);
         })
         .child(i18n::t("plugins.goToChain"))
         .child(

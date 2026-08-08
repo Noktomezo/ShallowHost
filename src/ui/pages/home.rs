@@ -269,6 +269,7 @@ fn action_button(
     cx: &App,
 ) -> Stateful<Div> {
     let hover_key = SharedString::from(format!("home-action-{id}"));
+    let pressed_hover_key = hover_key.clone();
     let hover = crate::ui::hover_motion::progress(&hover_key, cx);
     let background = if primary {
         colors::orange()
@@ -307,6 +308,9 @@ fn action_button(
         .text_color(foreground)
         .on_hover(move |hovered, window, cx| {
             crate::ui::hover_motion::set_hovered(hover_key.clone(), *hovered, window, cx);
+        })
+        .on_mouse_down(MouseButton::Left, move |_, window, cx| {
+            crate::ui::hover_motion::clear_hover(&pressed_hover_key, window, cx);
         })
         .child(div().control_text().child(i18n::t(label)))
         .child(icon(icon_name, foreground))

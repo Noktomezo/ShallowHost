@@ -55,6 +55,25 @@ pub fn set_hovered(key: SharedString, hovered: bool, window: &mut Window, cx: &m
     refresh_for_transition(cx);
 }
 
+pub fn clear_hover(key: &SharedString, window: &mut Window, cx: &mut App) {
+    if cx
+        .global_mut::<HoverMotionState>()
+        .transitions
+        .remove(key)
+        .is_some()
+    {
+        window.refresh();
+    }
+}
+
+pub fn clear_all_hovers(window: &mut Window, cx: &mut App) {
+    let transitions = &mut cx.global_mut::<HoverMotionState>().transitions;
+    if !transitions.is_empty() {
+        transitions.clear();
+        window.refresh();
+    }
+}
+
 pub fn state_progress(key: &SharedString, active: bool, cx: &App) -> f32 {
     cx.global::<HoverMotionState>()
         .states

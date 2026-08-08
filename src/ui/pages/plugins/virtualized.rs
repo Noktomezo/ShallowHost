@@ -204,7 +204,6 @@ pub(super) fn render(
                 px(12.0)
             })
             .child(render_plugin_card(
-                index,
                 plugin,
                 Arc::clone(&engine),
                 on_navigate.clone(),
@@ -231,7 +230,6 @@ pub(super) fn render(
 }
 
 fn render_plugin_card(
-    index: usize,
     plugin: PluginItem,
     engine: Arc<Engine>,
     on_navigate: NavigateCallback,
@@ -239,6 +237,12 @@ fn render_plugin_card(
     scan_state: Entity<PluginScanState>,
     cx: &App,
 ) -> AnyElement {
+    let stable_id = plugin.id.clone();
+    let card_id = SharedString::from(format!("plugin-card-{stable_id}"));
+    let in_chain_button_id = SharedString::from(format!("btn-in-chain-{stable_id}"));
+    let add_button_id = SharedString::from(format!("btn-add-chain-{stable_id}"));
+    let reveal_button_id = SharedString::from(format!("btn-reveal-{stable_id}"));
+    let remove_button_id = SharedString::from(format!("btn-remove-{stable_id}"));
     let add_engine = Arc::clone(&engine);
     let add_operations = chain_operations.clone();
     let remove_engine = engine;
@@ -254,7 +258,7 @@ fn render_plugin_card(
     let scanning = scan_state.read(cx).scanning;
 
     div()
-        .id(SharedString::from(format!("plugin-card-{index}")))
+        .id(card_id)
         .w_full()
         .p_4()
         .bg(colors::base_950())
@@ -337,12 +341,12 @@ fn render_plugin_card(
                 .items_center()
                 .gap_1()
                 .child(if plugin.in_chain || plugin.initializing {
-                    chain_navigation_button(SharedString::from(format!("btn-in-chain-{index}")), cx)
+                    chain_navigation_button(in_chain_button_id, cx)
                         .on_click(move |_, window, cx| on_navigate(Route::Home, window, cx))
                         .into_any_element()
                 } else {
                     icon_button(
-                        SharedString::from(format!("btn-add-chain-{index}")),
+                        add_button_id,
                         "assets/icons/plus.svg",
                         i18n::t("plugins.addToChain"),
                         IconButtonStyle::Outline,
@@ -365,7 +369,7 @@ fn render_plugin_card(
                 })
                 .child(
                     icon_button(
-                        SharedString::from(format!("btn-reveal-{index}")),
+                        reveal_button_id,
                         "assets/icons/folder.svg",
                         i18n::t("plugins.reveal"),
                         IconButtonStyle::Outline,
@@ -377,7 +381,7 @@ fn render_plugin_card(
                 )
                 .child(
                     icon_button(
-                        SharedString::from(format!("btn-remove-{index}")),
+                        remove_button_id,
                         "assets/icons/trash-2.svg",
                         i18n::t("plugins.remove"),
                         IconButtonStyle::Danger,

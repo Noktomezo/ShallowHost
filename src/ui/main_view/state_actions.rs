@@ -117,7 +117,9 @@ impl MainView {
         });
     }
 
-    pub(super) fn close_or_hide(&mut self, window: &mut Window, _cx: &mut Context<Self>) {
+    pub(super) fn close_or_hide(&mut self, window: &mut Window, cx: &mut Context<Self>) {
+        crate::ui::hover_motion::clear_all_hovers(window, cx);
+        crate::ui::cursor_tooltip::hide(window, cx);
         if self.storage.config().system.minimize_to_tray {
             match hide_window(window) {
                 Ok(()) => return,

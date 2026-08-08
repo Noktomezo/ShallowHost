@@ -158,6 +158,7 @@ fn chain_item(
     let gui_id = item.id.clone();
     let bypass_id = item.id.clone();
     let remove_id = item.id.clone();
+    let stable_id = item.id.clone();
     let next_bypassed = !item.bypassed;
     let source_bounds = Rc::new(Cell::new(None));
     let drag = ChainDrag {
@@ -174,7 +175,7 @@ fn chain_item(
     let gui_operations = chain_operations.clone();
     let bypass_operations = chain_operations.clone();
     let remove_operations = chain_operations;
-    let bypass_button_id = ElementId::from(SharedString::from(format!("bypass-{index}")));
+    let bypass_button_id = ElementId::from(SharedString::from(format!("bypass-{stable_id}")));
     let bypass_motion_key = button_motion_key(&bypass_button_id);
 
     div()
@@ -191,7 +192,7 @@ fn chain_item(
                 .gap_1()
                 .child(
                     icon_button(
-                        format!("gui-{index}"),
+                        format!("gui-{stable_id}"),
                         "external-link.svg",
                         "home.openGui",
                         false,
@@ -245,7 +246,7 @@ fn chain_item(
                 )
                 .child(
                     icon_button(
-                        format!("remove-{index}"),
+                        format!("remove-{stable_id}"),
                         "trash-2.svg",
                         "home.removeFromChain",
                         true,
