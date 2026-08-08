@@ -2713,7 +2713,6 @@ dependencies = [
 [[package]]
 name = "gpui-updater"
 version = "0.0.6"
-source = "git+https://github.com/AprilNEA/gpui-updater?tag=v0.0.6#e8a85768793ac3238b0c1bc1f32d6a1544667ec3"
 dependencies = [
  "gpui",
  "minisign-verify",
@@ -2721,6 +2720,7 @@ dependencies = [
  "serde",
  "serde_json",
  "sha2 0.10.9",
+ "tempfile",
  "thiserror 2.0.19",
  "tracing",
  "ureq",

@@ -31,8 +31,8 @@ gpui = { git = "https://github.com/zed-industries/zed" }
 gpui_platform = { git = "https://github.com/zed-industries/zed", features = ["font-kit"] }
 gpui-component = { git = "https://github.com/longbridge/gpui-component" }
 gpui-component-assets = { git = "https://github.com/longbridge/gpui-component" }
-# Observable GPUI-native updater; pinned so release behaviour is reproducible.
-gpui-updater = { git = "https://github.com/AprilNEA/gpui-updater", tag = "v0.0.6", features = ["gpui"] }
+# Vendored from v0.0.6 with a Windows MSI handoff fix; see vendor/gpui-updater/README.shallowhost.md.
+gpui-updater = { path = "vendor/gpui-updater", features = ["gpui"] }
 rust-i18n = "3.1"
 image = "0.25"
 serde = { version = "1", features = ["derive"] }
