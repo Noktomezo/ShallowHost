@@ -2,6 +2,13 @@
   <img src="assets/thumbnail.png" width="100%" alt="ShallowHost" />
 
   <p>A native Windows host for real-time audio processing with VST3 plug-ins.</p>
+
+  <p>
+    <picture><source media="(prefers-color-scheme: dark)" srcset="https://www.shieldcn.dev/github/ci/Noktomezo/ShallowHost.svg?variant=secondary&amp;size=xs&amp;mode=dark&amp;theme=neutral"><img alt="CI" src="https://www.shieldcn.dev/github/ci/Noktomezo/ShallowHost.svg?variant=secondary&amp;size=xs&amp;mode=light&amp;theme=neutral"></picture>
+    <picture><source media="(prefers-color-scheme: dark)" srcset="https://www.shieldcn.dev/github/release/Noktomezo/ShallowHost.svg?size=xs&amp;mode=dark&amp;theme=neutral"><img alt="Release" src="https://www.shieldcn.dev/github/release/Noktomezo/ShallowHost.svg?size=xs&amp;mode=light&amp;theme=neutral"></picture>
+    <picture><source media="(prefers-color-scheme: dark)" srcset="https://www.shieldcn.dev/github/license/Noktomezo/ShallowHost.svg?variant=ghost&amp;size=xs&amp;mode=dark&amp;theme=neutral"><img alt="License" src="https://www.shieldcn.dev/github/license/Noktomezo/ShallowHost.svg?variant=ghost&amp;size=xs&amp;mode=light&amp;theme=neutral"></picture>
+    <picture><source media="(prefers-color-scheme: dark)" srcset="https://www.shieldcn.dev/github/stars/Noktomezo/ShallowHost.svg?variant=secondary&amp;size=xs&amp;mode=dark&amp;theme=neutral"><img alt="Stars" src="https://www.shieldcn.dev/github/stars/Noktomezo/ShallowHost.svg?variant=secondary&amp;size=xs&amp;mode=light&amp;theme=neutral"></picture>
+  </p>
 </div>
 
 > [!WARNING]
@@ -9,14 +16,14 @@
 
 ShallowHost processes microphone or other audio input through a configurable plug-in chain. It is inspired by [LightHost](https://github.com/opencma/LightHost), with a new interface built in Rust and GPUI and an audio engine based on JUCE 9.
 
-## Features
+## ✨ Features
 
 - VST3 scanning, native plug-in editors, bypass controls, and drag-and-drop chain ordering
 - Windows Audio and ASIO with channel selection, mono/stereo routing, and level meters
 - Persistent configuration, plug-in cache, and chain state stored beside the executable
 - Tray integration, autostart, themes, Russian and English localization, and signed updates
 
-## Installation
+## 📦 Installation
 
 Download the latest package from [GitHub Releases](https://github.com/Noktomezo/ShallowHost/releases):
 
@@ -34,7 +41,7 @@ cache/
 └── chain.json
 ```
 
-## Screenshots
+## 📸 Screenshots
 
 <p align="center">
   <img width="100%" alt="ShallowHost main page" src="https://github.com/user-attachments/assets/97382120-45d5-40eb-adf7-f11ac1084d40" />
@@ -42,7 +49,7 @@ cache/
   <img width="100%" alt="ShallowHost plug-ins page" src="https://github.com/user-attachments/assets/0256705c-7fb6-4533-a7a0-c4a492118dc4" />
 </p>
 
-## Architecture
+## 🏗️ Architecture
 
 The GPUI application communicates with the JUCE audio engine through a safe Rust facade and a `cxx` bridge.
 
@@ -63,7 +70,7 @@ The main source directories are:
 - `src/ui/` — shared controls, application shell, state, and pages
 - `cpp/` — JUCE audio engine and plug-in hosting
 
-## Development
+## 🚀 Development
 
 Requirements:
 
@@ -91,7 +98,7 @@ Useful commands:
 
 JUCE is loaded from `vendor/juce` when available. Otherwise CMake downloads the pinned version during configuration.
 
-## Acknowledgments
+## 🙏 Acknowledgments
 
 [LightHost](https://github.com/opencma/LightHost), [GPUI](https://www.gpui.rs/), [gpui-component](https://github.com/longbridge/gpui-component), [JUCE](https://github.com/juce-framework/JUCE), [gpui-updater](https://github.com/AprilNEA/gpui-updater), and the [Flexoki](https://stephango.com/flexoki) palette.
 
