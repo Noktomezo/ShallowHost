@@ -118,7 +118,7 @@ public:
     int audioStopOnMessageThread();
 
     std::string getAudioDevicesJson(const char* driver = nullptr, const char* deviceName = nullptr);
-    std::string scanPluginsJson(const std::string& vst3PathsJson = "[]");
+    std::string scanPluginsJson(const std::string& pluginPathsJson = "{}");
 
     std::string addToChain(const std::string& uniqueId);
     bool removeFromChain(const std::string& nodeId);

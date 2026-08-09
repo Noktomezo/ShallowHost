@@ -74,13 +74,22 @@ pub struct DriverDeviceSelection {
 #[derive(Clone, Debug, Serialize, Deserialize)]
 #[serde(default)]
 pub struct PluginSettings {
+    pub vst2_paths: Vec<String>,
     pub vst3_paths: Vec<String>,
 }
 
 impl Default for PluginSettings {
     fn default() -> Self {
         Self {
-            vst3_paths: vec![String::from(r"C:\Program Files\Common Files\VST3")],
+            vst2_paths: vec![
+                String::from(r"C:\Program Files\VSTPlugins"),
+                String::from(r"C:\Program Files\Common Files\VST2"),
+                String::from(r"C:\Program Files (x86)\VSTPlugins"),
+            ],
+            vst3_paths: vec![
+                String::from(r"C:\Program Files\Common Files\VST3"),
+                String::from(r"C:\Program Files (x86)\Common Files\VST3"),
+            ],
         }
     }
 }
@@ -260,3 +269,25 @@ impl fmt::Display for ConfigError {
 }
 
 impl std::error::Error for ConfigError {}
+
+#[cfg(test)]
+mod tests {
+    use super::{AppConfig, PluginSettings};
+
+    #[test]
+    fn old_config_gets_default_vst2_paths_without_losing_vst3_paths() {
+        let config: AppConfig = toml::from_str(
+            r#"
+                [plugins]
+                vst3_paths = ["D:\\Audio\\VST3"]
+            "#,
+        )
+        .expect("test config is valid TOML");
+
+        assert_eq!(config.plugins.vst3_paths, [r"D:\Audio\VST3"]);
+        assert_eq!(
+            config.plugins.vst2_paths,
+            PluginSettings::default().vst2_paths
+        );
+    }
+}

@@ -17,7 +17,7 @@ bool audio_start(rust::Str driver, rust::Str input, rust::Str output,
 bool audio_stop();
 NativeAudioLevels audio_levels();
 rust::String audio_devices(rust::Str driver, rust::Str device);
-rust::String scan_plugins(rust::Str vst3_paths_json);
+rust::String scan_plugins(rust::Str plugin_paths_json);
 rust::String add_to_chain(rust::Str unique_id);
 void clear_chain();
 bool remove_from_chain(rust::Str node_id);

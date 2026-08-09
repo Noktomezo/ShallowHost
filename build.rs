@@ -14,6 +14,7 @@ fn main() {
         "cpp/src/host.cpp",
         "cpp/src/host_audio.cpp",
         "cpp/src/host_chain.cpp",
+        "cpp/src/host_scan.cpp",
         "cpp/src/host_params.cpp",
         "cpp/src/ffi.cpp",
         "cpp/src/native_host.h",
@@ -21,6 +22,9 @@ fn main() {
         "cpp/src/cxx_bridge.cpp",
         "cpp/CMakeLists.txt",
         "cpp/patches/juce-vst3-waveshell-class-index.patch",
+        "cpp/third_party/xaymar_vst2_juce/xaymar_vst2_preinclude.h",
+        "cpp/third_party/xaymar_vst2_juce/include/pluginterfaces/vst2.x/aeffect.h",
+        "cpp/third_party/xaymar_vst2_juce/include/pluginterfaces/vst2.x/aeffectx.h",
     ] {
         println!("cargo:rerun-if-changed={source}");
     }

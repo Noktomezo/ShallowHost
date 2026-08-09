@@ -11,6 +11,8 @@ use std::fs;
 use std::path::{Path, PathBuf};
 use std::sync::Mutex;
 
+use crate::infrastructure::config::PluginSettings;
+
 #[derive(Debug)]
 pub enum EngineError {
     BridgeFailure {
@@ -158,7 +160,7 @@ impl Engine {
         let _guard = engine.lock()?;
         ffi::init()?;
         ffi::set_data_dir(&data_dir.to_string_lossy())?;
-        let cached_plugins = parse_json(&ffi::scan_plugins("[]")?)?;
+        let cached_plugins = parse_json(&ffi::scan_plugins(r#"{"vst2":[],"vst3":[]}"#)?)?;
         drop(_guard);
         *engine
             .plugins
@@ -191,10 +193,22 @@ impl Engine {
         parse_json(&ffi::audio_devices(driver, device)?)
     }
 
-    pub fn scan_plugins(&self, vst3_paths: &[String]) -> Result<Vec<ScannedPlugin>, EngineError> {
-        let vst3 = serde_json::to_string(vst3_paths)?;
+    pub fn scan_plugins(
+        &self,
+        settings: &PluginSettings,
+    ) -> Result<Vec<ScannedPlugin>, EngineError> {
+        #[derive(Serialize)]
+        struct ScanPaths<'a> {
+            vst2: &'a [String],
+            vst3: &'a [String],
+        }
+
+        let paths = serde_json::to_string(&ScanPaths {
+            vst2: &settings.vst2_paths,
+            vst3: &settings.vst3_paths,
+        })?;
         let _guard = self.lock()?;
-        let plugins: Vec<ScannedPlugin> = parse_json(&ffi::scan_plugins(&vst3)?)?;
+        let plugins: Vec<ScannedPlugin> = parse_json(&ffi::scan_plugins(&paths)?)?;
         drop(_guard);
         let mut cache = self.plugins.lock().map_err(|_| EngineError::LockPoisoned)?;
         *cache = plugins.clone();

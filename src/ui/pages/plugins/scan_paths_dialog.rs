@@ -7,7 +7,7 @@ use crate::infrastructure::config::PluginSettings;
 use crate::ui::foundation::control_style::ControlTypography;
 use crate::ui::foundation::{colors, i18n};
 use crate::ui::resolve_asset_path;
-use crate::ui::shell::routes::{DropdownCallbacks, PluginPathUpdate};
+use crate::ui::shell::routes::{DropdownCallbacks, PluginPathKind, PluginPathUpdate};
 
 pub(super) fn render_scan_paths_dialog(
     settings: &PluginSettings,
@@ -42,12 +42,29 @@ pub(super) fn render_scan_paths_dialog(
                 .on_click(|_, _, cx| cx.stop_propagation())
                 .child(dialog_header())
                 .child(separator())
-                .child(div().p_4().flex().flex_col().gap_4().child(path_section(
-                    "plugins.vst3SearchPaths",
-                    "plugins.noVst3Paths",
-                    &settings.vst3_paths,
-                    callbacks,
-                )))
+                .child(
+                    div()
+                        .p_4()
+                        .flex()
+                        .flex_col()
+                        .gap_4()
+                        .child(path_section(
+                            PluginPathKind::Vst2,
+                            "vst2",
+                            "plugins.vst2SearchPaths",
+                            "plugins.noVst2Paths",
+                            &settings.vst2_paths,
+                            callbacks,
+                        ))
+                        .child(path_section(
+                            PluginPathKind::Vst3,
+                            "vst3",
+                            "plugins.vst3SearchPaths",
+                            "plugins.noVst3Paths",
+                            &settings.vst3_paths,
+                            callbacks,
+                        )),
+                )
                 .child(separator())
                 .child(
                     div()
@@ -104,6 +121,8 @@ fn dialog_header() -> AnyElement {
 }
 
 fn path_section(
+    kind: PluginPathKind,
+    section_id: &'static str,
     title: &'static str,
     empty_text: &'static str,
     paths: &[String],
@@ -111,8 +130,6 @@ fn path_section(
 ) -> AnyElement {
     let picker = callbacks.on_pick_plugin_path.clone();
     let update = callbacks.on_update_plugin_path.clone();
-    let section_id = "vst3";
-
     div()
         .flex()
         .flex_col()
@@ -136,7 +153,7 @@ fn path_section(
                         i18n::t("plugins.addFolder"),
                         false,
                     )
-                    .on_click(move |_, window, cx| picker(window, cx)),
+                    .on_click(move |_, window, cx| picker(kind, window, cx)),
                 ),
         )
         .child(
@@ -199,7 +216,10 @@ fn path_section(
                                 .hover(|style| style.bg(colors::red().opacity(0.16)))
                                 .on_click(move |_, window, cx| {
                                     update(
-                                        PluginPathUpdate::Remove(path_for_remove.clone()),
+                                        PluginPathUpdate::Remove {
+                                            kind,
+                                            path: path_for_remove.clone(),
+                                        },
                                         window,
                                         cx,
                                     );

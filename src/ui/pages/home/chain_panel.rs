@@ -12,6 +12,7 @@ use crate::infrastructure::engine::{ChainItem, Engine};
 use crate::ui::components::badge::{BadgeStyle, badge, loading_badge};
 use crate::ui::foundation::colors;
 use crate::ui::foundation::i18n;
+use crate::ui::foundation::plugin_format;
 use crate::ui::shell::routes::{NavigateCallback, Route};
 use crate::ui::state::chain_operations::{self, ChainOperationState};
 
@@ -376,7 +377,10 @@ pub(super) fn chain_item_visual(
                                         .text_color(colors::base_200())
                                         .child(item.name.clone()),
                                 )
-                                .child(badge(item.format.clone(), BadgeStyle::Purple))
+                                .child(badge(
+                                    plugin_format::display_name(&item.format),
+                                    BadgeStyle::Purple,
+                                ))
                                 .child(if item.initializing {
                                     loading_badge(i18n::t("plugins.initializing"))
                                 } else if item.removing {

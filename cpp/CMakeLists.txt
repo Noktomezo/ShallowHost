@@ -14,6 +14,18 @@ set(CMAKE_CXX_EXTENSIONS OFF)
 
 include(FetchContent)
 
+# JUCE still expects the discontinued legacy header layout when VST2 hosting is
+# enabled. Xaymar/vst2sdk is a BSD-3-Clause clean-room ABI definition; the
+# project-local compatibility headers only translate its names to JUCE's API.
+FetchContent_Declare(
+    xaymar_vst2sdk
+    GIT_REPOSITORY https://github.com/Xaymar/vst2sdk.git
+    GIT_TAG        339d4f31590bf77c0d0d248e09a380ac6285e069
+    GIT_SHALLOW    FALSE
+    SOURCE_SUBDIR  cmake-skip
+)
+FetchContent_MakeAvailable(xaymar_vst2sdk)
+
 set(JUCE_LOCAL_DIR "${CMAKE_CURRENT_SOURCE_DIR}/../vendor/juce")
 
 if(EXISTS "${JUCE_LOCAL_DIR}/CMakeLists.txt")
@@ -75,11 +87,13 @@ add_library(engine STATIC
     src/host.cpp
     src/host_audio.cpp
     src/host_chain.cpp
+    src/host_scan.cpp
     src/host_params.cpp
     src/ffi.cpp
 )
 
 target_compile_definitions(engine PRIVATE
+    JUCE_PLUGINHOST_VST=1
     JUCE_PLUGINHOST_VST3=1
     JUCE_WASAPI=1
     JUCE_ASIO=1
@@ -103,8 +117,21 @@ set_target_properties(engine PROPERTIES
 
 target_include_directories(engine PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}/src
+    ${CMAKE_CURRENT_SOURCE_DIR}/third_party/xaymar_vst2_juce/include
+    ${xaymar_vst2sdk_SOURCE_DIR}/include
     ${JUCE_MODULES_DIR}
 )
+
+# Xaymar's header must be parsed at global scope. JUCE includes the legacy
+# compatibility headers inside namespace Vst2, where parsing vst.h directly
+# would incorrectly move the clean-room C ABI declarations into that namespace.
+set(SHALLOW_VST2_PREINCLUDE
+    "${CMAKE_CURRENT_SOURCE_DIR}/third_party/xaymar_vst2_juce/xaymar_vst2_preinclude.h")
+if(MSVC)
+    target_compile_options(engine PRIVATE "/FI${SHALLOW_VST2_PREINCLUDE}")
+else()
+    target_compile_options(engine PRIVATE "-include" "${SHALLOW_VST2_PREINCLUDE}")
+endif()
 
 target_link_libraries(engine PRIVATE
     juce::juce_audio_basics

@@ -1,7 +1,7 @@
 <div align="center">
   <img src="assets/thumbnail.png" width="100%" alt="ShallowHost" />
 
-  <p>A native Windows host for real-time audio processing with VST3 plug-ins.</p>
+  <p>A native Windows host for real-time audio processing with VST2 and VST3 plug-ins.</p>
 
   <p>
     <picture><source media="(prefers-color-scheme: dark)" srcset="https://www.shieldcn.dev/github/ci/Noktomezo/ShallowHost.svg?variant=secondary&amp;size=xs&amp;mode=dark&amp;theme=neutral"><img alt="CI" src="https://www.shieldcn.dev/github/ci/Noktomezo/ShallowHost.svg?variant=secondary&amp;size=xs&amp;mode=light&amp;theme=neutral"></picture>
@@ -18,7 +18,7 @@ ShallowHost processes microphone or other audio input through a configurable plu
 
 ## ✨ Features
 
-- VST3 scanning, native plug-in editors, bypass controls, and drag-and-drop chain ordering
+- VST2/VST3 scanning, native plug-in editors, bypass controls, and drag-and-drop chain ordering
 - Windows Audio and ASIO with channel selection, mono/stereo routing, and level meters
 - Persistent configuration, plug-in cache, and chain state stored beside the executable
 - Tray integration, autostart, themes, Russian and English localization, and signed updates
@@ -69,6 +69,10 @@ The main source directories are:
 - `src/infrastructure/` — persistence, updates, Windows integration, and the audio-engine facade
 - `src/ui/` — shared controls, application shell, state, and pages
 - `cpp/` — JUCE audio engine and plug-in hosting
+
+Legacy VST2 hosting uses the BSD-licensed clean-room interface from
+[Xaymar/vst2sdk](https://github.com/Xaymar/vst2sdk); the discontinued Steinberg
+VST2 SDK is not included.
 
 ## 🚀 Development
 

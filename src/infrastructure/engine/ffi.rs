@@ -30,7 +30,7 @@ mod bridge {
         fn audio_stop() -> Result<bool>;
         fn audio_levels() -> Result<NativeAudioLevels>;
         fn audio_devices(driver: &str, device: &str) -> Result<String>;
-        fn scan_plugins(vst3_paths_json: &str) -> Result<String>;
+        fn scan_plugins(plugin_paths_json: &str) -> Result<String>;
         fn add_to_chain(unique_id: &str) -> Result<String>;
         fn clear_chain() -> Result<()>;
         fn remove_from_chain(node_id: &str) -> Result<bool>;
@@ -85,8 +85,8 @@ pub fn audio_devices(driver: &str, device: &str) -> Result<String, EngineError> 
     bridge::audio_devices(driver, device).map_err(|error| bridge_error("list audio devices", error))
 }
 
-pub fn scan_plugins(vst3: &str) -> Result<String, EngineError> {
-    bridge::scan_plugins(vst3).map_err(|error| bridge_error("scan plugins", error))
+pub fn scan_plugins(paths: &str) -> Result<String, EngineError> {
+    bridge::scan_plugins(paths).map_err(|error| bridge_error("scan plugins", error))
 }
 
 pub fn add_to_chain(unique_id: &str) -> Result<String, EngineError> {

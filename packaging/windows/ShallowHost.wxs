@@ -29,6 +29,9 @@
               Name="ShallowHost.exe"
               Source="$(var.ExeFile)"
               KeyPath="yes" />
+        <File Id="ThirdPartyNotices"
+              Name="THIRD_PARTY_NOTICES.md"
+              Source="$(var.NoticeFile)" />
       </Component>
     </ComponentGroup>
 

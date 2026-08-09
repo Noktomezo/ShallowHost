@@ -12,6 +12,7 @@ use crate::ui::components::badge::{BadgeStyle, badge, loading_badge};
 use crate::ui::components::smooth_scroll::{PageScrollbar, SmoothUniformListScroll};
 use crate::ui::foundation::colors;
 use crate::ui::foundation::i18n;
+use crate::ui::foundation::plugin_format;
 use crate::ui::shell::routes::{DropdownCallbacks, NavigateCallback, Route};
 use crate::ui::state::chain_operations::{self, ChainOperationState, PendingPlugin};
 
@@ -47,7 +48,7 @@ impl HeaderContext {
     fn render(&self, plugin_count: usize, cx: &App) -> AnyElement {
         let open_scan_paths = self.callbacks.on_set_scan_paths_open.clone();
         let scan_engine = Arc::clone(&self.engine);
-        let vst3_paths = self.settings.vst3_paths.clone();
+        let plugin_settings = self.settings.clone();
         let scanning = self.scan_state.read(cx).scanning;
         let scan_state = self.scan_state.clone();
 
@@ -128,10 +129,10 @@ impl HeaderContext {
                             });
                             window.refresh();
                             let engine = Arc::clone(&scan_engine);
-                            let vst3 = vst3_paths.clone();
+                            let settings = plugin_settings.clone();
                             let scan_state = scan_state.clone();
                             let task =
-                                cx.background_spawn(async move { engine.scan_plugins(&vst3) });
+                                cx.background_spawn(async move { engine.scan_plugins(&settings) });
                             cx.spawn(async move |cx| {
                                 let result = task.await;
                                 if let Err(error) = result {
@@ -319,7 +320,10 @@ fn render_plugin_card(
                                         .text_color(colors::base_200())
                                         .child(plugin.name),
                                 )
-                                .child(badge(plugin.format.to_uppercase(), BadgeStyle::Purple))
+                                .child(badge(
+                                    plugin_format::display_name(&plugin.format),
+                                    BadgeStyle::Purple,
+                                ))
                                 .when(plugin.initializing, |row| {
                                     row.child(loading_badge(i18n::t("plugins.initializing")))
                                 })

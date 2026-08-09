@@ -4,3 +4,4 @@ pub(crate) mod control_style;
 pub(crate) mod hover_motion;
 pub(crate) mod i18n;
 pub(crate) mod motion;
+pub(crate) mod plugin_format;
