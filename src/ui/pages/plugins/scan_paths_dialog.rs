@@ -1,9 +1,9 @@
 use gpui::prelude::*;
 use gpui::*;
 use gpui_component::StyledExt;
-use gpui_component::scroll::ScrollableElement;
 
 use crate::infrastructure::config::PluginSettings;
+use crate::ui::components::smooth_scroll::SmoothVerticalScroll;
 use crate::ui::foundation::control_style::ControlTypography;
 use crate::ui::foundation::motion::{DIALOG_MOTION, mix_color};
 use crate::ui::foundation::{colors, i18n};
@@ -154,6 +154,82 @@ fn path_section(
 ) -> AnyElement {
     let picker = callbacks.on_pick_plugin_path.clone();
     let update = callbacks.on_update_plugin_path.clone();
+    let list_height = path_list_height(paths.len());
+    let scroll_id = SharedString::from(format!("{section_id}-paths-scroll"));
+    let list_content = div()
+        .w_full()
+        .p_2()
+        .flex()
+        .flex_col()
+        .gap(px(6.0))
+        .when(paths.is_empty(), |element| {
+            element.child(
+                div()
+                    .h(px(32.0))
+                    .flex_none()
+                    .flex()
+                    .items_center()
+                    .justify_center()
+                    .text_xs()
+                    .text_color(colors::base_500())
+                    .child(i18n::t(empty_text)),
+            )
+        })
+        .children(paths.iter().enumerate().map(move |(index, path)| {
+            let update = update.clone();
+            let path_for_remove = path.clone();
+            div()
+                .id(SharedString::from(format!("{section_id}-path-{index}")))
+                .h(px(32.0))
+                .flex_none()
+                .px_2()
+                .flex()
+                .items_center()
+                .justify_between()
+                .gap_2()
+                .bg(colors::base_900())
+                .rounded_sm()
+                .child(
+                    div()
+                        .min_w_0()
+                        .flex_1()
+                        .truncate()
+                        .text_xs()
+                        .text_color(colors::base_300())
+                        .child(path.clone()),
+                )
+                .child(
+                    div()
+                        .id(SharedString::from(format!(
+                            "{section_id}-remove-path-{index}"
+                        )))
+                        .size(px(26.0))
+                        .flex_none()
+                        .flex()
+                        .items_center()
+                        .justify_center()
+                        .cursor_pointer()
+                        .rounded_sm()
+                        .hover(|style| style.bg(colors::red().opacity(0.16)))
+                        .on_click(move |_, window, cx| {
+                            update(
+                                PluginPathUpdate::Remove {
+                                    kind,
+                                    path: path_for_remove.clone(),
+                                },
+                                window,
+                                cx,
+                            );
+                        })
+                        .child(
+                            svg()
+                                .external_path(resolve_asset_path("assets/icons/trash-2.svg"))
+                                .size(px(15.0))
+                                .text_color(colors::red()),
+                        ),
+                )
+        }));
+
     div()
         .flex()
         .flex_col()
@@ -183,83 +259,25 @@ fn path_section(
         .child(
             div()
                 .w_full()
-                .max_h(px(140.0))
-                .p_2()
-                .flex()
-                .flex_col()
-                .gap(px(6.0))
-                .overflow_y_scrollbar()
+                .h(list_height)
+                .flex_none()
+                .overflow_hidden()
                 .bg(colors::base_900().opacity(0.45))
                 .border_1()
                 .border_color(colors::base_800())
                 .rounded_md()
-                .when(paths.is_empty(), |element| {
-                    element.child(
-                        div()
-                            .py_1()
-                            .text_center()
-                            .text_xs()
-                            .text_color(colors::base_500())
-                            .child(i18n::t(empty_text)),
-                    )
-                })
-                .children(paths.iter().enumerate().map(move |(index, path)| {
-                    let update = update.clone();
-                    let path_for_remove = path.clone();
-                    div()
-                        .id(SharedString::from(format!("{section_id}-path-{index}")))
-                        .h(px(32.0))
-                        .px_2()
-                        .flex()
-                        .items_center()
-                        .justify_between()
-                        .gap_2()
-                        .bg(colors::base_900())
-                        .rounded_sm()
-                        .child(
-                            div()
-                                .min_w_0()
-                                .flex_1()
-                                .truncate()
-                                .text_xs()
-                                .text_color(colors::base_300())
-                                .child(path.clone()),
-                        )
-                        .child(
-                            div()
-                                .id(SharedString::from(format!(
-                                    "{section_id}-remove-path-{index}"
-                                )))
-                                .size(px(26.0))
-                                .flex_none()
-                                .flex()
-                                .items_center()
-                                .justify_center()
-                                .cursor_pointer()
-                                .rounded_sm()
-                                .hover(|style| style.bg(colors::red().opacity(0.16)))
-                                .on_click(move |_, window, cx| {
-                                    update(
-                                        PluginPathUpdate::Remove {
-                                            kind,
-                                            path: path_for_remove.clone(),
-                                        },
-                                        window,
-                                        cx,
-                                    );
-                                })
-                                .child(
-                                    svg()
-                                        .external_path(resolve_asset_path(
-                                            "assets/icons/trash-2.svg",
-                                        ))
-                                        .size(px(15.0))
-                                        .text_color(colors::red()),
-                                ),
-                        )
-                })),
+                .child(SmoothVerticalScroll::new(scroll_id, list_content)),
         )
         .into_any_element()
+}
+
+fn path_list_height(path_count: usize) -> Pixels {
+    px(match path_count.clamp(1, 4) {
+        1 => 48.0,
+        2 => 86.0,
+        3 => 124.0,
+        _ => 162.0,
+    })
 }
 
 fn text_button(
@@ -314,4 +332,18 @@ fn text_button(
 
 fn separator() -> Div {
     div().h(px(1.0)).w_full().bg(colors::base_800())
+}
+
+#[cfg(test)]
+mod tests {
+    use super::path_list_height;
+    use gpui::px;
+
+    #[test]
+    fn path_list_height_never_exposes_a_partial_row() {
+        assert_eq!(path_list_height(0), px(48.0));
+        assert_eq!(path_list_height(3), px(124.0));
+        assert_eq!(path_list_height(4), px(162.0));
+        assert_eq!(path_list_height(9), px(162.0));
+    }
 }
