@@ -1,3 +1,5 @@
+use std::time::Duration;
+
 use gpui::prelude::*;
 use gpui::*;
 use gpui_component::Sizable as _;
@@ -11,6 +13,8 @@ use crate::ui::foundation::motion::mix_color;
 
 const SEARCH_HOVER_KEY: &str = "plugins-search-hover";
 pub(crate) const SEARCH_FOCUS_KEY: &str = "plugins-search-focus";
+const CARET_BLINK_DURATION: Duration = Duration::from_millis(1_000);
+const CARET_WIDTH: Pixels = px(2.0);
 
 pub(super) fn render(search: &Entity<InputState>, window: &mut Window, cx: &App) -> AnyElement {
     let has_query = !search.read(cx).value().is_empty();
@@ -27,6 +31,7 @@ pub(super) fn render(search: &Entity<InputState>, window: &mut Window, cx: &App)
 
     div()
         .id("plugins-search-control")
+        .relative()
         .w(px(190.0))
         .h(CONTROL_HEIGHT)
         .flex_none()
@@ -88,7 +93,42 @@ pub(super) fn render(search: &Entity<InputState>, window: &mut Window, cx: &App)
                     )
                 }),
         )
+        .when(focused, |control| {
+            control.child(render_caret(search.clone()))
+        })
         .into_any_element()
+}
+
+fn render_caret(search: Entity<InputState>) -> AnyElement {
+    div()
+        .absolute()
+        .inset_0()
+        .with_animation(
+            "plugins-search-caret-blink",
+            Animation::new(CARET_BLINK_DURATION).repeat(),
+            |caret, delta| caret.opacity(caret_opacity(delta)),
+        )
+        .child(canvas(
+            |_, _, _| {},
+            move |_, _, window, cx| {
+                let state = search.read(cx);
+                let selected_range = state.selected_range();
+                if !selected_range.is_empty() {
+                    return;
+                }
+
+                let Some(bounds) = state.range_to_bounds(&selected_range) else {
+                    return;
+                };
+                let bounds = Bounds::new(bounds.origin, size(CARET_WIDTH, bounds.size.height));
+                window.paint_quad(fill(bounds, colors::orange()));
+            },
+        ))
+        .into_any_element()
+}
+
+fn caret_opacity(progress: f32) -> f32 {
+    0.5 + 0.5 * (std::f32::consts::TAU * progress.clamp(0.0, 1.0)).cos()
 }
 
 pub(super) fn matches_plugin(plugin: &PluginItem, query: &str) -> bool {
@@ -128,4 +168,16 @@ pub(crate) fn reset_interaction(window: &mut Window, cx: &mut App) {
         window,
         cx,
     );
+}
+
+#[cfg(test)]
+mod tests {
+    use super::caret_opacity;
+
+    #[test]
+    fn caret_fades_out_and_back_in() {
+        assert!((caret_opacity(0.0) - 1.0).abs() < f32::EPSILON);
+        assert!(caret_opacity(0.5).abs() < f32::EPSILON);
+        assert!((caret_opacity(1.0) - 1.0).abs() < f32::EPSILON);
+    }
 }
