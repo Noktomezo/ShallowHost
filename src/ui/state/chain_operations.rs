@@ -1,3 +1,4 @@
+use std::collections::HashSet;
 use std::sync::Arc;
 
 use gpui::{App, AppContext, Entity};
@@ -40,25 +41,25 @@ impl PendingPlugin {
 enum ChainOperation {
     Adding(PendingPlugin),
     Restoring(Vec<PendingPlugin>),
-    Removing(String),
     Clearing,
 }
 
 #[derive(Default)]
 pub struct ChainOperationState {
     operation: Option<ChainOperation>,
+    removing: HashSet<String>,
 }
 
 impl ChainOperationState {
     pub fn is_busy(&self) -> bool {
-        self.operation.is_some()
+        self.operation.is_some() || !self.removing.is_empty()
     }
 
     pub fn pending_plugins(&self) -> &[PendingPlugin] {
         match &self.operation {
             Some(ChainOperation::Adding(plugin)) => std::slice::from_ref(plugin),
             Some(ChainOperation::Restoring(plugins)) => plugins,
-            Some(ChainOperation::Removing(_) | ChainOperation::Clearing) | None => &[],
+            Some(ChainOperation::Clearing) | None => &[],
         }
     }
 
@@ -69,7 +70,7 @@ impl ChainOperationState {
     }
 
     pub fn is_removing(&self, node_id: &str) -> bool {
-        matches!(&self.operation, Some(ChainOperation::Removing(id)) if id == node_id)
+        self.removing.contains(node_id)
     }
 
     pub fn is_clearing(&self) -> bool {
@@ -87,7 +88,7 @@ impl ChainOperationState {
     }
 
     fn begin(&mut self, operation: ChainOperation) -> bool {
-        if self.operation.is_some() {
+        if self.is_busy() {
             return false;
         }
         self.operation = Some(operation);
@@ -96,6 +97,20 @@ impl ChainOperationState {
 
     fn finish(&mut self) {
         self.operation = None;
+    }
+
+    fn begin_removal(&mut self, node_id: String) -> bool {
+        if matches!(
+            self.operation,
+            Some(ChainOperation::Restoring(_) | ChainOperation::Clearing)
+        ) {
+            return false;
+        }
+        self.removing.insert(node_id)
+    }
+
+    fn finish_removal(&mut self, node_id: &str) {
+        self.removing.remove(node_id);
     }
 }
 
@@ -121,14 +136,31 @@ pub fn remove_plugin(
     node_id: String,
     cx: &mut App,
 ) {
-    start_operation(
-        state,
-        engine,
-        ChainOperation::Removing(node_id.clone()),
-        move |engine| engine.remove_from_chain(&node_id),
-        "remove plugin from JUCE chain",
-        cx,
-    );
+    let started = state.update(cx, |state, cx| {
+        let started = state.begin_removal(node_id.clone());
+        if started {
+            cx.notify();
+        }
+        started
+    });
+    if !started {
+        return;
+    }
+
+    cx.refresh_windows();
+    let work_node_id = node_id.clone();
+    let task = cx.background_spawn(async move { engine.remove_from_chain(&work_node_id) });
+    cx.spawn(async move |cx| {
+        if let Err(error) = task.await {
+            eprintln!("failed to remove plugin from JUCE chain: {error}");
+        }
+        state.update(cx, |state, cx| {
+            state.finish_removal(&node_id);
+            cx.notify();
+        });
+        cx.refresh();
+    })
+    .detach();
 }
 
 pub fn clear_chain(state: Entity<ChainOperationState>, engine: Arc<Engine>, cx: &mut App) {
@@ -191,15 +223,19 @@ mod tests {
     }
 
     #[test]
-    fn serializes_chain_operations_and_exposes_pending_plugin() {
+    fn tracks_pending_add_and_independent_removal() {
         let mut state = ChainOperationState::default();
         assert!(state.begin(ChainOperation::Adding(plugin())));
         assert!(state.is_busy());
         assert!(state.is_adding("vst3.test"));
         assert!(!state.begin(ChainOperation::Clearing));
+        assert!(state.begin_removal(String::from("existing-node")));
+        assert!(state.is_removing("existing-node"));
 
         state.finish();
 
+        assert!(state.is_busy());
+        state.finish_removal("existing-node");
         assert!(!state.is_busy());
         assert!(state.pending_plugins().is_empty());
     }

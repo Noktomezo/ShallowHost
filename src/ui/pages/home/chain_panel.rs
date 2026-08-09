@@ -8,7 +8,7 @@ use gpui_component::{ElementExt, StyledExt};
 
 use super::chain_drag::{self, ProjectedRow};
 use super::{action_button, button_motion_key, card, card_header, icon, icon_button, separator};
-use crate::infrastructure::engine::{ChainItem, Engine};
+use crate::infrastructure::engine::{ChainItem, Engine, EngineError};
 use crate::ui::components::badge::{BadgeStyle, badge, loading_badge};
 use crate::ui::foundation::colors;
 use crate::ui::foundation::i18n;
@@ -172,10 +172,10 @@ fn chain_item(
     };
     let measured_source_bounds = Rc::clone(&source_bounds);
     let drop_engine = Arc::clone(&engine);
-    let disabled = chain_operations.read(cx).is_busy() || item.initializing || item.removing;
+    let item_disabled = item.initializing || item.removing;
     let gui_operations = chain_operations.clone();
     let bypass_operations = chain_operations.clone();
-    let remove_operations = chain_operations;
+    let remove_operations = chain_operations.clone();
     let bypass_button_id = ElementId::from(SharedString::from(format!("bypass-{stable_id}")));
     let bypass_motion_key = button_motion_key(&bypass_button_id);
 
@@ -186,7 +186,11 @@ fn chain_item(
         .on_prepaint(move |bounds, _, _| measured_source_bounds.set(Some(bounds)))
         .child(chain_item_visual(
             &item,
-            drag_handle(index, drag, disabled),
+            drag_handle(
+                index,
+                drag,
+                chain_operations.read(cx).is_busy() || item_disabled,
+            ),
             div()
                 .flex()
                 .items_center()
@@ -198,11 +202,21 @@ fn chain_item(
                         "home.openGui",
                         false,
                         None,
-                        disabled,
+                        item_disabled,
                         cx,
                     )
                     .on_click(move |_, _, cx| {
+                        if item_disabled {
+                            return;
+                        }
                         if gui_operations.read(cx).is_busy() {
+                            let queued_engine = Arc::clone(&gui_engine);
+                            let queued_id = gui_id.clone();
+                            run_engine_action(
+                                move || queued_engine.open_plugin_gui(&queued_id, "ShallowHost"),
+                                "open plugin editor",
+                                cx,
+                            );
                             return;
                         }
                         if let Err(error) = gui_engine.open_plugin_gui(&gui_id, "ShallowHost") {
@@ -225,11 +239,21 @@ fn chain_item(
                         },
                         false,
                         Some(item.bypassed),
-                        disabled,
+                        item_disabled,
                         cx,
                     )
                     .on_click(move |_, window, cx| {
+                        if item_disabled {
+                            return;
+                        }
                         if bypass_operations.read(cx).is_busy() {
+                            let queued_engine = Arc::clone(&bypass_engine);
+                            let queued_id = bypass_id.clone();
+                            run_engine_action(
+                                move || queued_engine.bypass_plugin(&queued_id, next_bypassed),
+                                "change plugin bypass",
+                                cx,
+                            );
                             return;
                         }
                         if let Err(error) = bypass_engine.bypass_plugin(&bypass_id, next_bypassed) {
@@ -252,11 +276,11 @@ fn chain_item(
                         "home.removeFromChain",
                         true,
                         None,
-                        disabled,
+                        item_disabled,
                         cx,
                     )
                     .on_click(move |_, _, cx| {
-                        if remove_operations.read(cx).is_busy() {
+                        if item_disabled {
                             return;
                         }
                         chain_operations::remove_plugin(
@@ -272,6 +296,21 @@ fn chain_item(
             element.children(chain_drag::drop_zones(index, drop_engine))
         })
         .into_any_element()
+}
+
+fn run_engine_action(
+    work: impl FnOnce() -> Result<(), EngineError> + Send + 'static,
+    description: &'static str,
+    cx: &mut App,
+) {
+    let task = cx.background_spawn(async move { work() });
+    cx.spawn(async move |cx| {
+        if let Err(error) = task.await {
+            eprintln!("failed to {description}: {error}");
+        }
+        cx.refresh();
+    })
+    .detach();
 }
 
 fn drag_handle(index: usize, drag: ChainDrag, disabled: bool) -> Stateful<Div> {
