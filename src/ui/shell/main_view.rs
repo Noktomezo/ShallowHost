@@ -19,6 +19,7 @@ use crate::ui::pages::home::update_chain_drag_mouse;
 use crate::ui::pages::plugins::PluginScanState;
 use crate::ui::state::audio_controls::AudioControls;
 use crate::ui::state::chain_operations::ChainOperationState;
+use gpui_component::input::{InputEvent, InputState};
 use gpui_updater::Updater;
 
 mod navigation_item;
@@ -51,6 +52,7 @@ pub struct MainView {
     theme_dropdown_motion: Entity<DropdownMotion>,
     language_dropdown_motion: Entity<DropdownMotion>,
     plugin_scan_state: Entity<PluginScanState>,
+    plugin_search: Entity<InputState>,
     chain_operation_state: Entity<ChainOperationState>,
     updater: Entity<Updater>,
     single_instance: SingleInstance,
@@ -104,6 +106,11 @@ impl MainView {
                 Default::default()
             });
         let audio_controls = AudioControls::new(&devices, &initial_config.audio, cx);
+        let plugin_search = cx.new(|cx| {
+            InputState::new(window, cx)
+                .placeholder(i18n::t("plugins.search"))
+                .clean_on_escape()
+        });
         let updater = crate::infrastructure::updater::new_entity(cx);
         let system_integration =
             match SystemIntegration::new(&i18n::t("tray.show"), &i18n::t("tray.quit")) {
@@ -142,6 +149,7 @@ impl MainView {
             theme_dropdown_motion: cx.new(|_| DropdownMotion::default()),
             language_dropdown_motion: cx.new(|_| DropdownMotion::default()),
             plugin_scan_state: cx.new(|_| PluginScanState::default()),
+            plugin_search: plugin_search.clone(),
             chain_operation_state: cx.new(|_| ChainOperationState::default()),
             updater: updater.clone(),
             single_instance,
@@ -166,6 +174,14 @@ impl MainView {
             audio_routing_revision: 0,
             update_check_task: None,
         };
+
+        this._subscriptions.push(
+            cx.subscribe(&plugin_search, |_, _, event: &InputEvent, cx| {
+                if matches!(event, InputEvent::Change) {
+                    cx.notify();
+                }
+            }),
+        );
 
         this._subscriptions.push(cx.subscribe(
             &audio_controls.driver,

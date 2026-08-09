@@ -63,6 +63,7 @@ home:
 plugins:
   title: "Plugins"
   description: "Audio plugin library and management."
+  search: "Search plugins..."
   scan: "Scan"
   scanning: "Scanning..."
   empty: "No plugins scanned yet."

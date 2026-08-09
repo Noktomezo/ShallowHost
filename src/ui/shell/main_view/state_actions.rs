@@ -320,10 +320,18 @@ impl MainView {
         cx.notify();
     }
 
-    pub(super) fn set_language(&mut self, language: Language, cx: &mut Context<Self>) {
+    pub(super) fn set_language(
+        &mut self,
+        language: Language,
+        window: &mut Window,
+        cx: &mut Context<Self>,
+    ) {
         self.selected_language = language;
         self.storage.config_mut().language = language;
         i18n::set_language(language);
+        self.plugin_search.update(cx, |search, cx| {
+            search.set_placeholder(i18n::t("plugins.search"), window, cx);
+        });
         self.save_config();
         cx.notify();
     }

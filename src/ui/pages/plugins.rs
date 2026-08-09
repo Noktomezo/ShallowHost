@@ -2,6 +2,7 @@ use std::sync::Arc;
 
 use gpui::prelude::*;
 use gpui::*;
+use gpui_component::input::InputState;
 
 use crate::infrastructure::config::PluginSettings;
 use crate::infrastructure::engine::Engine;
@@ -36,6 +37,7 @@ pub struct PluginsPage {
     scan_paths: ScanPathsDialogState,
     callbacks: DropdownCallbacks,
     scan_state: Entity<PluginScanState>,
+    search: Entity<InputState>,
     chain_operations: Entity<ChainOperationState>,
 }
 
@@ -46,6 +48,7 @@ impl PluginsPage {
         settings: PluginSettings,
         scan_paths: ScanPathsDialogState,
         scan_state: Entity<PluginScanState>,
+        search: Entity<InputState>,
         chain_operations: Entity<ChainOperationState>,
     ) -> Self {
         Self {
@@ -55,6 +58,7 @@ impl PluginsPage {
             scan_paths,
             callbacks: cb.clone(),
             scan_state,
+            search,
             chain_operations,
         }
     }
@@ -71,6 +75,7 @@ impl PluginsPage {
             })
             .unwrap_or_default();
         let operations = self.chain_operations.read(cx);
+        let search_query = self.search.read(cx).value().to_string();
         let mut plugins = self
             .engine
             .plugins()
@@ -86,6 +91,7 @@ impl PluginsPage {
                 path: plugin.path,
             })
             .collect::<Vec<_>>();
+        plugins.retain(|plugin| plugin_matches_search(plugin, &search_query));
         sort_plugins(&mut plugins);
         let plugins = Arc::new(plugins);
         let scan_paths_visible = self.scan_paths.visible();
@@ -94,6 +100,7 @@ impl PluginsPage {
             self.settings.clone(),
             self.callbacks.clone(),
             self.scan_state.clone(),
+            self.search.clone(),
             !scan_paths_visible,
         );
         let content = virtualized::render(
@@ -121,6 +128,36 @@ impl PluginsPage {
     }
 }
 
+fn plugin_matches_search(plugin: &PluginItem, query: &str) -> bool {
+    let query = query.trim().to_lowercase();
+    if query.is_empty() {
+        return true;
+    }
+
+    let fields = [plugin.name.to_lowercase(), plugin.vendor.to_lowercase()];
+    query.split_whitespace().all(|query_word| {
+        fields.iter().any(|field| {
+            field.contains(query_word)
+                || field
+                    .split(|character: char| !character.is_alphanumeric())
+                    .filter(|word| !word.is_empty())
+                    .any(|word| {
+                        strsim::levenshtein(query_word, word)
+                            <= fuzzy_distance_limit(query_word.chars().count())
+                    })
+        })
+    })
+}
+
+const fn fuzzy_distance_limit(query_length: usize) -> usize {
+    match query_length {
+        0..=2 => 0,
+        3..=5 => 1,
+        6..=8 => 2,
+        _ => 3,
+    }
+}
+
 fn sort_plugins(plugins: &mut [PluginItem]) {
     plugins.sort_by_cached_key(|plugin| {
         (
@@ -142,7 +179,7 @@ fn plugin_name_group(name: &str) -> u8 {
 
 #[cfg(test)]
 mod tests {
-    use super::{PluginItem, sort_plugins};
+    use super::{PluginItem, plugin_matches_search, sort_plugins};
 
     fn plugin(id: &str, name: &str, vendor: &str) -> PluginItem {
         PluginItem {
@@ -176,5 +213,16 @@ mod tests {
                 .collect::<Vec<_>>(),
             ["1", "2", "0", "3", "4", "5"]
         );
+    }
+
+    #[test]
+    fn search_matches_substrings_vendor_and_typo_with_bounded_distance() {
+        let clarity = plugin("1", "Clarity Vx - DeReverb", "Waves");
+
+        assert!(plugin_matches_search(&clarity, "clarity"));
+        assert!(plugin_matches_search(&clarity, "waves"));
+        assert!(plugin_matches_search(&clarity, "claritu waves"));
+        assert!(!plugin_matches_search(&clarity, "cx"));
+        assert!(!plugin_matches_search(&clarity, "completely unrelated"));
     }
 }

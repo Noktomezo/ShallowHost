@@ -13,6 +13,7 @@ use crate::ui::pages::plugins::PluginScanState;
 use crate::ui::pages::{HomePage, PluginsPage, SettingsPage};
 use crate::ui::state::audio_controls::{AudioControls, ChannelDirection};
 use crate::ui::state::chain_operations::ChainOperationState;
+use gpui_component::input::InputState;
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
 pub enum Route {
@@ -79,6 +80,7 @@ pub struct RenderContext {
     pub theme_dropdown_motion: Entity<DropdownMotion>,
     pub language_dropdown_motion: Entity<DropdownMotion>,
     pub plugin_scan_state: Entity<PluginScanState>,
+    pub plugin_search: Entity<InputState>,
     pub chain_operation_state: Entity<ChainOperationState>,
     pub updater: Entity<Updater>,
 }
@@ -136,6 +138,7 @@ impl Route {
                 ctx.plugin_settings,
                 ctx.scan_paths,
                 ctx.plugin_scan_state,
+                ctx.plugin_search,
                 ctx.chain_operation_state,
             )
             .render(window, cx)

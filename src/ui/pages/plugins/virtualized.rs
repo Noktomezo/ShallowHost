@@ -2,7 +2,8 @@ use std::sync::Arc;
 
 use gpui::prelude::*;
 use gpui::*;
-use gpui_component::StyledExt;
+use gpui_component::input::{Input, InputState};
+use gpui_component::{Sizable as _, StyledExt};
 
 use super::controls::{IconButtonStyle, chain_navigation_button, icon_button};
 use super::{PluginItem, PluginScanState};
@@ -29,6 +30,7 @@ pub(super) struct HeaderContext {
     settings: PluginSettings,
     callbacks: DropdownCallbacks,
     scan_state: Entity<PluginScanState>,
+    search: Entity<InputState>,
     wheel_enabled: bool,
 }
 
@@ -38,6 +40,7 @@ impl HeaderContext {
         settings: PluginSettings,
         callbacks: DropdownCallbacks,
         scan_state: Entity<PluginScanState>,
+        search: Entity<InputState>,
         wheel_enabled: bool,
     ) -> Self {
         Self {
@@ -45,6 +48,7 @@ impl HeaderContext {
             settings,
             callbacks,
             scan_state,
+            search,
             wheel_enabled,
         }
     }
@@ -58,6 +62,9 @@ impl HeaderContext {
         let scanning = scan_status.scanning;
         let scan_progress = scan_status.progress;
         let scan_state = self.scan_state.clone();
+        let search = self.search.clone();
+        let clear_search = self.search.clone();
+        let has_query = !self.search.read(cx).value().is_empty();
 
         div()
             .w_full()
@@ -117,6 +124,44 @@ impl HeaderContext {
                     .flex_row()
                     .items_center()
                     .gap_2()
+                    .child(
+                        Input::new(&search)
+                            .small()
+                            .w(px(190.0))
+                            .h(px(34.0))
+                            .prefix(
+                                svg()
+                                    .external_path(crate::ui::resolve_asset_path(
+                                        "assets/icons/search.svg",
+                                    ))
+                                    .size_4()
+                                    .text_color(colors::base_500()),
+                            )
+                            .when(has_query, |input| {
+                                input.suffix(
+                                    div()
+                                        .id("plugins-search-clear")
+                                        .size_5()
+                                        .flex()
+                                        .items_center()
+                                        .justify_center()
+                                        .cursor_pointer()
+                                        .child(
+                                            svg()
+                                                .external_path(crate::ui::resolve_asset_path(
+                                                    "assets/icons/x.svg",
+                                                ))
+                                                .size_3()
+                                                .text_color(colors::base_300()),
+                                        )
+                                        .on_click(move |_, window, cx| {
+                                            clear_search.update(cx, |search, cx| {
+                                                search.set_value("", window, cx);
+                                            });
+                                        }),
+                                )
+                            }),
+                    )
                     .child(
                         icon_button(
                             "btn-scan-paths",

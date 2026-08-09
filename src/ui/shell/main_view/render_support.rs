@@ -40,6 +40,7 @@ impl MainView {
             theme_dropdown_motion: self.theme_dropdown_motion.clone(),
             language_dropdown_motion: self.language_dropdown_motion.clone(),
             plugin_scan_state: self.plugin_scan_state.clone(),
+            plugin_search: self.plugin_search.clone(),
             chain_operation_state: self.chain_operation_state.clone(),
             updater: self.updater.clone(),
         }
@@ -49,8 +50,8 @@ impl MainView {
         let theme = cx.listener(|this: &mut Self, value: &ThemeMode, window, cx| {
             this.set_theme(*value, window, cx);
         });
-        let language = cx.listener(|this: &mut Self, value: &Language, _window, cx| {
-            this.set_language(*value, cx);
+        let language = cx.listener(|this: &mut Self, value: &Language, window, cx| {
+            this.set_language(*value, window, cx);
         });
         let transparency = cx.listener(|this: &mut Self, value: &bool, window, cx| {
             this.set_transparent_shell(*value, window, cx);
