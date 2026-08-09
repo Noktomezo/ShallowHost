@@ -182,7 +182,7 @@ fn path_section(
                 .id(SharedString::from(format!("{section_id}-path-{index}")))
                 .h(px(32.0))
                 .flex_none()
-                .px_2()
+                .px(px(3.0))
                 .flex()
                 .items_center()
                 .justify_between()
