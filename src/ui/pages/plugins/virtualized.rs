@@ -9,6 +9,7 @@ use super::{PluginItem, PluginScanState};
 use crate::infrastructure::config::PluginSettings;
 use crate::infrastructure::engine::Engine;
 use crate::ui::components::badge::{BadgeStyle, badge, loading_badge};
+use crate::ui::components::cursor_tooltip;
 use crate::ui::components::smooth_scroll::{PageScrollbar, SmoothUniformListScroll};
 use crate::ui::foundation::colors;
 use crate::ui::foundation::i18n;
@@ -48,7 +49,8 @@ impl HeaderContext {
         }
     }
 
-    fn render(&self, plugin_count: usize, cx: &App) -> AnyElement {
+    fn render(&self, format_counts: plugin_format::Counts, cx: &App) -> AnyElement {
+        let plugin_count = format_counts.total();
         let open_scan_paths = self.callbacks.on_set_scan_paths_open.clone();
         let scan_engine = Arc::clone(&self.engine);
         let plugin_settings = self.settings.clone();
@@ -80,13 +82,20 @@ impl HeaderContext {
                                     .text_color(colors::base_200())
                                     .child(i18n::t("plugins.title")),
                             )
-                            .child(badge(
-                                plugin_count.to_string(),
-                                if plugin_count == 0 {
-                                    BadgeStyle::Red
-                                } else {
-                                    BadgeStyle::Purple
-                                },
+                            .child(cursor_tooltip::attach(
+                                div().id("plugins-format-counts-tooltip").child(badge(
+                                    plugin_count.to_string(),
+                                    if plugin_count == 0 {
+                                        BadgeStyle::Red
+                                    } else {
+                                        BadgeStyle::Purple
+                                    },
+                                )),
+                                ElementId::Name("plugins-format-counts-tooltip".into()),
+                                format!(
+                                    "VST2: {}\nVST3: {}",
+                                    format_counts.vst2, format_counts.vst3
+                                ),
                             ))
                             .when(scanning, |title_row| {
                                 title_row.child(loading_badge(format!(
@@ -217,7 +226,7 @@ pub(super) fn render(
         .clone();
     let scroll_handle = state.read(cx).scroll.clone();
     let render_plugins = Arc::clone(&plugins);
-    let plugin_count = plugins.len();
+    let format_counts = plugin_format::counts(plugins.iter().map(|plugin| plugin.format.as_str()));
     let card_scan_state = header.scan_state.clone();
     let wheel_enabled = header.wheel_enabled;
     let content = uniform_list(
@@ -233,7 +242,7 @@ pub(super) fn render(
                             .px_4()
                             .pt_4()
                             .pb_3()
-                            .child(header.render(plugin_count, cx))
+                            .child(header.render(format_counts, cx))
                             .into_any_element();
                     }
 
