@@ -10,6 +10,7 @@ use crate::ui::foundation::motion::refresh_rotation;
 pub enum BadgeStyle {
     Neutral,
     Purple,
+    Cyan,
     Green,
     Red,
     Orange,
@@ -22,6 +23,11 @@ pub fn badge(text: impl Into<SharedString>, style: BadgeStyle) -> Div {
             colors::purple().opacity(0.15),
             colors::purple().opacity(0.4),
             colors::purple(),
+        ),
+        BadgeStyle::Cyan => (
+            colors::cyan().opacity(0.15),
+            colors::cyan().opacity(0.4),
+            colors::cyan(),
         ),
         BadgeStyle::Green => (
             colors::green().opacity(0.15),

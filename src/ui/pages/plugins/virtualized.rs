@@ -368,7 +368,7 @@ fn render_plugin_card(
                                 )
                                 .child(badge(
                                     plugin_format::display_name(&plugin.format),
-                                    BadgeStyle::Purple,
+                                    plugin_format::badge_style(&plugin.format),
                                 ))
                                 .when(plugin.initializing, |row| {
                                     row.child(loading_badge(i18n::t("plugins.initializing")))

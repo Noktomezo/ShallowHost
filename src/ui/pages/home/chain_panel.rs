@@ -379,7 +379,7 @@ pub(super) fn chain_item_visual(
                                 )
                                 .child(badge(
                                     plugin_format::display_name(&item.format),
-                                    BadgeStyle::Purple,
+                                    plugin_format::badge_style(&item.format),
                                 ))
                                 .child(if item.initializing {
                                     loading_badge(i18n::t("plugins.initializing"))
