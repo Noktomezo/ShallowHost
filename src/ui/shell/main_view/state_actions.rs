@@ -469,6 +469,7 @@ pub(super) fn sync_component_theme(theme: ThemeMode, window: &mut Window, cx: &m
         ThemeMode::System => ComponentThemeMode::Light,
     };
     Theme::change(component_theme, Some(window), cx);
+    Theme::global_mut(cx).caret = colors::orange().into();
 }
 
 fn scale_level(level: f32) -> f32 {
