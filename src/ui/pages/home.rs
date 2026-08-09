@@ -135,7 +135,7 @@ impl HomePage {
             has_input_device && self.meter.input_peak,
             audio_dropdown("audio-input", &self.audio.input, cx),
         );
-        let mut settings = div().p_4().flex().flex_col().gap_3().child(config_row(
+        let mut settings = div().p_4().flex().flex_col().gap_4().child(config_row(
             "home.driver",
             "home.driverDescription",
             audio_dropdown("audio-driver", &self.audio.driver, cx),
