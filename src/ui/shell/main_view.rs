@@ -16,7 +16,7 @@ use crate::ui::components::audio_dropdown::AudioDropdownEvent;
 use crate::ui::foundation::motion::DropdownMotion;
 use crate::ui::foundation::{colors, i18n};
 use crate::ui::pages::home::update_chain_drag_mouse;
-use crate::ui::pages::plugins::PluginScanState;
+use crate::ui::pages::plugins::{PluginScanState, SEARCH_FOCUS_KEY};
 use crate::ui::state::audio_controls::AudioControls;
 use crate::ui::state::chain_operations::ChainOperationState;
 use gpui_component::input::{InputEvent, InputState};
@@ -175,13 +175,26 @@ impl MainView {
             update_check_task: None,
         };
 
-        this._subscriptions.push(
-            cx.subscribe(&plugin_search, |_, _, event: &InputEvent, cx| {
-                if matches!(event, InputEvent::Change) {
-                    cx.notify();
-                }
-            }),
-        );
+        this._subscriptions.push(cx.subscribe_in(
+            &plugin_search,
+            window,
+            |_, _, event: &InputEvent, window, cx| match event {
+                InputEvent::Change => cx.notify(),
+                InputEvent::Focus => crate::ui::foundation::hover_motion::set_active(
+                    SharedString::from(SEARCH_FOCUS_KEY),
+                    true,
+                    window,
+                    cx,
+                ),
+                InputEvent::Blur => crate::ui::foundation::hover_motion::set_active(
+                    SharedString::from(SEARCH_FOCUS_KEY),
+                    false,
+                    window,
+                    cx,
+                ),
+                InputEvent::PressEnter { .. } => {}
+            },
+        ));
 
         this._subscriptions.push(cx.subscribe(
             &audio_controls.driver,

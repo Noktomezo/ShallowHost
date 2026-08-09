@@ -2,10 +2,11 @@ use std::sync::Arc;
 
 use gpui::prelude::*;
 use gpui::*;
-use gpui_component::input::{Input, InputState};
-use gpui_component::{Sizable as _, StyledExt};
+use gpui_component::StyledExt;
+use gpui_component::input::InputState;
 
 use super::controls::{IconButtonStyle, chain_navigation_button, icon_button};
+use super::search;
 use super::{PluginItem, PluginScanState};
 use crate::infrastructure::config::PluginSettings;
 use crate::infrastructure::engine::Engine;
@@ -53,7 +54,12 @@ impl HeaderContext {
         }
     }
 
-    fn render(&self, format_counts: plugin_format::Counts, cx: &App) -> AnyElement {
+    fn render(
+        &self,
+        format_counts: plugin_format::Counts,
+        window: &mut Window,
+        cx: &App,
+    ) -> AnyElement {
         let plugin_count = format_counts.total();
         let open_scan_paths = self.callbacks.on_set_scan_paths_open.clone();
         let scan_engine = Arc::clone(&self.engine);
@@ -62,9 +68,7 @@ impl HeaderContext {
         let scanning = scan_status.scanning;
         let scan_progress = scan_status.progress;
         let scan_state = self.scan_state.clone();
-        let search = self.search.clone();
-        let clear_search = self.search.clone();
-        let has_query = !self.search.read(cx).value().is_empty();
+        let search_control = search::render(&self.search, window, cx);
 
         div()
             .w_full()
@@ -124,44 +128,7 @@ impl HeaderContext {
                     .flex_row()
                     .items_center()
                     .gap_2()
-                    .child(
-                        Input::new(&search)
-                            .small()
-                            .w(px(190.0))
-                            .h(px(34.0))
-                            .prefix(
-                                svg()
-                                    .external_path(crate::ui::resolve_asset_path(
-                                        "assets/icons/search.svg",
-                                    ))
-                                    .size_4()
-                                    .text_color(colors::base_500()),
-                            )
-                            .when(has_query, |input| {
-                                input.suffix(
-                                    div()
-                                        .id("plugins-search-clear")
-                                        .size_5()
-                                        .flex()
-                                        .items_center()
-                                        .justify_center()
-                                        .cursor_pointer()
-                                        .child(
-                                            svg()
-                                                .external_path(crate::ui::resolve_asset_path(
-                                                    "assets/icons/x.svg",
-                                                ))
-                                                .size_3()
-                                                .text_color(colors::base_300()),
-                                        )
-                                        .on_click(move |_, window, cx| {
-                                            clear_search.update(cx, |search, cx| {
-                                                search.set_value("", window, cx);
-                                            });
-                                        }),
-                                )
-                            }),
-                    )
+                    .child(search_control)
                     .child(
                         icon_button(
                             "btn-scan-paths",
@@ -277,7 +244,7 @@ pub(super) fn render(
     let content = uniform_list(
         "plugins-uniform-list",
         item_count,
-        move |range, _window, cx| {
+        move |range, window, cx| {
             range
                 .map(|row| {
                     if row == 0 {
@@ -287,7 +254,7 @@ pub(super) fn render(
                             .px_4()
                             .pt_4()
                             .pb_3()
-                            .child(header.render(format_counts, cx))
+                            .child(header.render(format_counts, window, cx))
                             .into_any_element();
                     }
 

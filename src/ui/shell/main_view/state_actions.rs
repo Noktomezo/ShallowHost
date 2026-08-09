@@ -255,7 +255,7 @@ impl MainView {
         cx.notify();
     }
 
-    pub(super) fn navigate(&mut self, route: Route, cx: &mut Context<Self>) {
+    pub(super) fn navigate(&mut self, route: Route, window: &mut Window, cx: &mut Context<Self>) {
         if self.current_route != route {
             match self.current_route {
                 Route::Home => self.audio_controls.reset_dropdown_interactions(cx),
@@ -269,7 +269,10 @@ impl MainView {
                         cx,
                     );
                 }
-                Route::Plugins => self.dismiss_scan_paths_immediately(),
+                Route::Plugins => {
+                    self.dismiss_scan_paths_immediately();
+                    crate::ui::pages::plugins::reset_search_interaction(window, cx);
+                }
             }
             let now = Instant::now();
             self.deselected_route = Some(self.current_route);

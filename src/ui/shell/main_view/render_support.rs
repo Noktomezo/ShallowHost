@@ -56,8 +56,8 @@ impl MainView {
         let transparency = cx.listener(|this: &mut Self, value: &bool, window, cx| {
             this.set_transparent_shell(*value, window, cx);
         });
-        let navigate = cx.listener(|this: &mut Self, value: &Route, _window, cx| {
-            this.navigate(*value, cx);
+        let navigate = cx.listener(|this: &mut Self, value: &Route, window, cx| {
+            this.navigate(*value, window, cx);
         });
         let mono = cx.listener(|this: &mut Self, value: &bool, _window, cx| {
             this.set_mono(*value, cx);

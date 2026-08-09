@@ -116,8 +116,8 @@ impl MainView {
                     cx,
                 );
             })
-            .on_click(cx.listener(move |this, _, _, cx| {
-                this.navigate(route, cx);
+            .on_click(cx.listener(move |this, _, window, cx| {
+                this.navigate(route, window, cx);
             }))
             .child(
                 div()

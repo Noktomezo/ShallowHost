@@ -11,7 +11,10 @@ use crate::ui::state::chain_operations::ChainOperationState;
 
 mod controls;
 mod scan_paths_dialog;
+mod search;
 mod virtualized;
+
+pub(crate) use search::{SEARCH_FOCUS_KEY, reset_interaction as reset_search_interaction};
 
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct PluginItem {
@@ -91,7 +94,7 @@ impl PluginsPage {
                 path: plugin.path,
             })
             .collect::<Vec<_>>();
-        plugins.retain(|plugin| plugin_matches_search(plugin, &search_query));
+        plugins.retain(|plugin| search::matches_plugin(plugin, &search_query));
         sort_plugins(&mut plugins);
         let plugins = Arc::new(plugins);
         let scan_paths_visible = self.scan_paths.visible();
@@ -128,36 +131,6 @@ impl PluginsPage {
     }
 }
 
-fn plugin_matches_search(plugin: &PluginItem, query: &str) -> bool {
-    let query = query.trim().to_lowercase();
-    if query.is_empty() {
-        return true;
-    }
-
-    let fields = [plugin.name.to_lowercase(), plugin.vendor.to_lowercase()];
-    query.split_whitespace().all(|query_word| {
-        fields.iter().any(|field| {
-            field.contains(query_word)
-                || field
-                    .split(|character: char| !character.is_alphanumeric())
-                    .filter(|word| !word.is_empty())
-                    .any(|word| {
-                        strsim::levenshtein(query_word, word)
-                            <= fuzzy_distance_limit(query_word.chars().count())
-                    })
-        })
-    })
-}
-
-const fn fuzzy_distance_limit(query_length: usize) -> usize {
-    match query_length {
-        0..=2 => 0,
-        3..=5 => 1,
-        6..=8 => 2,
-        _ => 3,
-    }
-}
-
 fn sort_plugins(plugins: &mut [PluginItem]) {
     plugins.sort_by_cached_key(|plugin| {
         (
@@ -179,7 +152,7 @@ fn plugin_name_group(name: &str) -> u8 {
 
 #[cfg(test)]
 mod tests {
-    use super::{PluginItem, plugin_matches_search, sort_plugins};
+    use super::{PluginItem, search, sort_plugins};
 
     fn plugin(id: &str, name: &str, vendor: &str) -> PluginItem {
         PluginItem {
@@ -219,10 +192,10 @@ mod tests {
     fn search_matches_substrings_vendor_and_typo_with_bounded_distance() {
         let clarity = plugin("1", "Clarity Vx - DeReverb", "Waves");
 
-        assert!(plugin_matches_search(&clarity, "clarity"));
-        assert!(plugin_matches_search(&clarity, "waves"));
-        assert!(plugin_matches_search(&clarity, "claritu waves"));
-        assert!(!plugin_matches_search(&clarity, "cx"));
-        assert!(!plugin_matches_search(&clarity, "completely unrelated"));
+        assert!(search::matches_plugin(&clarity, "clarity"));
+        assert!(search::matches_plugin(&clarity, "waves"));
+        assert!(search::matches_plugin(&clarity, "claritu waves"));
+        assert!(!search::matches_plugin(&clarity, "cx"));
+        assert!(!search::matches_plugin(&clarity, "completely unrelated"));
     }
 }
