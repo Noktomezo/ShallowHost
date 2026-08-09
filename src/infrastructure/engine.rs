@@ -5,6 +5,7 @@
 
 mod ffi;
 mod plugin_scan;
+mod state_persistence;
 
 use serde::{Deserialize, Serialize};
 use std::fmt;
@@ -232,6 +233,8 @@ impl Engine {
 
     pub fn remove_from_chain(&self, node_id: &str) -> Result<(), EngineError> {
         let _guard = self.lock()?;
+        let previous_chain = self.cached_chain()?;
+        let removed_index = previous_chain.iter().position(|item| item.id == node_id);
         let removed = ffi::remove_from_chain(node_id)?
             .then_some(())
             .ok_or(EngineError::NativeFailure("remove plugin from chain"));
@@ -240,7 +243,10 @@ impl Engine {
         }
         drop(_guard);
         removed?;
-        self.save_chain_state()
+        match removed_index {
+            Some(index) => self.persist_removed_chain_item(&previous_chain, index),
+            None => self.save_chain_state(),
+        }
     }
 
     pub fn reorder_chain(&self, node_id: &str, to_index: usize) -> Result<(), EngineError> {
