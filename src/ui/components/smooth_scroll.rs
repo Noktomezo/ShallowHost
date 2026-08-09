@@ -101,18 +101,20 @@ impl RenderOnce for SmoothVerticalScroll {
     }
 }
 
-/// Adds eased wheel scrolling to GPUI's virtualized, variable-height list.
-/// The list remains the only viewport; this element only replaces its immediate
-/// wheel jump with an animated offset.
+/// Adds eased wheel scrolling to GPUI's fixed-height virtualized list.
 #[derive(IntoElement)]
-pub struct SmoothListScroll {
+pub struct SmoothUniformListScroll {
     id: ElementId,
-    handle: ListState,
+    handle: UniformListScrollHandle,
     child: AnyElement,
 }
 
-impl SmoothListScroll {
-    pub fn new(id: impl Into<ElementId>, handle: ListState, child: impl IntoElement) -> Self {
+impl SmoothUniformListScroll {
+    pub fn new(
+        id: impl Into<ElementId>,
+        handle: UniformListScrollHandle,
+        child: impl IntoElement,
+    ) -> Self {
         Self {
             id: id.into(),
             handle,
@@ -121,15 +123,13 @@ impl SmoothListScroll {
     }
 }
 
-impl RenderOnce for SmoothListScroll {
+impl RenderOnce for SmoothUniformListScroll {
     fn render(self, window: &mut Window, cx: &mut App) -> impl IntoElement {
         let state = window
             .use_keyed_state((self.id.clone(), "smooth-list-state"), cx, |_, _| {
                 SmoothListState::new()
             })
             .clone();
-        let wheel_state = state.clone();
-        let wheel_handle = self.handle.clone();
 
         CaptureListWheel {
             child: div()
@@ -137,19 +137,42 @@ impl RenderOnce for SmoothListScroll {
                 .size_full()
                 .child(self.child)
                 .into_any_element(),
-            state: wheel_state,
-            handle: wheel_handle,
+            state,
+            handle: UniformScrollHandle(self.handle),
         }
     }
 }
 
-struct CaptureListWheel {
-    child: AnyElement,
-    state: Entity<SmoothListState>,
-    handle: ListState,
+trait SmoothVirtualHandle: Clone + 'static {
+    fn offset(&self) -> Point<Pixels>;
+    fn max_scroll_y(&self) -> Pixels;
+    fn set_offset(&self, offset: Point<Pixels>);
 }
 
-impl IntoElement for CaptureListWheel {
+#[derive(Clone)]
+struct UniformScrollHandle(UniformListScrollHandle);
+
+impl SmoothVirtualHandle for UniformScrollHandle {
+    fn offset(&self) -> Point<Pixels> {
+        self.0.0.borrow().base_handle.offset()
+    }
+
+    fn max_scroll_y(&self) -> Pixels {
+        self.0.0.borrow().base_handle.max_offset().y
+    }
+
+    fn set_offset(&self, offset: Point<Pixels>) {
+        self.0.0.borrow().base_handle.set_offset(offset);
+    }
+}
+
+struct CaptureListWheel<H: SmoothVirtualHandle> {
+    child: AnyElement,
+    state: Entity<SmoothListState>,
+    handle: H,
+}
+
+impl<H: SmoothVirtualHandle> IntoElement for CaptureListWheel<H> {
     type Element = Self;
 
     fn into_element(self) -> Self::Element {
@@ -157,7 +180,7 @@ impl IntoElement for CaptureListWheel {
     }
 }
 
-impl Element for CaptureListWheel {
+impl<H: SmoothVirtualHandle> Element for CaptureListWheel<H> {
     type RequestLayoutState = ();
     type PrepaintState = ();
 
@@ -267,15 +290,15 @@ fn schedule_frame(state: Entity<SmoothScrollState>, window: &Window) {
 
 fn handle_list_wheel(
     state: &Entity<SmoothListState>,
-    handle: &ListState,
+    handle: &impl SmoothVirtualHandle,
     delta_y: Pixels,
     window: &mut Window,
     cx: &mut App,
 ) {
     let reduce_motion = cx.reduce_motion();
     let should_schedule = state.update(cx, |state, _| {
-        let applied_offset = handle.scroll_px_offset_for_scrollbar();
-        let max_scroll = handle.max_offset_for_scrollbar().y;
+        let applied_offset = handle.offset();
+        let max_scroll = handle.max_scroll_y();
         let current_y = applied_offset.y.clamp(-max_scroll, Pixels::ZERO);
 
         if !state.running {
@@ -284,7 +307,7 @@ fn handle_list_wheel(
         state.target_y = coalesced_target(current_y, state.target_y, delta_y, max_scroll);
 
         if reduce_motion {
-            handle.set_offset_from_scrollbar(point(applied_offset.x, state.target_y));
+            handle.set_offset(point(applied_offset.x, state.target_y));
             state.running = false;
             false
         } else if state.running {
@@ -302,13 +325,17 @@ fn handle_list_wheel(
     }
 }
 
-fn schedule_list_frame(state: Entity<SmoothListState>, handle: ListState, window: &Window) {
+fn schedule_list_frame(
+    state: Entity<SmoothListState>,
+    handle: impl SmoothVirtualHandle,
+    window: &Window,
+) {
     window.on_next_frame(move |window, cx| advance_list_frame(state, handle, window, cx));
 }
 
 fn advance_list_frame(
     state: Entity<SmoothListState>,
-    handle: ListState,
+    handle: impl SmoothVirtualHandle,
     window: &mut Window,
     cx: &mut App,
 ) {
@@ -317,19 +344,19 @@ fn advance_list_frame(
         let elapsed = now.duration_since(state.last_frame).as_secs_f32();
         state.last_frame = now;
 
-        let current = handle.scroll_px_offset_for_scrollbar();
-        let max_scroll = handle.max_offset_for_scrollbar().y;
+        let current = handle.offset();
+        let max_scroll = handle.max_scroll_y();
         state.target_y = state.target_y.clamp(-max_scroll, Pixels::ZERO);
         let distance = state.target_y - current.y;
         if distance.abs() <= SETTLE_DISTANCE {
-            handle.set_offset_from_scrollbar(point(current.x, state.target_y));
+            handle.set_offset(point(current.x, state.target_y));
             state.running = false;
             return false;
         }
 
         let frame_seconds = elapsed.clamp(1.0 / 240.0, 1.0 / 30.0);
         let progress = 1.0 - (-frame_seconds / RESPONSE_SECONDS).exp();
-        handle.set_offset_from_scrollbar(point(current.x, current.y + distance * progress));
+        handle.set_offset(point(current.x, current.y + distance * progress));
         true
     });
 

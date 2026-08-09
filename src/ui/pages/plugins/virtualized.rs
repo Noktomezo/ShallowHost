@@ -9,18 +9,17 @@ use super::{PluginItem, PluginScanState};
 use crate::infrastructure::config::PluginSettings;
 use crate::infrastructure::engine::Engine;
 use crate::ui::components::badge::{BadgeStyle, badge, loading_badge};
-use crate::ui::components::smooth_scroll::{PageScrollbar, SmoothListScroll};
+use crate::ui::components::smooth_scroll::{PageScrollbar, SmoothUniformListScroll};
 use crate::ui::foundation::colors;
 use crate::ui::foundation::i18n;
 use crate::ui::shell::routes::{DropdownCallbacks, NavigateCallback, Route};
 use crate::ui::state::chain_operations::{self, ChainOperationState, PendingPlugin};
 
 // 40 px content + 32 px card padding + 12 px inter-row spacing.
-// Keep every virtual row at this exact height: ListState uses the value to
-// compute the complete scrollbar extent before off-screen rows are rendered.
+// Keep every virtual row at this exact height: uniform_list measures one row
+// and computes the complete scrollbar extent before off-screen rows are rendered.
 const CARD_HEIGHT: Pixels = px(72.0);
 const ROW_HEIGHT: Pixels = px(84.0);
-const LIST_OVERDRAW: Pixels = px(178.0);
 
 #[derive(Clone)]
 pub(super) struct HeaderContext {
@@ -153,7 +152,7 @@ impl HeaderContext {
 }
 
 struct VirtualListState {
-    list: ListState,
+    scroll: UniformListScrollHandle,
 }
 
 pub(super) fn render(
@@ -170,62 +169,65 @@ pub(super) fn render(
     let item_count = plugins.len() + 1;
     let state = window
         .use_keyed_state("plugins-virtual-list", cx, |_, _| VirtualListState {
-            list: ListState::new(item_count, ListAlignment::Top, LIST_OVERDRAW)
-                .with_uniform_item_height(ROW_HEIGHT),
+            scroll: UniformListScrollHandle::new(),
         })
         .clone();
-    let list_state = state.read(cx).list.clone();
-    if list_state.item_count() != item_count {
-        list_state.reset_with_uniform_height(item_count, ROW_HEIGHT);
-    }
-
-    let scrollbar_state = list_state.clone();
+    let scroll_handle = state.read(cx).scroll.clone();
     let render_plugins = Arc::clone(&plugins);
     let plugin_count = plugins.len();
     let card_scan_state = header.scan_state.clone();
-    let content = list(list_state, move |row, _window, cx| {
-        if row == 0 {
-            return div()
-                .w_full()
-                .h(ROW_HEIGHT)
-                .px_4()
-                .pt_4()
-                .pb_3()
-                .child(header.render(plugin_count, cx))
-                .into_any_element();
-        }
+    let content = uniform_list(
+        "plugins-uniform-list",
+        item_count,
+        move |range, _window, cx| {
+            range
+                .map(|row| {
+                    if row == 0 {
+                        return div()
+                            .w_full()
+                            .h(ROW_HEIGHT)
+                            .px_4()
+                            .pt_4()
+                            .pb_3()
+                            .child(header.render(plugin_count, cx))
+                            .into_any_element();
+                    }
 
-        let index = row - 1;
-        let Some(plugin) = render_plugins.get(index).cloned() else {
-            return div().into_any_element();
-        };
-        div()
-            .w_full()
-            .h(ROW_HEIGHT)
-            .px_4()
-            .pb_3()
-            .child(render_plugin_card(
-                plugin,
-                Arc::clone(&engine),
-                on_navigate.clone(),
-                chain_operations.clone(),
-                card_scan_state.clone(),
-                cx,
-            ))
-            .into_any_element()
-    });
+                    let index = row - 1;
+                    let Some(plugin) = render_plugins.get(index).cloned() else {
+                        return div().h(ROW_HEIGHT).into_any_element();
+                    };
+                    div()
+                        .w_full()
+                        .h(ROW_HEIGHT)
+                        .px_4()
+                        .pb_3()
+                        .child(render_plugin_card(
+                            plugin,
+                            Arc::clone(&engine),
+                            on_navigate.clone(),
+                            chain_operations.clone(),
+                            card_scan_state.clone(),
+                            cx,
+                        ))
+                        .into_any_element()
+                })
+                .collect::<Vec<_>>()
+        },
+    )
+    .track_scroll(&scroll_handle);
 
     div()
         .relative()
         .size_full()
-        .child(SmoothListScroll::new(
+        .child(SmoothUniformListScroll::new(
             "plugins-virtual-list-smooth-scroll",
-            scrollbar_state.clone(),
+            scroll_handle.clone(),
             content.size_full(),
         ))
         .child(PageScrollbar::new(
             "plugins-virtual-list-scrollbar",
-            scrollbar_state,
+            scroll_handle,
         ))
         .into_any_element()
 }

@@ -26,13 +26,13 @@ impl PageScrollHandle for ScrollHandle {
     }
 }
 
-impl PageScrollHandle for ListState {
+impl PageScrollHandle for UniformListScrollHandle {
     fn viewport_height(&self) -> Pixels {
-        self.viewport_bounds().size.height
+        self.0.borrow().base_handle.bounds().size.height
     }
 
     fn max_scroll_y(&self) -> Pixels {
-        self.max_offset_for_scrollbar().y
+        self.0.borrow().base_handle.max_offset().y
     }
 }
 
