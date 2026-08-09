@@ -155,12 +155,11 @@ fn path_section(
     let picker = callbacks.on_pick_plugin_path.clone();
     let update = callbacks.on_update_plugin_path.clone();
     let list_height = path_list_height(paths.len());
-    let has_overflow = paths.len() > 4;
     let scroll_id = SharedString::from(format!("{section_id}-paths-scroll"));
     let list_content = div()
         .w_full()
-        .p_2()
-        .when(has_overflow, |content| content.pr(px(20.0)))
+        .py_2()
+        .px_4()
         .flex()
         .flex_col()
         .gap(px(6.0))
@@ -275,10 +274,10 @@ fn path_section(
 
 fn path_list_height(path_count: usize) -> Pixels {
     px(match path_count.clamp(1, 4) {
-        1 => 48.0,
-        2 => 86.0,
-        3 => 124.0,
-        _ => 162.0,
+        1 => 50.0,
+        2 => 88.0,
+        3 => 126.0,
+        _ => 164.0,
     })
 }
 
@@ -343,9 +342,10 @@ mod tests {
 
     #[test]
     fn path_list_height_never_exposes_a_partial_row() {
-        assert_eq!(path_list_height(0), px(48.0));
-        assert_eq!(path_list_height(3), px(124.0));
-        assert_eq!(path_list_height(4), px(162.0));
-        assert_eq!(path_list_height(9), px(162.0));
+        assert_eq!(path_list_height(0), px(50.0));
+        assert_eq!(path_list_height(2), px(88.0));
+        assert_eq!(path_list_height(3), px(126.0));
+        assert_eq!(path_list_height(4), px(164.0));
+        assert_eq!(path_list_height(9), px(164.0));
     }
 }
