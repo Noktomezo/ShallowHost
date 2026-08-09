@@ -4,14 +4,13 @@
 )]
 
 mod ffi;
+mod plugin_scan;
 
 use serde::{Deserialize, Serialize};
 use std::fmt;
 use std::fs;
 use std::path::{Path, PathBuf};
 use std::sync::Mutex;
-
-use crate::infrastructure::config::PluginSettings;
 
 #[derive(Debug)]
 pub enum EngineError {
@@ -191,28 +190,6 @@ impl Engine {
     pub fn audio_devices(&self, driver: &str, device: &str) -> Result<AudioDevices, EngineError> {
         let _guard = self.lock()?;
         parse_json(&ffi::audio_devices(driver, device)?)
-    }
-
-    pub fn scan_plugins(
-        &self,
-        settings: &PluginSettings,
-    ) -> Result<Vec<ScannedPlugin>, EngineError> {
-        #[derive(Serialize)]
-        struct ScanPaths<'a> {
-            vst2: &'a [String],
-            vst3: &'a [String],
-        }
-
-        let paths = serde_json::to_string(&ScanPaths {
-            vst2: &settings.vst2_paths,
-            vst3: &settings.vst3_paths,
-        })?;
-        let _guard = self.lock()?;
-        let plugins: Vec<ScannedPlugin> = parse_json(&ffi::scan_plugins(&paths)?)?;
-        drop(_guard);
-        let mut cache = self.plugins.lock().map_err(|_| EngineError::LockPoisoned)?;
-        *cache = plugins.clone();
-        Ok(plugins)
     }
 
     pub fn plugins(&self) -> Result<Vec<ScannedPlugin>, EngineError> {

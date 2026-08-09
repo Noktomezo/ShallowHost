@@ -52,7 +52,9 @@ impl HeaderContext {
         let open_scan_paths = self.callbacks.on_set_scan_paths_open.clone();
         let scan_engine = Arc::clone(&self.engine);
         let plugin_settings = self.settings.clone();
-        let scanning = self.scan_state.read(cx).scanning;
+        let scan_status = self.scan_state.read(cx);
+        let scanning = scan_status.scanning;
+        let scan_progress = scan_status.progress;
         let scan_state = self.scan_state.clone();
 
         div()
@@ -85,7 +87,13 @@ impl HeaderContext {
                                 } else {
                                     BadgeStyle::Purple
                                 },
-                            )),
+                            ))
+                            .when(scanning, |title_row| {
+                                title_row.child(loading_badge(format!(
+                                    "{:.0}%",
+                                    scan_progress.clamp(0.0, 1.0) * 100.0
+                                )))
+                            }),
                     )
                     .child(
                         div()
@@ -128,21 +136,52 @@ impl HeaderContext {
                             }
                             scan_state.update(cx, |state, cx| {
                                 state.scanning = true;
+                                state.progress = 0.0;
                                 cx.notify();
                             });
                             window.refresh();
                             let engine = Arc::clone(&scan_engine);
                             let settings = plugin_settings.clone();
                             let scan_state = scan_state.clone();
-                            let task =
-                                cx.background_spawn(async move { engine.scan_plugins(&settings) });
                             cx.spawn(async move |cx| {
-                                let result = task.await;
-                                if let Err(error) = result {
-                                    eprintln!("JUCE plugin scan failed: {error}");
+                                let start_engine = Arc::clone(&engine);
+                                let mut result = cx
+                                    .background_spawn(async move {
+                                        start_engine.start_plugin_scan(&settings)
+                                    })
+                                    .await;
+
+                                loop {
+                                    let done = match result {
+                                        Ok(step) => {
+                                            let done = step.done;
+                                            scan_state.update(cx, |state, cx| {
+                                                state.progress = step.progress;
+                                                cx.notify();
+                                            });
+                                            cx.refresh();
+                                            done
+                                        }
+                                        Err(error) => {
+                                            eprintln!("JUCE plugin scan failed: {error}");
+                                            break;
+                                        }
+                                    };
+                                    if done {
+                                        break;
+                                    }
+
+                                    let next_engine = Arc::clone(&engine);
+                                    result = cx
+                                        .background_spawn(
+                                            async move { next_engine.scan_next_plugin() },
+                                        )
+                                        .await;
                                 }
+
                                 scan_state.update(cx, |state, cx| {
                                     state.scanning = false;
+                                    state.progress = 0.0;
                                     cx.notify();
                                 });
                                 cx.refresh();

@@ -39,6 +39,8 @@ rust::String audio_devices(rust::Str driver, rust::Str device)
 }
 
 rust::String scan_plugins(rust::Str paths) { return native::scanPlugins(toStdString(paths)); }
+rust::String start_plugin_scan(rust::Str paths) { return native::startPluginScan(toStdString(paths)); }
+rust::String scan_next_plugin() { return native::scanNextPlugin(); }
 rust::String add_to_chain(rust::Str id) { return native::addToChain(toStdString(id)); }
 void clear_chain() { native::clearChain(); }
 bool remove_from_chain(rust::Str id) { return native::removeFromChain(toStdString(id)); }

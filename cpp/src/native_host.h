@@ -20,6 +20,8 @@ bool audioStop();
 AudioLevels audioLevels();
 std::string audioDevices(const std::string& driver, const std::string& device);
 std::string scanPlugins(const std::string& vst3PathsJson);
+std::string startPluginScan(const std::string& pluginPathsJson);
+std::string scanNextPlugin();
 std::string addToChain(const std::string& uniqueId);
 void clearChain();
 bool removeFromChain(const std::string& nodeId);

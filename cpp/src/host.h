@@ -119,6 +119,8 @@ public:
 
     std::string getAudioDevicesJson(const char* driver = nullptr, const char* deviceName = nullptr);
     std::string scanPluginsJson(const std::string& pluginPathsJson = "{}");
+    std::string startPluginScanJson(const std::string& pluginPathsJson);
+    std::string scanNextPluginJson();
 
     std::string addToChain(const std::string& uniqueId);
     bool removeFromChain(const std::string& nodeId);
@@ -161,6 +163,10 @@ private:
 
     std::vector<juce::AudioProcessorGraph::Node::Ptr> chainNodes;
     juce::KnownPluginList knownPluginList;
+    juce::KnownPluginList pluginScanList;
+    std::vector<std::unique_ptr<juce::PluginDirectoryScanner>> pluginScanners;
+    std::size_t pluginScannerIndex = 0;
+    bool pluginScanActive = false;
     bool isMono = false;
 
     class PluginWindow : public juce::DocumentWindow {

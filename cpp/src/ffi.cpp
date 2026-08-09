@@ -49,6 +49,16 @@ std::string scanPlugins(const std::string& vst3PathsJson)
     return ShallowHost::getInstance().scanPluginsJson(vst3PathsJson);
 }
 
+std::string startPluginScan(const std::string& pluginPathsJson)
+{
+    return ShallowHost::getInstance().startPluginScanJson(pluginPathsJson);
+}
+
+std::string scanNextPlugin()
+{
+    return ShallowHost::getInstance().scanNextPluginJson();
+}
+
 std::string addToChain(const std::string& uniqueId)
 {
     return ShallowHost::getInstance().addToChain(uniqueId);

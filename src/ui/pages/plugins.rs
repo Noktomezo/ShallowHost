@@ -26,6 +26,7 @@ pub struct PluginItem {
 #[derive(Default)]
 pub struct PluginScanState {
     scanning: bool,
+    progress: f32,
 }
 
 pub struct PluginsPage {
