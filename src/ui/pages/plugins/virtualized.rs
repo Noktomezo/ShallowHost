@@ -16,11 +16,11 @@ use crate::ui::foundation::plugin_format;
 use crate::ui::shell::routes::{DropdownCallbacks, NavigateCallback, Route};
 use crate::ui::state::chain_operations::{self, ChainOperationState, PendingPlugin};
 
-// 40 px content + 32 px card padding + 12 px inter-row spacing.
+// 40 px content + 32 px card padding + 2 px border + 12 px inter-row spacing.
 // Keep every virtual row at this exact height: uniform_list measures one row
 // and computes the complete scrollbar extent before off-screen rows are rendered.
-const CARD_HEIGHT: Pixels = px(72.0);
-const ROW_HEIGHT: Pixels = px(84.0);
+const CARD_HEIGHT: Pixels = px(74.0);
+const ROW_HEIGHT: Pixels = px(86.0);
 
 #[derive(Clone)]
 pub(super) struct HeaderContext {
