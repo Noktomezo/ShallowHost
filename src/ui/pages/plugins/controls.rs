@@ -13,7 +13,6 @@ use crate::ui::resolve_asset_path;
 pub(super) enum IconButtonStyle {
     Outline,
     Primary,
-    Danger,
 }
 
 pub(super) fn icon_button(
@@ -46,13 +45,6 @@ pub(super) fn icon_button(
             colors::accent_foreground(),
             colors::orange(),
             colors::accent_foreground().opacity(0.45),
-        ),
-        IconButtonStyle::Danger => (
-            colors::red().opacity(0.16),
-            colors::red().opacity(0.7),
-            colors::red(),
-            colors::red().opacity(0.25),
-            colors::red(),
         ),
     };
     let tooltip = tooltip.into();

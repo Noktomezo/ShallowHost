@@ -208,12 +208,6 @@ impl Engine {
             .map_err(|_| EngineError::LockPoisoned)
     }
 
-    pub fn remove_cached_plugin(&self, unique_id: &str) -> Result<(), EngineError> {
-        let mut plugins = self.plugins.lock().map_err(|_| EngineError::LockPoisoned)?;
-        plugins.retain(|plugin| plugin.unique_id != unique_id);
-        Ok(())
-    }
-
     pub fn chain(&self) -> Result<Vec<ChainItem>, EngineError> {
         let _guard = self.lock()?;
         self.cache_chain_from_native()

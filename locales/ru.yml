@@ -69,7 +69,6 @@ plugins:
   actions: "Действия"
   reveal: "Показать в папке"
   revealInFolder: "Показать в папке"
-  remove: "Удалить"
   addToChain: "Добавить в цепочку"
   goToChain: "Перейти к цепочке"
   inChain: "В цепочке"

@@ -69,7 +69,6 @@ plugins:
   actions: "Actions"
   reveal: "Reveal in folder"
   revealInFolder: "Reveal in folder"
-  remove: "Remove"
   addToChain: "Add to chain"
   goToChain: "Go to chain"
   inChain: "In chain"

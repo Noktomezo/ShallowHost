@@ -245,11 +245,8 @@ fn render_plugin_card(
     let in_chain_button_id = SharedString::from(format!("btn-in-chain-{stable_id}"));
     let add_button_id = SharedString::from(format!("btn-add-chain-{stable_id}"));
     let reveal_button_id = SharedString::from(format!("btn-reveal-{stable_id}"));
-    let remove_button_id = SharedString::from(format!("btn-remove-{stable_id}"));
-    let add_engine = Arc::clone(&engine);
+    let add_engine = engine;
     let add_operations = chain_operations.clone();
-    let remove_engine = engine;
-    let remove_id = plugin.id.clone();
     let plugin_path = plugin.path.clone();
     let pending_plugin = PendingPlugin {
         unique_id: plugin.id.clone(),
@@ -383,23 +380,6 @@ fn render_plugin_card(
                         cx,
                     )
                     .on_click(move |_, _, _| reveal_plugin(&plugin_path)),
-                )
-                .child(
-                    icon_button(
-                        remove_button_id,
-                        "assets/icons/trash-2.svg",
-                        i18n::t("plugins.remove"),
-                        IconButtonStyle::Danger,
-                        false,
-                        false,
-                        cx,
-                    )
-                    .on_click(move |_, _, cx| {
-                        if let Err(error) = remove_engine.remove_cached_plugin(&remove_id) {
-                            eprintln!("failed to remove cached plugin: {error}");
-                        }
-                        cx.refresh_windows();
-                    }),
                 ),
         )
         .into_any_element()
