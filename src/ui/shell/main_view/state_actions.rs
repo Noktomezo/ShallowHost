@@ -429,7 +429,7 @@ impl MainView {
                 return;
             };
             if view
-                .update_in(cx, |view, _window, cx| {
+                .update_in(cx, |view, window, cx| {
                     view.update_plugin_path(
                         PluginPathUpdate::Add {
                             kind,
@@ -437,6 +437,9 @@ impl MainView {
                         },
                         cx,
                     );
+                    // The native directory picker may return without producing another input
+                    // frame, so explicitly repaint the still-open paths dialog.
+                    window.refresh();
                 })
                 .is_err()
             {
