@@ -6,7 +6,7 @@ use std::time::Instant;
 
 use crate::infrastructure::engine::Engine;
 use crate::ui::components::audio_dropdown::audio_dropdown;
-use crate::ui::components::card_header::{PAGE_HEADER_GAP, card_heading};
+use crate::ui::components::card_header::{PAGE_HEADER_GAP, card_header_layout, card_heading};
 use crate::ui::components::smooth_scroll::SmoothVerticalScroll;
 use crate::ui::foundation::colors;
 use crate::ui::foundation::control_style::ControlTypography;
@@ -218,14 +218,7 @@ fn card_header(
     title: &'static str,
     description: &'static str,
 ) -> Div {
-    div()
-        .w_full()
-        .p_4()
-        .flex()
-        .items_center()
-        .justify_between()
-        .gap_4()
-        .child(card_heading(icon_path, icon_color, title, description))
+    card_header_layout().child(card_heading(icon_path, icon_color, title, description))
 }
 
 fn config_row(title: &'static str, description: &'static str, control: AnyElement) -> Div {

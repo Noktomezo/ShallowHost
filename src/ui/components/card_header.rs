@@ -5,7 +5,18 @@ use gpui_component::StyledExt;
 use crate::ui::foundation::{colors, i18n};
 use crate::ui::resolve_asset_path;
 
-pub const PAGE_HEADER_GAP: Pixels = px(14.0);
+pub const PAGE_HEADER_GAP: Pixels = px(13.0);
+
+pub fn card_header_layout() -> Div {
+    div()
+        .w_full()
+        .px_4()
+        .py(px(14.0))
+        .flex()
+        .items_center()
+        .justify_between()
+        .gap_4()
+}
 
 pub fn card_heading(
     icon_path: &'static str,

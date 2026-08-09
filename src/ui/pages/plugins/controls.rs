@@ -5,7 +5,7 @@ use gpui::*;
 
 use crate::ui::components::cursor_tooltip;
 use crate::ui::foundation::control_style::ControlTypography;
-use crate::ui::foundation::motion::mix_color;
+use crate::ui::foundation::motion::{mix_color, refresh_rotation};
 use crate::ui::foundation::{colors, i18n};
 use crate::ui::resolve_asset_path;
 
@@ -56,11 +56,7 @@ pub(super) fn icon_button(
         icon.with_animation(
             "plugin-scan-spinner",
             Animation::new(Duration::from_millis(850)).repeat(),
-            |icon, delta| {
-                icon.with_transformation(Transformation::rotate(Radians(
-                    -std::f32::consts::TAU * delta,
-                )))
-            },
+            |icon, delta| icon.with_transformation(Transformation::rotate(refresh_rotation(delta))),
         )
         .into_any_element()
     } else {

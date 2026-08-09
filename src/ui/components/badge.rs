@@ -4,6 +4,7 @@ use gpui_component::StyledExt;
 use std::time::Duration;
 
 use crate::ui::foundation::colors;
+use crate::ui::foundation::motion::refresh_rotation;
 
 #[derive(Clone, Copy)]
 pub enum BadgeStyle {
@@ -64,11 +65,7 @@ pub fn loading_badge(text: impl Into<SharedString>) -> Div {
         .with_animation(
             "chain-operation-spinner",
             Animation::new(Duration::from_millis(850)).repeat(),
-            |icon, delta| {
-                icon.with_transformation(Transformation::rotate(Radians(
-                    -std::f32::consts::TAU * delta,
-                )))
-            },
+            |icon, delta| icon.with_transformation(Transformation::rotate(refresh_rotation(delta))),
         );
 
     div()

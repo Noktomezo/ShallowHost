@@ -6,7 +6,7 @@ use std::time::Duration;
 
 use crate::ui::components::badge::progress_ring;
 use crate::ui::foundation::colors;
-use crate::ui::foundation::motion::{UPDATE_PULSE_MOTION, update_pulse_opacity};
+use crate::ui::foundation::motion::{UPDATE_PULSE_MOTION, refresh_rotation, update_pulse_opacity};
 use crate::ui::resolve_asset_path;
 
 pub type ToggleSidebarCallback = Rc<dyn Fn(&mut Window, &mut App)>;
@@ -181,11 +181,7 @@ fn restarting_icon() -> AnyElement {
         .with_animation(
             "titlebar-update-restarting",
             Animation::new(Duration::from_millis(850)).repeat(),
-            |icon, delta| {
-                icon.with_transformation(Transformation::rotate(Radians(
-                    -std::f32::consts::TAU * delta,
-                )))
-            },
+            |icon, delta| icon.with_transformation(Transformation::rotate(refresh_rotation(delta))),
         )
         .into_any_element()
 }

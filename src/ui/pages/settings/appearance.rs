@@ -5,7 +5,7 @@ use std::rc::Rc;
 use std::time::Instant;
 
 use super::{Language, ThemeMode, card, resolve_path, row, separator, setting_copy};
-use crate::ui::components::card_header::card_heading;
+use crate::ui::components::card_header::{card_header_layout, card_heading};
 use crate::ui::components::dropdown_overlay::adaptive_dropdown;
 use crate::ui::components::toggle_switch::toggle_switch;
 use crate::ui::foundation::colors;
@@ -49,7 +49,7 @@ pub(super) struct AppearanceCardProps {
 
 pub(super) fn appearance_card(props: AppearanceCardProps, cx: &App) -> AnyElement {
     card()
-        .child(div().p_4().child(card_heading(
+        .child(card_header_layout().child(card_heading(
             "assets/icons/palette.svg",
             colors::yellow(),
             "settings.appearance",

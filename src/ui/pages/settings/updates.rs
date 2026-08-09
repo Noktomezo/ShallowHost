@@ -4,14 +4,16 @@ use gpui::prelude::*;
 use gpui::*;
 use gpui_updater::{UpdateStatus, Updater};
 
-use super::{ToggleRowProps, card, resolve_path, row, separator, toggle_row};
+use super::{ToggleRowProps, card, resolve_path, separator, toggle_row};
 use crate::infrastructure::config::SystemSettings;
 use crate::ui::components::badge::{BadgeStyle, badge, loading_badge, progress_badge};
-use crate::ui::components::card_header::card_heading_with_suffix;
+use crate::ui::components::card_header::{card_header_layout, card_heading_with_suffix};
 use crate::ui::foundation::colors;
 use crate::ui::foundation::control_style::ControlTypography;
 use crate::ui::foundation::i18n;
-use crate::ui::foundation::motion::{UPDATE_PULSE_MOTION, mix_color, update_pulse_opacity};
+use crate::ui::foundation::motion::{
+    UPDATE_PULSE_MOTION, mix_color, refresh_rotation, update_pulse_opacity,
+};
 use crate::ui::shell::routes::{SystemCallback, SystemSetting};
 
 pub(super) fn updates_card(
@@ -30,7 +32,7 @@ pub(super) fn updates_card(
 
     card()
         .child(
-            row()
+            card_header_layout()
                 .child(card_heading_with_suffix(
                     "assets/icons/cloud-download.svg",
                     colors::green(),
@@ -174,11 +176,7 @@ fn update_icon(spinning: bool) -> AnyElement {
     icon.with_animation(
         "app-update-spinner",
         Animation::new(Duration::from_millis(850)).repeat(),
-        |icon, delta| {
-            icon.with_transformation(Transformation::rotate(Radians(
-                -std::f32::consts::TAU * delta,
-            )))
-        },
+        |icon, delta| icon.with_transformation(Transformation::rotate(refresh_rotation(delta))),
     )
     .into_any_element()
 }

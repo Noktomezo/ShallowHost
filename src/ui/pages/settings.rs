@@ -5,7 +5,7 @@ use std::time::Instant;
 
 use crate::domain::preferences::{Language, ThemeMode};
 use crate::infrastructure::config::SystemSettings;
-use crate::ui::components::card_header::{PAGE_HEADER_GAP, card_heading};
+use crate::ui::components::card_header::{PAGE_HEADER_GAP, card_header_layout, card_heading};
 use crate::ui::components::smooth_scroll::SmoothVerticalScroll;
 use crate::ui::components::toggle_switch::toggle_switch;
 use crate::ui::foundation::colors;
@@ -163,7 +163,7 @@ fn system_card(
     callback: SystemCallback,
 ) -> AnyElement {
     card()
-        .child(div().p_4().child(card_heading(
+        .child(card_header_layout().child(card_heading(
             "assets/icons/cog.svg",
             colors::cyan(),
             "settings.system",
