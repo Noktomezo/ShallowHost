@@ -5,7 +5,7 @@ use std::time::Instant;
 
 use crate::domain::preferences::{Language, ThemeMode};
 use crate::infrastructure::config::SystemSettings;
-use crate::ui::components::card_header::card_heading;
+use crate::ui::components::card_header::{PAGE_HEADER_GAP, card_heading};
 use crate::ui::components::smooth_scroll::SmoothVerticalScroll;
 use crate::ui::components::toggle_switch::toggle_switch;
 use crate::ui::foundation::colors;
@@ -104,7 +104,7 @@ impl SettingsPage {
                 .p_4()
                 .flex()
                 .flex_col()
-                .gap_3()
+                .gap(PAGE_HEADER_GAP)
                 .child(page_header())
                 .child(appearance::appearance_card(
                     appearance::AppearanceCardProps {

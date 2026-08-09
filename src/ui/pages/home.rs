@@ -6,7 +6,7 @@ use std::time::Instant;
 
 use crate::infrastructure::engine::Engine;
 use crate::ui::components::audio_dropdown::audio_dropdown;
-use crate::ui::components::card_header::card_heading;
+use crate::ui::components::card_header::{PAGE_HEADER_GAP, card_heading};
 use crate::ui::components::smooth_scroll::SmoothVerticalScroll;
 use crate::ui::foundation::colors;
 use crate::ui::foundation::control_style::ControlTypography;
@@ -100,7 +100,7 @@ impl HomePage {
                 .p_4()
                 .flex()
                 .flex_col()
-                .gap_3()
+                .gap(PAGE_HEADER_GAP)
                 .child(page_header())
                 .child(self.audio_card(cx))
                 .child(chain_card(

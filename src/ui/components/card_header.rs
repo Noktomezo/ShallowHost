@@ -5,6 +5,8 @@ use gpui_component::StyledExt;
 use crate::ui::foundation::{colors, i18n};
 use crate::ui::resolve_asset_path;
 
+pub const PAGE_HEADER_GAP: Pixels = px(14.0);
+
 pub fn card_heading(
     icon_path: &'static str,
     icon_color: Rgba,

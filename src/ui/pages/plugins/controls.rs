@@ -58,7 +58,7 @@ pub(super) fn icon_button(
             Animation::new(Duration::from_millis(850)).repeat(),
             |icon, delta| {
                 icon.with_transformation(Transformation::rotate(Radians(
-                    std::f32::consts::TAU * delta,
+                    -std::f32::consts::TAU * delta,
                 )))
             },
         )
