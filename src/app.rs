@@ -1,7 +1,6 @@
 use std::sync::Arc;
 
 use gpui::*;
-use gpui_component::{Root, Theme};
 
 use crate::infrastructure::config::ConfigStore;
 use crate::infrastructure::engine::Engine;
@@ -27,13 +26,11 @@ pub(crate) fn run() {
         }
     };
 
-    let app = Application::with_platform(gpui_platform::current_platform(false))
-        .with_assets(gpui_component_assets::Assets);
+    let app = Application::with_platform(gpui_platform::current_platform(false));
 
     app.run(move |cx: &mut App| {
         cx.set_app_identity(APP_ID, APP_TITLE);
         load_fonts(cx);
-        gpui_component::init(cx);
         ui::init(cx);
 
         let storage = match ConfigStore::beside_executable() {
@@ -50,8 +47,6 @@ pub(crate) fn run() {
                 return;
             }
         };
-
-        Theme::global_mut(cx).font_family = "IBM Plex Sans".into();
 
         let bounds = Bounds::centered(None, size(px(900.0), px(700.0)), cx);
         let window_background = if storage.config().transparent_shell {
@@ -73,13 +68,7 @@ pub(crate) fn run() {
             move |window, cx| {
                 window.set_window_title(APP_TITLE);
                 let engine = Arc::clone(&engine);
-                let view = cx.new(|cx| MainView::new(engine, storage, single_instance, window, cx));
-                cx.new(|cx| {
-                    Root::new(view, window, cx)
-                        // The app view owns the opaque/50%-tinted surfaces. Keeping Root clear
-                        // lets Windows Acrylic remain visible through those alpha layers.
-                        .bg(rgba(0x00000000))
-                })
+                cx.new(|cx| MainView::new(engine, storage, single_instance, window, cx))
             },
         ) {
             eprintln!("failed to open the application window: {error}");

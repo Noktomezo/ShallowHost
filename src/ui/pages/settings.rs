@@ -1,6 +1,5 @@
 use gpui::prelude::*;
 use gpui::*;
-use gpui_component::StyledExt;
 use std::time::Instant;
 
 use crate::domain::preferences::{Language, ThemeMode};
@@ -144,7 +143,7 @@ fn page_header() -> AnyElement {
         .child(
             div()
                 .text_xl()
-                .font_semibold()
+                .font_weight(FontWeight::SEMIBOLD)
                 .text_color(colors::base_200())
                 .child(i18n::t("settings.title")),
         )
@@ -277,7 +276,7 @@ fn setting_copy(title: &'static str, description: &'static str) -> AnyElement {
         .child(
             div()
                 .text_sm()
-                .font_medium()
+                .font_weight(FontWeight::MEDIUM)
                 .text_color(colors::base_200())
                 .child(i18n::t(title)),
         )

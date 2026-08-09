@@ -1,22 +1,17 @@
-use std::time::Duration;
-
 use gpui::prelude::*;
 use gpui::*;
-use gpui_component::Sizable as _;
-use gpui_component::input::{Input, InputState};
 
 use super::PluginItem;
 use crate::ui::components::audio_dropdown::CONTROL_HEIGHT;
+use crate::ui::components::text_input::{TextInput, TextInputState};
 use crate::ui::foundation::colors;
 use crate::ui::foundation::control_style::ControlTypography;
 use crate::ui::foundation::motion::mix_color;
 
 const SEARCH_HOVER_KEY: &str = "plugins-search-hover";
 pub(crate) const SEARCH_FOCUS_KEY: &str = "plugins-search-focus";
-const CARET_BLINK_DURATION: Duration = Duration::from_millis(1_000);
-const CARET_WIDTH: Pixels = px(2.0);
 
-pub(super) fn render(search: &Entity<InputState>, window: &mut Window, cx: &App) -> AnyElement {
+pub(super) fn render(search: &Entity<TextInputState>, window: &mut Window, cx: &App) -> AnyElement {
     let has_query = !search.read(cx).value().is_empty();
     let focused = search.focus_handle(cx).is_focused(window);
     let hover_key = SharedString::from(SEARCH_HOVER_KEY);
@@ -28,6 +23,7 @@ pub(super) fn render(search: &Entity<InputState>, window: &mut Window, cx: &App)
     );
     let resting_border = mix_color(colors::base_800(), colors::base_700(), hover);
     let clear_search = search.clone();
+    let focus_handle = search.read(cx).focus_handle().clone();
 
     div()
         .id("plugins-search-control")
@@ -44,6 +40,7 @@ pub(super) fn render(search: &Entity<InputState>, window: &mut Window, cx: &App)
         .border_1()
         .border_color(mix_color(resting_border, colors::orange(), focus))
         .rounded_md()
+        .cursor(CursorStyle::IBeam)
         .on_hover(move |hovered, window, cx| {
             crate::ui::foundation::hover_motion::set_hovered(
                 hover_key.clone(),
@@ -52,24 +49,34 @@ pub(super) fn render(search: &Entity<InputState>, window: &mut Window, cx: &App)
                 cx,
             );
         })
-        .on_mouse_down_out(|_, window, _| window.blur())
+        .on_mouse_down(MouseButton::Left, move |_, window, cx| {
+            window.focus(&focus_handle, cx);
+        })
         .child(
-            Input::new(search)
-                .small()
+            div()
                 .size_full()
+                .px_2()
+                .flex()
+                .items_center()
                 .gap_2()
-                .appearance(false)
-                .focus_bordered(false)
                 .control_text()
                 .text_color(colors::base_200())
-                .prefix(
+                .child(
                     svg()
                         .external_path(crate::ui::resolve_asset_path("assets/icons/search.svg"))
                         .size_4()
+                        .flex_none()
                         .text_color(colors::base_500()),
                 )
+                .child(
+                    div()
+                        .min_w_0()
+                        .h_full()
+                        .flex_1()
+                        .child(TextInput::new(search)),
+                )
                 .when(has_query, |input| {
-                    input.suffix(
+                    input.child(
                         div()
                             .id("plugins-search-clear")
                             .size_5()
@@ -87,48 +94,15 @@ pub(super) fn render(search: &Entity<InputState>, window: &mut Window, cx: &App)
                             )
                             .on_click(move |_, window, cx| {
                                 clear_search.update(cx, |search, cx| {
-                                    search.set_value("", window, cx);
+                                    search.set_value("", cx);
                                 });
+                                let focus_handle = clear_search.read(cx).focus_handle().clone();
+                                window.focus(&focus_handle, cx);
                             }),
                     )
                 }),
         )
-        .when(focused, |control| {
-            control.child(render_caret(search.clone()))
-        })
         .into_any_element()
-}
-
-fn render_caret(search: Entity<InputState>) -> AnyElement {
-    div()
-        .absolute()
-        .inset_0()
-        .with_animation(
-            "plugins-search-caret-blink",
-            Animation::new(CARET_BLINK_DURATION).repeat(),
-            |caret, delta| caret.opacity(caret_opacity(delta)),
-        )
-        .child(canvas(
-            |_, _, _| {},
-            move |_, _, window, cx| {
-                let state = search.read(cx);
-                let selected_range = state.selected_range();
-                if !selected_range.is_empty() {
-                    return;
-                }
-
-                let Some(bounds) = state.range_to_bounds(&selected_range) else {
-                    return;
-                };
-                let bounds = Bounds::new(bounds.origin, size(CARET_WIDTH, bounds.size.height));
-                window.paint_quad(fill(bounds, colors::orange()));
-            },
-        ))
-        .into_any_element()
-}
-
-fn caret_opacity(progress: f32) -> f32 {
-    0.5 + 0.5 * (std::f32::consts::TAU * progress.clamp(0.0, 1.0)).cos()
 }
 
 pub(super) fn matches_plugin(plugin: &PluginItem, query: &str) -> bool {
@@ -168,16 +142,4 @@ pub(crate) fn reset_interaction(window: &mut Window, cx: &mut App) {
         window,
         cx,
     );
-}
-
-#[cfg(test)]
-mod tests {
-    use super::caret_opacity;
-
-    #[test]
-    fn caret_fades_out_and_back_in() {
-        assert!((caret_opacity(0.0) - 1.0).abs() < f32::EPSILON);
-        assert!(caret_opacity(0.5).abs() < f32::EPSILON);
-        assert!((caret_opacity(1.0) - 1.0).abs() < f32::EPSILON);
-    }
 }

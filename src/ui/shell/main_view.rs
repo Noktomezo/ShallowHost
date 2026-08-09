@@ -13,13 +13,13 @@ use super::navigation::{FOOTER_NAV_ITEM, MAIN_NAV_ITEMS};
 use super::routes::{Language, Route, ThemeMode};
 use super::titlebar::render_titlebar;
 use crate::ui::components::audio_dropdown::AudioDropdownEvent;
+use crate::ui::components::text_input::{TextInputEvent, TextInputState};
 use crate::ui::foundation::motion::DropdownMotion;
 use crate::ui::foundation::{colors, i18n};
 use crate::ui::pages::home::update_chain_drag_mouse;
 use crate::ui::pages::plugins::{PluginScanState, SEARCH_FOCUS_KEY};
 use crate::ui::state::audio_controls::AudioControls;
 use crate::ui::state::chain_operations::ChainOperationState;
-use gpui_component::input::{InputEvent, InputState};
 use gpui_updater::Updater;
 
 mod navigation_item;
@@ -52,7 +52,7 @@ pub struct MainView {
     theme_dropdown_motion: Entity<DropdownMotion>,
     language_dropdown_motion: Entity<DropdownMotion>,
     plugin_scan_state: Entity<PluginScanState>,
-    plugin_search: Entity<InputState>,
+    plugin_search: Entity<TextInputState>,
     chain_operation_state: Entity<ChainOperationState>,
     updater: Entity<Updater>,
     single_instance: SingleInstance,
@@ -91,7 +91,6 @@ impl MainView {
         let default_lang = initial_config.language;
 
         colors::set_active_theme(default_theme);
-        state_actions::sync_component_theme(default_theme, window, cx);
         i18n::set_language(default_lang);
         window.set_background_appearance(if initial_config.transparent_shell {
             WindowBackgroundAppearance::Blurred
@@ -107,7 +106,7 @@ impl MainView {
             });
         let audio_controls = AudioControls::new(&devices, &initial_config.audio, cx);
         let plugin_search = cx.new(|cx| {
-            InputState::new(window, cx)
+            TextInputState::new(window, cx)
                 .placeholder(i18n::t("plugins.search"))
                 .clean_on_escape()
         });
@@ -178,21 +177,21 @@ impl MainView {
         this._subscriptions.push(cx.subscribe_in(
             &plugin_search,
             window,
-            |_, _, event: &InputEvent, window, cx| match event {
-                InputEvent::Change => cx.notify(),
-                InputEvent::Focus => crate::ui::foundation::hover_motion::set_active(
+            |_, _, event: &TextInputEvent, window, cx| match event {
+                TextInputEvent::Change => cx.notify(),
+                TextInputEvent::Focus => crate::ui::foundation::hover_motion::set_active(
                     SharedString::from(SEARCH_FOCUS_KEY),
                     true,
                     window,
                     cx,
                 ),
-                InputEvent::Blur => crate::ui::foundation::hover_motion::set_active(
+                TextInputEvent::Blur => crate::ui::foundation::hover_motion::set_active(
                     SharedString::from(SEARCH_FOCUS_KEY),
                     false,
                     window,
                     cx,
                 ),
-                InputEvent::PressEnter { .. } => {}
+                TextInputEvent::PressEnter => {}
             },
         ));
 
@@ -351,6 +350,7 @@ impl Render for MainView {
 
         div()
             .size_full()
+            .font_family(crate::ui::foundation::control_style::CONTROL_FONT_FAMILY)
             .on_mouse_move(cx.listener(|_, event: &MouseMoveEvent, window, cx| {
                 let tooltip_moved =
                     crate::ui::components::cursor_tooltip::update_position(event.position, cx);
@@ -404,8 +404,8 @@ impl Render for MainView {
                             .flex_1()
                             .h_full()
                             .bg(colors::black())
-                            .border_t_1()
-                            .border_l_1()
+                            .border_t(px(1.0))
+                            .border_l(px(1.0))
                             .border_color(colors::base_800())
                             .rounded_tl(px(8.0))
                             .overflow_hidden()

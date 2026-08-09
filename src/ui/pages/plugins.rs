@@ -2,10 +2,10 @@ use std::sync::Arc;
 
 use gpui::prelude::*;
 use gpui::*;
-use gpui_component::input::InputState;
 
 use crate::infrastructure::config::PluginSettings;
 use crate::infrastructure::engine::Engine;
+use crate::ui::components::text_input::TextInputState;
 use crate::ui::shell::routes::{DropdownCallbacks, NavigateCallback, ScanPathsDialogState};
 use crate::ui::state::chain_operations::ChainOperationState;
 
@@ -40,7 +40,7 @@ pub struct PluginsPage {
     scan_paths: ScanPathsDialogState,
     callbacks: DropdownCallbacks,
     scan_state: Entity<PluginScanState>,
-    search: Entity<InputState>,
+    search: Entity<TextInputState>,
     chain_operations: Entity<ChainOperationState>,
 }
 
@@ -51,7 +51,7 @@ impl PluginsPage {
         settings: PluginSettings,
         scan_paths: ScanPathsDialogState,
         scan_state: Entity<PluginScanState>,
-        search: Entity<InputState>,
+        search: Entity<TextInputState>,
         chain_operations: Entity<ChainOperationState>,
     ) -> Self {
         Self {

@@ -1,5 +1,4 @@
 use gpui::{App, AppContext, Context, Window};
-use gpui_component::theme::{Theme, ThemeMode as ComponentThemeMode};
 use std::sync::Arc;
 use std::time::Duration;
 use std::time::Instant;
@@ -312,13 +311,12 @@ impl MainView {
     pub(super) fn set_theme(
         &mut self,
         theme: ThemeMode,
-        window: &mut Window,
+        _window: &mut Window,
         cx: &mut Context<Self>,
     ) {
         self.selected_theme = theme;
         self.storage.config_mut().theme = theme;
         colors::set_active_theme(theme);
-        sync_component_theme(theme, window, cx);
         self.save_config();
         cx.notify();
     }
@@ -326,14 +324,14 @@ impl MainView {
     pub(super) fn set_language(
         &mut self,
         language: Language,
-        window: &mut Window,
+        _window: &mut Window,
         cx: &mut Context<Self>,
     ) {
         self.selected_language = language;
         self.storage.config_mut().language = language;
         i18n::set_language(language);
         self.plugin_search.update(cx, |search, cx| {
-            search.set_placeholder(i18n::t("plugins.search"), window, cx);
+            search.set_placeholder(i18n::t("plugins.search"), cx);
         });
         self.save_config();
         cx.notify();
@@ -459,17 +457,6 @@ impl MainView {
         })
         .detach();
     }
-}
-
-pub(super) fn sync_component_theme(theme: ThemeMode, window: &mut Window, cx: &mut App) {
-    let component_theme = match theme {
-        ThemeMode::Dark => ComponentThemeMode::Dark,
-        ThemeMode::Light => ComponentThemeMode::Light,
-        ThemeMode::System if colors::is_dark() => ComponentThemeMode::Dark,
-        ThemeMode::System => ComponentThemeMode::Light,
-    };
-    Theme::change(component_theme, Some(window), cx);
-    Theme::global_mut(cx).caret = colors::orange().opacity(0.0).into();
 }
 
 fn scale_level(level: f32) -> f32 {

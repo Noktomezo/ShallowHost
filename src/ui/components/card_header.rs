@@ -1,6 +1,5 @@
 use gpui::prelude::*;
 use gpui::*;
-use gpui_component::StyledExt;
 
 use crate::ui::foundation::{colors, i18n};
 use crate::ui::resolve_asset_path;
@@ -76,7 +75,7 @@ pub fn card_heading_with_suffix(
                                 .min_w_0()
                                 .truncate()
                                 .text_sm()
-                                .font_bold()
+                                .font_weight(FontWeight::BOLD)
                                 .text_color(colors::base_200())
                                 .child(i18n::t(title)),
                         )

@@ -1,9 +1,9 @@
 use gpui::prelude::*;
 use gpui::*;
-use gpui_component::scroll::ScrollableElement;
 use std::time::Duration;
 
 use super::dropdown_overlay::adaptive_dropdown;
+use super::smooth_scroll::ScrollableColumn;
 use crate::ui::foundation::colors;
 use crate::ui::foundation::control_style::ControlTypography;
 use crate::ui::foundation::motion::{
@@ -138,91 +138,98 @@ fn render_menu(
         .rounded_md()
         .shadow_lg()
         .child(
-            div()
-                .w_full()
-                .max_h(px(280.0))
-                .flex()
-                .flex_col()
-                .gap(px(0.0))
-                .children(choices.into_iter().enumerate().map(|(index, choice)| {
-                    let dropdown = dropdown.clone();
-                    let close_motion = motion.clone();
-                    let item_hovered = hovered_item == Some(index);
-                    let item_animating = motion_state.item_animating(index);
-                    let item_motion = motion.clone();
-                    let item_animation_id = ElementId::NamedInteger(
-                        SharedString::from(format!("{id}-option-{index}-hover")),
-                        u64::from(item_hovered),
-                    );
-                    let resting_background = if index == selected {
-                        colors::base_850()
-                    } else {
-                        colors::base_950()
-                    };
-                    let item_background = if item_animating {
+            ScrollableColumn::new(
+                SharedString::from(format!("{id}-menu-scroll")),
+                px(280.0),
+                div().w_full().flex().flex_col().gap(px(0.0)).children(
+                    choices.into_iter().enumerate().map(|(index, choice)| {
+                        let dropdown = dropdown.clone();
+                        let close_motion = motion.clone();
+                        let item_hovered = hovered_item == Some(index);
+                        let item_animating = motion_state.item_animating(index);
+                        let item_motion = motion.clone();
+                        let item_animation_id = ElementId::NamedInteger(
+                            SharedString::from(format!("{id}-option-{index}-hover")),
+                            u64::from(item_hovered),
+                        );
+                        let resting_background = if index == selected {
+                            colors::base_850()
+                        } else {
+                            colors::base_950()
+                        };
+                        let item_background = if item_animating {
+                            div()
+                                .absolute()
+                                .inset_0()
+                                .with_animation(
+                                    item_animation_id,
+                                    Animation::new(CONTROL_MOTION).with_easing(ease_in_out),
+                                    move |element, delta| {
+                                        let progress =
+                                            if item_hovered { delta } else { 1.0 - delta };
+                                        element.bg(mix_color(
+                                            resting_background,
+                                            colors::base_800(),
+                                            progress,
+                                        ))
+                                    },
+                                )
+                                .into_any_element()
+                        } else {
+                            div()
+                                .absolute()
+                                .inset_0()
+                                .bg(if item_hovered {
+                                    colors::base_800()
+                                } else {
+                                    resting_background
+                                })
+                                .into_any_element()
+                        };
                         div()
-                            .absolute()
-                            .inset_0()
-                            .with_animation(
-                                item_animation_id,
-                                Animation::new(CONTROL_MOTION).with_easing(ease_in_out),
-                                move |element, delta| {
-                                    let progress = if item_hovered { delta } else { 1.0 - delta };
-                                    element.bg(mix_color(
-                                        resting_background,
-                                        colors::base_800(),
-                                        progress,
-                                    ))
-                                },
-                            )
-                            .into_any_element()
-                    } else {
-                        div()
-                            .absolute()
-                            .inset_0()
-                            .bg(if item_hovered {
-                                colors::base_800()
-                            } else {
-                                resting_background
+                            .id(SharedString::from(format!("{id}-option-{index}")))
+                            .relative()
+                            .w_full()
+                            .h(CONTROL_HEIGHT)
+                            .px_2()
+                            .flex()
+                            .items_center()
+                            .justify_between()
+                            .cursor_pointer()
+                            .control_text()
+                            .text_color(colors::base_200())
+                            .on_hover(move |hovered, window, cx| {
+                                set_dropdown_item_hovered(
+                                    &item_motion,
+                                    index,
+                                    *hovered,
+                                    window,
+                                    cx,
+                                );
+                            })
+                            .on_click(move |_, window, cx| {
+                                dropdown.update(cx, |state, cx| {
+                                    state.selected = index;
+                                    cx.emit(AudioDropdownEvent);
+                                    cx.notify();
+                                });
+                                set_dropdown_open(&close_motion, false, window, cx);
+                            })
+                            .child(item_background)
+                            .child(choice_label(choice))
+                            .when(index == selected, |element| {
+                                element.child(
+                                    svg()
+                                        .external_path(resolve_asset_path("assets/icons/check.svg"))
+                                        .size_4()
+                                        .text_color(colors::orange()),
+                                )
                             })
                             .into_any_element()
-                    };
-                    div()
-                        .id(SharedString::from(format!("{id}-option-{index}")))
-                        .relative()
-                        .w_full()
-                        .h(CONTROL_HEIGHT)
-                        .px_2()
-                        .flex()
-                        .items_center()
-                        .justify_between()
-                        .cursor_pointer()
-                        .control_text()
-                        .text_color(colors::base_200())
-                        .on_hover(move |hovered, window, cx| {
-                            set_dropdown_item_hovered(&item_motion, index, *hovered, window, cx);
-                        })
-                        .on_click(move |_, window, cx| {
-                            dropdown.update(cx, |state, cx| {
-                                state.selected = index;
-                                cx.emit(AudioDropdownEvent);
-                                cx.notify();
-                            });
-                            set_dropdown_open(&close_motion, false, window, cx);
-                        })
-                        .child(item_background)
-                        .child(choice_label(choice))
-                        .when(index == selected, |element| {
-                            element.child(
-                                svg()
-                                    .external_path(resolve_asset_path("assets/icons/check.svg"))
-                                    .size_4()
-                                    .text_color(colors::orange()),
-                            )
-                        })
-                        .into_any_element()
-                }))
-                .overflow_y_scrollbar(),
+                    }),
+                ),
+            )
+            .w_full(),
         )
         .with_animation(
             animation_id,

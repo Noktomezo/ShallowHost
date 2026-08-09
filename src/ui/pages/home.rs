@@ -1,6 +1,5 @@
 use gpui::prelude::*;
 use gpui::*;
-use gpui_component::StyledExt;
 use std::sync::Arc;
 use std::time::Instant;
 
@@ -241,7 +240,7 @@ fn setting_copy(title: &'static str, description: &'static str) -> AnyElement {
         .child(
             div()
                 .text_sm()
-                .font_medium()
+                .font_weight(FontWeight::MEDIUM)
                 .text_color(colors::base_200())
                 .child(i18n::t(title)),
         )

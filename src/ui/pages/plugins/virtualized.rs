@@ -2,8 +2,6 @@ use std::sync::Arc;
 
 use gpui::prelude::*;
 use gpui::*;
-use gpui_component::StyledExt;
-use gpui_component::input::InputState;
 
 use super::controls::{IconButtonStyle, chain_navigation_button, icon_button};
 use super::search;
@@ -13,6 +11,7 @@ use crate::infrastructure::engine::Engine;
 use crate::ui::components::badge::{BadgeStyle, badge, loading_badge};
 use crate::ui::components::cursor_tooltip;
 use crate::ui::components::smooth_scroll::{PageScrollbar, SmoothUniformListScroll};
+use crate::ui::components::text_input::TextInputState;
 use crate::ui::foundation::colors;
 use crate::ui::foundation::i18n;
 use crate::ui::foundation::plugin_format;
@@ -31,7 +30,7 @@ pub(super) struct HeaderContext {
     settings: PluginSettings,
     callbacks: DropdownCallbacks,
     scan_state: Entity<PluginScanState>,
-    search: Entity<InputState>,
+    search: Entity<TextInputState>,
     wheel_enabled: bool,
 }
 
@@ -41,7 +40,7 @@ impl HeaderContext {
         settings: PluginSettings,
         callbacks: DropdownCallbacks,
         scan_state: Entity<PluginScanState>,
-        search: Entity<InputState>,
+        search: Entity<TextInputState>,
         wheel_enabled: bool,
     ) -> Self {
         Self {
@@ -89,7 +88,7 @@ impl HeaderContext {
                             .child(
                                 div()
                                     .text_xl()
-                                    .font_semibold()
+                                    .font_weight(FontWeight::SEMIBOLD)
                                     .text_color(colors::base_200())
                                     .child(i18n::t("plugins.title")),
                             )
@@ -383,7 +382,7 @@ fn render_plugin_card(
                                     div()
                                         .truncate()
                                         .text_sm()
-                                        .font_bold()
+                                        .font_weight(FontWeight::BOLD)
                                         .text_color(colors::base_200())
                                         .child(plugin.name),
                                 )

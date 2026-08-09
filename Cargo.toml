@@ -29,8 +29,6 @@ strip = true
 cxx = "1.0.198"
 gpui = { git = "https://github.com/zed-industries/zed" }
 gpui_platform = { git = "https://github.com/zed-industries/zed", features = ["font-kit"] }
-gpui-component = { git = "https://github.com/longbridge/gpui-component" }
-gpui-component-assets = { git = "https://github.com/longbridge/gpui-component" }
 # Vendored from v0.0.6 with a Windows MSI handoff fix; see vendor/gpui-updater/README.shallowhost.md.
 gpui-updater = { path = "vendor/gpui-updater", features = ["gpui"] }
 rust-i18n = "3.1"
@@ -39,6 +37,8 @@ serde = { version = "1", features = ["derive"] }
 serde_json = "1"
 # Small, established edit-distance implementation for fuzzy plugin search.
 strsim = "0.11"
+# Unicode grapheme and word boundaries keep the native text input cursor safe.
+unicode-segmentation = "1.12"
 # Portable configuration is stored as a human-editable file beside the executable.
 toml = "0.9"
 

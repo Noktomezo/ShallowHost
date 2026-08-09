@@ -3,7 +3,8 @@ use std::rc::Rc;
 
 use gpui::prelude::*;
 use gpui::*;
-use gpui_component::ElementExt;
+
+use crate::ui::foundation::element_ext::ElementPrepaintExt as _;
 
 use crate::ui::foundation::motion::{DropdownMotion, set_dropdown_open};
 

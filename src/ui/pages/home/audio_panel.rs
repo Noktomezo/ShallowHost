@@ -1,7 +1,6 @@
+use crate::ui::components::smooth_scroll::ScrollableColumn;
 use gpui::prelude::*;
 use gpui::*;
-use gpui_component::StyledExt;
-use gpui_component::scroll::ScrollableElement;
 
 use crate::ui::components::volume_meter::volume_meter;
 use crate::ui::foundation::colors;
@@ -19,7 +18,7 @@ pub(super) fn page_header() -> AnyElement {
         .child(
             div()
                 .text_xl()
-                .font_semibold()
+                .font_weight(FontWeight::SEMIBOLD)
                 .text_color(colors::base_200())
                 .child(i18n::t("home.title")),
         )
@@ -105,87 +104,94 @@ pub(super) fn channel_panel(
                 .child(
                     div()
                         .text_sm()
-                        .font_medium()
+                        .font_weight(FontWeight::MEDIUM)
                         .text_color(colors::base_200())
                         .child(i18n::t(title)),
                 )
                 .child(volume_meter(level, peak)),
         )
         .child(
-            div()
-                .w_full()
-                .max_h(px(160.0))
-                .p_3()
-                .flex()
-                .flex_col()
-                .gap(px(6.0))
-                .overflow_y_scrollbar()
-                .bg(rgba(0xffffff08))
-                .border_1()
-                .border_color(colors::base_800())
-                .rounded_md()
-                .when(pairs.is_empty(), |element| {
-                    element.child(
-                        div()
-                            .text_xs()
-                            .text_color(colors::base_500())
-                            .child(i18n::t("home.noChannelsAvailable")),
-                    )
-                })
-                .children(pairs.into_iter().enumerate().map(|(row, pair)| {
-                    let checked = pair.indices.iter().all(|index| active.contains(index));
-                    let animate_checkbox = routing.channel_animating(direction, row);
-                    let callback = callback.clone();
-                    let indices = pair.indices;
-                    let direction_name = match direction {
-                        ChannelDirection::Input => "input",
-                        ChannelDirection::Output => "output",
-                    };
-                    let checkbox_id =
-                        SharedString::from(format!("channel-{direction_name}-{row}-checkbox"));
-                    let hover_key =
-                        SharedString::from(format!("channel-{direction_name}-{row}-hover"));
-                    let hover = crate::ui::foundation::hover_motion::progress(&hover_key, cx);
-                    div()
-                        .id(SharedString::from(format!(
-                            "channel-{direction_name}-{row}"
-                        )))
-                        .h(px(26.0))
-                        .px_1()
-                        .flex()
-                        .items_center()
-                        .gap_2()
-                        .rounded_sm()
-                        .cursor_pointer()
-                        .bg(colors::base_850().opacity(hover))
-                        .on_hover(move |hovered, window, cx| {
-                            crate::ui::foundation::hover_motion::set_hovered(
-                                hover_key.clone(),
-                                *hovered,
-                                window,
-                                cx,
-                            );
-                        })
-                        .on_click(move |_, window, cx| {
-                            callback(direction, indices.clone(), !checked, window, cx);
-                        })
-                        .child(channel_checkbox(
-                            checkbox_id,
-                            checked,
-                            animate_checkbox,
-                            hover,
-                        ))
-                        .child(
+            ScrollableColumn::new(
+                SharedString::from(format!("channel-{}-scroll", direction_name(direction))),
+                px(160.0),
+                div()
+                    .w_full()
+                    .p_3()
+                    .flex()
+                    .flex_col()
+                    .gap(px(6.0))
+                    .when(pairs.is_empty(), |element| {
+                        element.child(
                             div()
-                                .min_w_0()
-                                .truncate()
-                                .control_text()
-                                .text_color(colors::base_300())
-                                .child(pair.label),
+                                .text_xs()
+                                .text_color(colors::base_500())
+                                .child(i18n::t("home.noChannelsAvailable")),
                         )
-                })),
+                    })
+                    .children(pairs.into_iter().enumerate().map(|(row, pair)| {
+                        let checked = pair.indices.iter().all(|index| active.contains(index));
+                        let animate_checkbox = routing.channel_animating(direction, row);
+                        let callback = callback.clone();
+                        let indices = pair.indices;
+                        let direction_name = direction_name(direction);
+                        let checkbox_id =
+                            SharedString::from(format!("channel-{direction_name}-{row}-checkbox"));
+                        let hover_key =
+                            SharedString::from(format!("channel-{direction_name}-{row}-hover"));
+                        let hover = crate::ui::foundation::hover_motion::progress(&hover_key, cx);
+                        div()
+                            .id(SharedString::from(format!(
+                                "channel-{direction_name}-{row}"
+                            )))
+                            .h(px(26.0))
+                            .px_1()
+                            .flex()
+                            .items_center()
+                            .gap_2()
+                            .rounded_sm()
+                            .cursor_pointer()
+                            .bg(colors::base_850().opacity(hover))
+                            .on_hover(move |hovered, window, cx| {
+                                crate::ui::foundation::hover_motion::set_hovered(
+                                    hover_key.clone(),
+                                    *hovered,
+                                    window,
+                                    cx,
+                                );
+                            })
+                            .on_click(move |_, window, cx| {
+                                callback(direction, indices.clone(), !checked, window, cx);
+                            })
+                            .child(channel_checkbox(
+                                checkbox_id,
+                                checked,
+                                animate_checkbox,
+                                hover,
+                            ))
+                            .child(
+                                div()
+                                    .min_w_0()
+                                    .truncate()
+                                    .control_text()
+                                    .text_color(colors::base_300())
+                                    .child(pair.label),
+                            )
+                    })),
+            )
+            .w_full()
+            .bg(rgba(0xffffff08))
+            .border_1()
+            .border_color(colors::base_800())
+            .rounded_md(),
         )
         .into_any_element()
+}
+
+const fn direction_name(direction: ChannelDirection) -> &'static str {
+    match direction {
+        ChannelDirection::Input => "input",
+        ChannelDirection::Output => "output",
+    }
 }
 
 fn channel_checkbox(id: SharedString, checked: bool, animate: bool, hover: f32) -> AnyElement {

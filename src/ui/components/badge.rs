@@ -1,6 +1,5 @@
 use gpui::prelude::*;
 use gpui::*;
-use gpui_component::StyledExt;
 use std::time::Duration;
 
 use crate::ui::foundation::colors;
@@ -58,7 +57,7 @@ pub fn badge(text: impl Into<SharedString>, style: BadgeStyle) -> Div {
         .rounded_sm()
         .bg(background)
         .text_xs()
-        .font_medium()
+        .font_weight(FontWeight::MEDIUM)
         .text_color(foreground)
         .child(text.into())
 }
@@ -87,7 +86,7 @@ pub fn loading_badge(text: impl Into<SharedString>) -> Div {
         .rounded_sm()
         .bg(colors::orange().opacity(0.12))
         .text_xs()
-        .font_medium()
+        .font_weight(FontWeight::MEDIUM)
         .text_color(colors::orange())
         .child(icon)
         .child(text.into())
@@ -107,7 +106,7 @@ pub fn progress_badge(text: impl Into<SharedString>, progress: f32) -> Div {
         .rounded_sm()
         .bg(colors::orange().opacity(0.12))
         .text_xs()
-        .font_medium()
+        .font_weight(FontWeight::MEDIUM)
         .text_color(colors::orange())
         .child(progress_ring(progress))
         .child(text.into())

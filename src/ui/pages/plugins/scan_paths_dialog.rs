@@ -1,6 +1,5 @@
 use gpui::prelude::*;
 use gpui::*;
-use gpui_component::StyledExt;
 
 use crate::infrastructure::config::PluginSettings;
 use crate::ui::components::smooth_scroll::SmoothVerticalScroll;
@@ -131,7 +130,7 @@ fn dialog_header() -> AnyElement {
         .child(
             div()
                 .text_base()
-                .font_semibold()
+                .font_weight(FontWeight::SEMIBOLD)
                 .text_color(colors::base_200())
                 .child(i18n::t("plugins.scanPathsTitle")),
         )
@@ -243,7 +242,7 @@ fn path_section(
                 .child(
                     div()
                         .text_sm()
-                        .font_semibold()
+                        .font_weight(FontWeight::SEMIBOLD)
                         .text_color(colors::base_200())
                         .child(i18n::t(title)),
                 )

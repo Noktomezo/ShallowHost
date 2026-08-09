@@ -104,6 +104,6 @@ JUCE is loaded from `vendor/juce` when available. Otherwise CMake downloads the 
 
 ## 🙏 Acknowledgments
 
-[LightHost](https://github.com/opencma/LightHost), [GPUI](https://www.gpui.rs/), [gpui-component](https://github.com/longbridge/gpui-component), [JUCE](https://github.com/juce-framework/JUCE), [gpui-updater](https://github.com/AprilNEA/gpui-updater), and the [Flexoki](https://stephango.com/flexoki) palette.
+[LightHost](https://github.com/opencma/LightHost), [GPUI](https://www.gpui.rs/), [JUCE](https://github.com/juce-framework/JUCE), [gpui-updater](https://github.com/AprilNEA/gpui-updater), and the [Flexoki](https://stephango.com/flexoki) palette.
 
 ShallowHost is distributed under the [MIT license](LICENSE).

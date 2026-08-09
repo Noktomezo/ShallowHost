@@ -10,6 +10,56 @@ pub use scrollbar::PageScrollbar;
 const SETTLE_DISTANCE: Pixels = px(0.5);
 const RESPONSE_SECONDS: f32 = 0.065;
 
+#[derive(IntoElement)]
+pub struct ScrollableColumn {
+    id: ElementId,
+    max_height: Pixels,
+    child: AnyElement,
+    base: Div,
+}
+
+impl ScrollableColumn {
+    pub fn new(id: impl Into<ElementId>, max_height: Pixels, child: impl IntoElement) -> Self {
+        Self {
+            id: id.into(),
+            max_height,
+            child: child.into_any_element(),
+            base: div(),
+        }
+    }
+}
+
+impl Styled for ScrollableColumn {
+    fn style(&mut self) -> &mut StyleRefinement {
+        self.base.style()
+    }
+}
+
+impl RenderOnce for ScrollableColumn {
+    fn render(self, window: &mut Window, cx: &mut App) -> impl IntoElement {
+        let handle = window
+            .use_keyed_state((self.id.clone(), "scroll-handle"), cx, |_, _| {
+                ScrollHandle::new()
+            })
+            .read(cx)
+            .clone();
+        self.base
+            .relative()
+            .overflow_hidden()
+            .max_h(self.max_height)
+            .child(
+                div()
+                    .id((self.id.clone(), "area"))
+                    .w_full()
+                    .max_h(self.max_height)
+                    .track_scroll(&handle)
+                    .overflow_y_scroll()
+                    .child(self.child),
+            )
+            .child(PageScrollbar::new(self.id, handle))
+    }
+}
+
 struct SmoothScrollState {
     handle: ScrollHandle,
     target_y: Pixels,

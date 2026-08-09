@@ -4,7 +4,8 @@ use std::sync::Arc;
 
 use gpui::prelude::*;
 use gpui::*;
-use gpui_component::{ElementExt, StyledExt};
+
+use crate::ui::foundation::element_ext::ElementPrepaintExt as _;
 
 use super::chain_drag::{self, ProjectedRow};
 use super::{action_button, button_motion_key, card, card_header, icon, icon_button, separator};
@@ -412,7 +413,7 @@ pub(super) fn chain_item_visual(
                                     div()
                                         .truncate()
                                         .text_sm()
-                                        .font_semibold()
+                                        .font_weight(FontWeight::SEMIBOLD)
                                         .text_color(colors::base_200())
                                         .child(item.name.clone()),
                                 )

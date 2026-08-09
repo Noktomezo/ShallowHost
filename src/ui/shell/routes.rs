@@ -8,12 +8,12 @@ use crate::infrastructure::config::{PluginSettings, SystemSettings};
 use crate::infrastructure::engine::Engine;
 use gpui_updater::Updater;
 
+use crate::ui::components::text_input::TextInputState;
 use crate::ui::foundation::motion::DropdownMotion;
 use crate::ui::pages::plugins::PluginScanState;
 use crate::ui::pages::{HomePage, PluginsPage, SettingsPage};
 use crate::ui::state::audio_controls::{AudioControls, ChannelDirection};
 use crate::ui::state::chain_operations::ChainOperationState;
-use gpui_component::input::InputState;
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
 pub enum Route {
@@ -80,7 +80,7 @@ pub struct RenderContext {
     pub theme_dropdown_motion: Entity<DropdownMotion>,
     pub language_dropdown_motion: Entity<DropdownMotion>,
     pub plugin_scan_state: Entity<PluginScanState>,
-    pub plugin_search: Entity<InputState>,
+    pub plugin_search: Entity<TextInputState>,
     pub chain_operation_state: Entity<ChainOperationState>,
     pub updater: Entity<Updater>,
 }
