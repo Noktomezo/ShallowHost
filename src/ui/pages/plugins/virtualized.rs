@@ -132,7 +132,7 @@ impl HeaderContext {
                     .child(
                         icon_button(
                             "btn-scan-paths",
-                            "assets/icons/settings.svg",
+                            "assets/icons/folder-cog.svg",
                             i18n::t("plugins.scanPathsTitle"),
                             IconButtonStyle::Outline,
                             false,
