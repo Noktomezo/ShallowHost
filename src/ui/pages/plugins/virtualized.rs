@@ -16,7 +16,10 @@ use crate::ui::shell::routes::{DropdownCallbacks, NavigateCallback, Route};
 use crate::ui::state::chain_operations::{self, ChainOperationState, PendingPlugin};
 
 // 40 px content + 32 px card padding + 12 px inter-row spacing.
-const ESTIMATED_ROW_HEIGHT: Pixels = px(84.0);
+// Keep every virtual row at this exact height: ListState uses the value to
+// compute the complete scrollbar extent before off-screen rows are rendered.
+const CARD_HEIGHT: Pixels = px(72.0);
+const ROW_HEIGHT: Pixels = px(84.0);
 const LIST_OVERDRAW: Pixels = px(178.0);
 
 #[derive(Clone)]
@@ -168,12 +171,12 @@ pub(super) fn render(
     let state = window
         .use_keyed_state("plugins-virtual-list", cx, |_, _| VirtualListState {
             list: ListState::new(item_count, ListAlignment::Top, LIST_OVERDRAW)
-                .with_uniform_item_height(ESTIMATED_ROW_HEIGHT),
+                .with_uniform_item_height(ROW_HEIGHT),
         })
         .clone();
     let list_state = state.read(cx).list.clone();
     if list_state.item_count() != item_count {
-        list_state.reset_with_uniform_height(item_count, ESTIMATED_ROW_HEIGHT);
+        list_state.reset_with_uniform_height(item_count, ROW_HEIGHT);
     }
 
     let scrollbar_state = list_state.clone();
@@ -184,6 +187,7 @@ pub(super) fn render(
         if row == 0 {
             return div()
                 .w_full()
+                .h(ROW_HEIGHT)
                 .px_4()
                 .pt_4()
                 .pb_3()
@@ -197,12 +201,9 @@ pub(super) fn render(
         };
         div()
             .w_full()
+            .h(ROW_HEIGHT)
             .px_4()
-            .pb(if index + 1 == plugin_count {
-                px(16.0)
-            } else {
-                px(12.0)
-            })
+            .pb_3()
             .child(render_plugin_card(
                 plugin,
                 Arc::clone(&engine),
@@ -260,6 +261,7 @@ fn render_plugin_card(
     div()
         .id(card_id)
         .w_full()
+        .h(CARD_HEIGHT)
         .p_4()
         .bg(colors::base_950())
         .border_1()
@@ -312,6 +314,7 @@ fn render_plugin_card(
                                 .gap_2()
                                 .child(
                                     div()
+                                        .truncate()
                                         .text_sm()
                                         .font_bold()
                                         .text_color(colors::base_200())
