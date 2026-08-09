@@ -4,6 +4,17 @@ use super::MainView;
 use crate::ui::foundation::motion::DIALOG_MOTION;
 
 impl MainView {
+    pub(super) fn dismiss_scan_paths_immediately(&mut self) {
+        if !self.scan_paths_open && !self.scan_paths_closing {
+            return;
+        }
+
+        self.scan_paths_open = false;
+        self.scan_paths_closing = false;
+        self.scan_paths_revision = self.scan_paths_revision.wrapping_add(1);
+        self._scan_paths_motion_task = Task::ready(());
+    }
+
     pub(super) fn set_scan_paths_open(&mut self, open: bool, cx: &mut Context<Self>) {
         if self.scan_paths_open == open && !(open && self.scan_paths_closing) {
             return;

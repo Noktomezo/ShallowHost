@@ -269,7 +269,7 @@ impl MainView {
                         cx,
                     );
                 }
-                Route::Plugins => {}
+                Route::Plugins => self.dismiss_scan_paths_immediately(),
             }
             let now = Instant::now();
             self.deselected_route = Some(self.current_route);
