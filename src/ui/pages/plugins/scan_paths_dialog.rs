@@ -155,10 +155,12 @@ fn path_section(
     let picker = callbacks.on_pick_plugin_path.clone();
     let update = callbacks.on_update_plugin_path.clone();
     let list_height = path_list_height(paths.len());
+    let has_overflow = paths.len() > 4;
     let scroll_id = SharedString::from(format!("{section_id}-paths-scroll"));
     let list_content = div()
         .w_full()
         .p_2()
+        .when(has_overflow, |content| content.pr(px(20.0)))
         .flex()
         .flex_col()
         .gap(px(6.0))
