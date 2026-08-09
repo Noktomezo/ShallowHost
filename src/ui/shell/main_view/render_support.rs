@@ -5,7 +5,7 @@ use std::time::Instant;
 use super::MainView;
 use crate::ui::shell::routes::{
     AudioMeterState, DropdownCallbacks, Language, PluginPathKind, PluginPathUpdate, RenderContext,
-    Route, SystemSetting, ThemeMode,
+    Route, ScanPathsDialogState, SystemSetting, ThemeMode,
 };
 use crate::ui::state::audio_controls::ChannelDirection;
 
@@ -16,7 +16,11 @@ impl MainView {
             selected_language: self.selected_language,
             transparent_shell: self.transparent_shell,
             transparency_changed_at: self.transparency_changed_at,
-            scan_paths_open: self.scan_paths_open,
+            scan_paths: ScanPathsDialogState {
+                open: self.scan_paths_open,
+                closing: self.scan_paths_closing,
+                revision: self.scan_paths_revision,
+            },
             audio_controls: self.audio_controls.clone(),
             is_mono: self.is_mono,
             mono_changed_at: self.mono_changed_at,

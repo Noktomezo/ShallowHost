@@ -28,6 +28,7 @@ pub(super) struct HeaderContext {
     settings: PluginSettings,
     callbacks: DropdownCallbacks,
     scan_state: Entity<PluginScanState>,
+    wheel_enabled: bool,
 }
 
 impl HeaderContext {
@@ -36,12 +37,14 @@ impl HeaderContext {
         settings: PluginSettings,
         callbacks: DropdownCallbacks,
         scan_state: Entity<PluginScanState>,
+        wheel_enabled: bool,
     ) -> Self {
         Self {
             engine,
             settings,
             callbacks,
             scan_state,
+            wheel_enabled,
         }
     }
 
@@ -177,6 +180,7 @@ pub(super) fn render(
     let render_plugins = Arc::clone(&plugins);
     let plugin_count = plugins.len();
     let card_scan_state = header.scan_state.clone();
+    let wheel_enabled = header.wheel_enabled;
     let content = uniform_list(
         "plugins-uniform-list",
         item_count,
@@ -221,11 +225,14 @@ pub(super) fn render(
     div()
         .relative()
         .size_full()
-        .child(SmoothUniformListScroll::new(
-            "plugins-virtual-list-smooth-scroll",
-            scroll_handle.clone(),
-            content.size_full(),
-        ))
+        .child(
+            SmoothUniformListScroll::new(
+                "plugins-virtual-list-smooth-scroll",
+                scroll_handle.clone(),
+                content.size_full(),
+            )
+            .wheel_enabled(wheel_enabled),
+        )
         .child(PageScrollbar::new(
             "plugins-virtual-list-scrollbar",
             scroll_handle,

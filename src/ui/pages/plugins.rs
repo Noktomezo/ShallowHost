@@ -5,7 +5,7 @@ use gpui::*;
 
 use crate::infrastructure::config::PluginSettings;
 use crate::infrastructure::engine::Engine;
-use crate::ui::shell::routes::{DropdownCallbacks, NavigateCallback};
+use crate::ui::shell::routes::{DropdownCallbacks, NavigateCallback, ScanPathsDialogState};
 use crate::ui::state::chain_operations::ChainOperationState;
 
 mod controls;
@@ -32,7 +32,7 @@ pub struct PluginsPage {
     on_navigate: NavigateCallback,
     engine: Arc<Engine>,
     settings: PluginSettings,
-    scan_paths_open: bool,
+    scan_paths: ScanPathsDialogState,
     callbacks: DropdownCallbacks,
     scan_state: Entity<PluginScanState>,
     chain_operations: Entity<ChainOperationState>,
@@ -43,7 +43,7 @@ impl PluginsPage {
         cb: &DropdownCallbacks,
         engine: Arc<Engine>,
         settings: PluginSettings,
-        scan_paths_open: bool,
+        scan_paths: ScanPathsDialogState,
         scan_state: Entity<PluginScanState>,
         chain_operations: Entity<ChainOperationState>,
     ) -> Self {
@@ -51,7 +51,7 @@ impl PluginsPage {
             on_navigate: cb.on_navigate.clone(),
             engine,
             settings,
-            scan_paths_open,
+            scan_paths,
             callbacks: cb.clone(),
             scan_state,
             chain_operations,
@@ -87,11 +87,13 @@ impl PluginsPage {
             .collect::<Vec<_>>();
         sort_plugins(&mut plugins);
         let plugins = Arc::new(plugins);
+        let scan_paths_visible = self.scan_paths.visible();
         let header = virtualized::HeaderContext::new(
             Arc::clone(&self.engine),
             self.settings.clone(),
             self.callbacks.clone(),
             self.scan_state.clone(),
+            !scan_paths_visible,
         );
         let content = virtualized::render(
             window,
@@ -107,10 +109,12 @@ impl PluginsPage {
             .relative()
             .size_full()
             .child(content)
-            .when(self.scan_paths_open, |element| {
+            .when(scan_paths_visible, |element| {
                 element.child(scan_paths_dialog::render_scan_paths_dialog(
                     &self.settings,
                     &self.callbacks,
+                    self.scan_paths.open,
+                    self.scan_paths.revision,
                 ))
             })
     }

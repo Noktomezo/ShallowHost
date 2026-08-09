@@ -6,6 +6,14 @@ use std::path::{Path, PathBuf};
 
 use crate::domain::preferences::{Language, ThemeMode};
 
+const CURRENT_CONFIG_VERSION: u32 = 2;
+const STEINBERG_VST2_PATHS: [&str; 4] = [
+    r"C:\Program Files\Steinberg\VstPlugins",
+    r"C:\Program Files (x86)\Steinberg\VstPlugins",
+    r"C:\Program Files\Common Files\Steinberg\VST2",
+    r"C:\Program Files (x86)\Common Files\Steinberg\VST2",
+];
+
 #[derive(Clone, Debug, Serialize, Deserialize)]
 #[serde(default)]
 pub struct AppConfig {
@@ -21,7 +29,7 @@ pub struct AppConfig {
 impl Default for AppConfig {
     fn default() -> Self {
         Self {
-            version: 1,
+            version: CURRENT_CONFIG_VERSION,
             theme: ThemeMode::System,
             language: Language::System,
             transparent_shell: true,
@@ -85,6 +93,10 @@ impl Default for PluginSettings {
                 String::from(r"C:\Program Files\VSTPlugins"),
                 String::from(r"C:\Program Files\Common Files\VST2"),
                 String::from(r"C:\Program Files (x86)\VSTPlugins"),
+                String::from(STEINBERG_VST2_PATHS[0]),
+                String::from(STEINBERG_VST2_PATHS[1]),
+                String::from(STEINBERG_VST2_PATHS[2]),
+                String::from(STEINBERG_VST2_PATHS[3]),
             ],
             vst3_paths: vec![
                 String::from(r"C:\Program Files\Common Files\VST3"),
@@ -134,7 +146,7 @@ impl ConfigStore {
         })?;
 
         let config_exists = path.exists();
-        let config = if config_exists {
+        let mut config = if config_exists {
             let contents = fs::read_to_string(&path).map_err(|source| ConfigError::Read {
                 path: path.clone(),
                 source,
@@ -146,6 +158,7 @@ impl ConfigStore {
         } else {
             AppConfig::default()
         };
+        let config_migrated = migrate_config(&mut config);
 
         let store = Self {
             path,
@@ -153,7 +166,7 @@ impl ConfigStore {
             config,
         };
         store.migrate_legacy_cache()?;
-        if !config_exists {
+        if !config_exists || config_migrated {
             store.save()?;
         }
         Ok(store)
@@ -200,6 +213,25 @@ impl ConfigStore {
         })?;
         Ok(())
     }
+}
+
+fn migrate_config(config: &mut AppConfig) -> bool {
+    if config.version >= CURRENT_CONFIG_VERSION {
+        return false;
+    }
+
+    for path in STEINBERG_VST2_PATHS {
+        if !config
+            .plugins
+            .vst2_paths
+            .iter()
+            .any(|existing| existing.eq_ignore_ascii_case(path))
+        {
+            config.plugins.vst2_paths.push(path.into());
+        }
+    }
+    config.version = CURRENT_CONFIG_VERSION;
+    true
 }
 
 #[derive(Debug)]
@@ -272,7 +304,7 @@ impl std::error::Error for ConfigError {}
 
 #[cfg(test)]
 mod tests {
-    use super::{AppConfig, PluginSettings};
+    use super::{AppConfig, CURRENT_CONFIG_VERSION, PluginSettings, migrate_config};
 
     #[test]
     fn old_config_gets_default_vst2_paths_without_losing_vst3_paths() {
@@ -289,5 +321,20 @@ mod tests {
             config.plugins.vst2_paths,
             PluginSettings::default().vst2_paths
         );
+    }
+
+    #[test]
+    fn version_one_config_adds_steinberg_paths_once() {
+        let mut config = AppConfig {
+            version: 1,
+            ..AppConfig::default()
+        };
+        config.plugins.vst2_paths = vec![String::from(r"C:\Program Files\Steinberg\VstPlugins")];
+
+        assert!(migrate_config(&mut config));
+        assert_eq!(config.version, CURRENT_CONFIG_VERSION);
+        assert_eq!(config.plugins.vst2_paths.len(), 4);
+        assert!(!migrate_config(&mut config));
+        assert_eq!(config.plugins.vst2_paths.len(), 4);
     }
 }

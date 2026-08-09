@@ -382,11 +382,6 @@ impl MainView {
         cx.notify();
     }
 
-    pub(super) fn set_scan_paths_open(&mut self, open: bool, cx: &mut Context<Self>) {
-        self.scan_paths_open = open;
-        cx.notify();
-    }
-
     pub(super) fn update_plugin_path(&mut self, update: PluginPathUpdate, cx: &mut Context<Self>) {
         let settings = &mut self.storage.config_mut().plugins;
         match update {

@@ -50,12 +50,25 @@ pub struct AudioMeterState {
     pub output_peak: bool,
 }
 
+#[derive(Debug, Clone, Copy, Default)]
+pub struct ScanPathsDialogState {
+    pub open: bool,
+    pub closing: bool,
+    pub revision: u64,
+}
+
+impl ScanPathsDialogState {
+    pub const fn visible(self) -> bool {
+        self.open || self.closing
+    }
+}
+
 pub struct RenderContext {
     pub selected_theme: ThemeMode,
     pub selected_language: Language,
     pub transparent_shell: bool,
     pub transparency_changed_at: Option<Instant>,
-    pub scan_paths_open: bool,
+    pub scan_paths: ScanPathsDialogState,
     pub audio_controls: AudioControls,
     pub is_mono: bool,
     pub mono_changed_at: Option<Instant>,
@@ -121,7 +134,7 @@ impl Route {
                 callbacks,
                 engine,
                 ctx.plugin_settings,
-                ctx.scan_paths_open,
+                ctx.scan_paths,
                 ctx.plugin_scan_state,
                 ctx.chain_operation_state,
             )

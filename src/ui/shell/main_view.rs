@@ -23,6 +23,7 @@ use gpui_updater::Updater;
 
 mod navigation_item;
 mod render_support;
+mod scan_paths_motion;
 mod sidebar_motion;
 mod state_actions;
 
@@ -42,6 +43,8 @@ pub struct MainView {
     transparent_shell: bool,
     transparency_changed_at: Option<Instant>,
     scan_paths_open: bool,
+    scan_paths_closing: bool,
+    scan_paths_revision: u64,
     audio_controls: AudioControls,
     is_mono: bool,
     mono_changed_at: Option<Instant>,
@@ -68,6 +71,7 @@ pub struct MainView {
     _system_task: Task<()>,
     _chain_restore_task: Task<()>,
     _audio_routing_task: Task<()>,
+    _scan_paths_motion_task: Task<()>,
     audio_routing_revision: u64,
     update_check_task: Option<Task<()>>,
 }
@@ -130,6 +134,8 @@ impl MainView {
             transparent_shell: initial_config.transparent_shell,
             transparency_changed_at: None,
             scan_paths_open: false,
+            scan_paths_closing: false,
+            scan_paths_revision: 0,
             audio_controls: audio_controls.clone(),
             is_mono: initial_config.audio.is_mono,
             mono_changed_at: None,
@@ -156,6 +162,7 @@ impl MainView {
             _system_task: Task::ready(()),
             _chain_restore_task: Task::ready(()),
             _audio_routing_task: Task::ready(()),
+            _scan_paths_motion_task: Task::ready(()),
             audio_routing_revision: 0,
             update_check_task: None,
         };

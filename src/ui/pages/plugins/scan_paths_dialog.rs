@@ -5,6 +5,7 @@ use gpui_component::scroll::ScrollableElement;
 
 use crate::infrastructure::config::PluginSettings;
 use crate::ui::foundation::control_style::ControlTypography;
+use crate::ui::foundation::motion::{DIALOG_MOTION, mix_color};
 use crate::ui::foundation::{colors, i18n};
 use crate::ui::resolve_asset_path;
 use crate::ui::shell::routes::{DropdownCallbacks, PluginPathKind, PluginPathUpdate};
@@ -12,10 +13,91 @@ use crate::ui::shell::routes::{DropdownCallbacks, PluginPathKind, PluginPathUpda
 pub(super) fn render_scan_paths_dialog(
     settings: &PluginSettings,
     callbacks: &DropdownCallbacks,
+    open: bool,
+    revision: u64,
 ) -> AnyElement {
     let close_overlay = callbacks.on_set_scan_paths_open.clone();
     let close_button = callbacks.on_set_scan_paths_open.clone();
     let reset = callbacks.on_update_plugin_path.clone();
+    let closing = !open;
+    let dialog_animation_id =
+        ElementId::NamedInteger(SharedString::from("scan-paths-dialog-motion"), revision);
+    let overlay_animation_id =
+        ElementId::NamedInteger(SharedString::from("scan-paths-overlay-motion"), revision);
+
+    let dialog = div()
+        .id("scan-paths-dialog")
+        .w(px(560.0))
+        .max_h(px(620.0))
+        .flex()
+        .flex_col()
+        .bg(colors::base_950())
+        .border_1()
+        .border_color(colors::base_800())
+        .rounded_lg()
+        .shadow_lg()
+        .on_click(|_, _, cx| cx.stop_propagation())
+        .child(dialog_header())
+        .child(separator())
+        .child(
+            div()
+                .p_4()
+                .flex()
+                .flex_col()
+                .gap_4()
+                .child(path_section(
+                    PluginPathKind::Vst2,
+                    "vst2",
+                    "plugins.vst2SearchPaths",
+                    "plugins.noVst2Paths",
+                    &settings.vst2_paths,
+                    callbacks,
+                ))
+                .child(path_section(
+                    PluginPathKind::Vst3,
+                    "vst3",
+                    "plugins.vst3SearchPaths",
+                    "plugins.noVst3Paths",
+                    &settings.vst3_paths,
+                    callbacks,
+                )),
+        )
+        .child(separator())
+        .child(
+            div()
+                .p_4()
+                .flex()
+                .items_center()
+                .justify_between()
+                .child(
+                    text_button(
+                        "scan-paths-reset",
+                        "assets/icons/refresh-cw.svg",
+                        i18n::t("plugins.resetDefaults"),
+                        false,
+                    )
+                    .on_click(move |_, window, cx| {
+                        reset(PluginPathUpdate::Reset, window, cx);
+                    }),
+                )
+                .child(
+                    text_button(
+                        "scan-paths-done",
+                        "assets/icons/check.svg",
+                        i18n::t("plugins.done"),
+                        true,
+                    )
+                    .on_click(move |_, window, cx| close_button(false, window, cx)),
+                ),
+        )
+        .with_animation(
+            dialog_animation_id,
+            Animation::new(DIALOG_MOTION).with_easing(ease_in_out),
+            move |dialog, delta| {
+                let progress = if closing { 1.0 - delta } else { delta };
+                dialog.opacity(progress).mt(px(8.0 * (1.0 - progress)))
+            },
+        );
 
     div()
         .id("scan-paths-overlay")
@@ -25,74 +107,16 @@ pub(super) fn render_scan_paths_dialog(
         .items_center()
         .justify_center()
         .occlude()
-        .bg(rgba(0x100f0f99))
+        .on_scroll_wheel(|_, _, cx| cx.stop_propagation())
         .on_click(move |_, window, cx| close_overlay(false, window, cx))
-        .child(
-            div()
-                .id("scan-paths-dialog")
-                .w(px(560.0))
-                .max_h(px(620.0))
-                .flex()
-                .flex_col()
-                .bg(colors::base_950())
-                .border_1()
-                .border_color(colors::base_800())
-                .rounded_lg()
-                .shadow_lg()
-                .on_click(|_, _, cx| cx.stop_propagation())
-                .child(dialog_header())
-                .child(separator())
-                .child(
-                    div()
-                        .p_4()
-                        .flex()
-                        .flex_col()
-                        .gap_4()
-                        .child(path_section(
-                            PluginPathKind::Vst2,
-                            "vst2",
-                            "plugins.vst2SearchPaths",
-                            "plugins.noVst2Paths",
-                            &settings.vst2_paths,
-                            callbacks,
-                        ))
-                        .child(path_section(
-                            PluginPathKind::Vst3,
-                            "vst3",
-                            "plugins.vst3SearchPaths",
-                            "plugins.noVst3Paths",
-                            &settings.vst3_paths,
-                            callbacks,
-                        )),
-                )
-                .child(separator())
-                .child(
-                    div()
-                        .p_4()
-                        .flex()
-                        .items_center()
-                        .justify_between()
-                        .child(
-                            text_button(
-                                "scan-paths-reset",
-                                "assets/icons/refresh-cw.svg",
-                                i18n::t("plugins.resetDefaults"),
-                                false,
-                            )
-                            .on_click(move |_, window, cx| {
-                                reset(PluginPathUpdate::Reset, window, cx);
-                            }),
-                        )
-                        .child(
-                            text_button(
-                                "scan-paths-done",
-                                "assets/icons/check.svg",
-                                i18n::t("plugins.done"),
-                                true,
-                            )
-                            .on_click(move |_, window, cx| close_button(false, window, cx)),
-                        ),
-                ),
+        .child(dialog)
+        .with_animation(
+            overlay_animation_id,
+            Animation::new(DIALOG_MOTION).with_easing(ease_in_out),
+            move |overlay, delta| {
+                let progress = if closing { 1.0 - delta } else { delta };
+                overlay.bg(mix_color(rgba(0x100f0f00), rgba(0x100f0f99), progress))
+            },
         )
         .into_any_element()
 }

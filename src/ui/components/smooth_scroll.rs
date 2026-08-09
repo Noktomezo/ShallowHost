@@ -107,6 +107,7 @@ pub struct SmoothUniformListScroll {
     id: ElementId,
     handle: UniformListScrollHandle,
     child: AnyElement,
+    wheel_enabled: bool,
 }
 
 impl SmoothUniformListScroll {
@@ -119,7 +120,13 @@ impl SmoothUniformListScroll {
             id: id.into(),
             handle,
             child: child.into_any_element(),
+            wheel_enabled: true,
         }
+    }
+
+    pub fn wheel_enabled(mut self, enabled: bool) -> Self {
+        self.wheel_enabled = enabled;
+        self
     }
 }
 
@@ -139,6 +146,7 @@ impl RenderOnce for SmoothUniformListScroll {
                 .into_any_element(),
             state,
             handle: UniformScrollHandle(self.handle),
+            wheel_enabled: self.wheel_enabled,
         }
     }
 }
@@ -170,6 +178,7 @@ struct CaptureListWheel<H: SmoothVirtualHandle> {
     child: AnyElement,
     state: Entity<SmoothListState>,
     handle: H,
+    wheel_enabled: bool,
 }
 
 impl<H: SmoothVirtualHandle> IntoElement for CaptureListWheel<H> {
@@ -225,6 +234,10 @@ impl<H: SmoothVirtualHandle> Element for CaptureListWheel<H> {
         cx: &mut App,
     ) {
         self.child.paint(window, cx);
+
+        if !self.wheel_enabled {
+            return;
+        }
 
         let state = self.state.clone();
         let handle = self.handle.clone();

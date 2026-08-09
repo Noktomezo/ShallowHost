@@ -3,6 +3,7 @@ use std::time::{Duration, Instant};
 
 pub const CONTROL_MOTION: Duration = Duration::from_millis(150);
 pub const MENU_MOTION: Duration = Duration::from_millis(140);
+pub const DIALOG_MOTION: Duration = Duration::from_millis(180);
 pub const MODE_MOTION: Duration = Duration::from_millis(300);
 pub const TOOLTIP_MOTION: Duration = Duration::from_millis(130);
 pub const UPDATE_PULSE_MOTION: Duration = Duration::from_millis(1_400);
