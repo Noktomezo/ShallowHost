@@ -64,7 +64,7 @@ fn main() {
     if cfg!(target_os = "windows") {
         for library in [
             "ole32", "user32", "gdi32", "winmm", "imm32", "oleaut32", "version", "advapi32",
-            "setupapi", "shell32", "dwmapi",
+            "setupapi", "shell32", "dwmapi", "comdlg32",
         ] {
             println!("cargo:rustc-link-lib=dylib={library}");
         }
