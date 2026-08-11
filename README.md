@@ -4,15 +4,12 @@
   <p>A native Windows host for real-time audio processing with VST2 and VST3 plug-ins.</p>
 
   <p>
-    <picture><source media="(prefers-color-scheme: dark)" srcset="https://www.shieldcn.dev/github/ci/Noktomezo/ShallowHost.svg?variant=secondary&amp;size=xs&amp;mode=dark&amp;theme=neutral"><img alt="CI" src="https://www.shieldcn.dev/github/ci/Noktomezo/ShallowHost.svg?variant=secondary&amp;size=xs&amp;mode=light&amp;theme=neutral"></picture>
-    <picture><source media="(prefers-color-scheme: dark)" srcset="https://www.shieldcn.dev/github/release/Noktomezo/ShallowHost.svg?size=xs&amp;mode=dark&amp;theme=neutral"><img alt="Release" src="https://www.shieldcn.dev/github/release/Noktomezo/ShallowHost.svg?size=xs&amp;mode=light&amp;theme=neutral"></picture>
-    <picture><source media="(prefers-color-scheme: dark)" srcset="https://www.shieldcn.dev/github/license/Noktomezo/ShallowHost.svg?variant=ghost&amp;size=xs&amp;mode=dark&amp;theme=neutral"><img alt="License" src="https://www.shieldcn.dev/github/license/Noktomezo/ShallowHost.svg?variant=ghost&amp;size=xs&amp;mode=light&amp;theme=neutral"></picture>
-    <picture><source media="(prefers-color-scheme: dark)" srcset="https://www.shieldcn.dev/github/stars/Noktomezo/ShallowHost.svg?variant=secondary&amp;size=xs&amp;mode=dark&amp;theme=neutral"><img alt="Stars" src="https://www.shieldcn.dev/github/stars/Noktomezo/ShallowHost.svg?variant=secondary&amp;size=xs&amp;mode=light&amp;theme=neutral"></picture>
+    <picture><source media="(prefers-color-scheme: dark)" srcset="https://www.shieldcn.dev/github/ci/Noktomezo/ShallowHost.svg?variant=secondary&amp;size=xs&amp;mode=dark&amp;theme=neutral"><img alt="CI" src=""></picture>
+    <picture><source media="(prefers-color-scheme: dark)" srcset=""><img alt="Release" src="https://www.shieldcn.dev/github/release/Noktomezo/ShallowHost.svg?size=xs&amp;mode=light&amp;theme=neutral"></picture>
+    <picture><source media="(prefers-color-scheme: dark)" srcset="https://www.shieldcn.dev/github/license/Noktomezo/ShallowHost.svg?variant=ghost&amp;size=xs&amp;mode=dark&amp;theme=neutral"><img alt="License" src=""></picture>
+    <picture><source media="(prefers-color-scheme: dark)" srcset=""><img alt="Stars" src="https://www.shieldcn.dev/github/stars/Noktomezo/ShallowHost.svg?variant=secondary&amp;size=xs&amp;mode=light&amp;theme=neutral"></picture>
   </p>
 </div>
-
-> [!WARNING]
-> ShallowHost is under active development. Audio and interface bugs are still possible.
 
 ShallowHost processes microphone or other audio input through a configurable plug-in chain. It is inspired by [LightHost](https://github.com/opencma/LightHost), with a new interface built in Rust and GPUI and an audio engine based on JUCE 9.
 
