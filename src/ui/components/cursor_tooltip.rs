@@ -4,6 +4,7 @@ use gpui::prelude::*;
 use gpui::*;
 
 use crate::ui::foundation::colors;
+use crate::ui::foundation::element_ext::ElementPrepaintExt as _;
 use crate::ui::foundation::motion::TOOLTIP_MOTION;
 
 const SHOW_DELAY: Duration = Duration::from_millis(80);
@@ -18,6 +19,7 @@ struct CursorTooltipState {
     text: Option<SharedString>,
     position: Point<Pixels>,
     visible: bool,
+    source_painted: bool,
     revision: u64,
     show_task: Option<Task<()>>,
 }
@@ -30,6 +32,7 @@ impl CursorTooltipState {
         self.source = None;
         self.text = None;
         self.visible = false;
+        self.source_painted = false;
         self.show_task = None;
     }
 
@@ -40,6 +43,15 @@ impl CursorTooltipState {
 
         self.clear();
         true
+    }
+
+    fn consume_source_heartbeat(&mut self) -> bool {
+        if std::mem::take(&mut self.source_painted) {
+            true
+        } else {
+            self.clear();
+            false
+        }
     }
 }
 
@@ -53,14 +65,16 @@ pub fn attach(
     text: impl Into<SharedString>,
 ) -> Stateful<Div> {
     let text = text.into();
+    let hovered_source = source.clone();
     let pressed_source = source.clone();
     element
         .on_hover(move |hovered, window, cx| {
-            set_hovered(source.clone(), text.clone(), *hovered, window, cx);
+            set_hovered(hovered_source.clone(), text.clone(), *hovered, window, cx);
         })
         .on_mouse_down(MouseButton::Left, move |_, window, cx| {
             hide_source(&pressed_source, window, cx);
         })
+        .on_prepaint(move |_, _, cx| mark_source_painted(&source, cx))
 }
 
 pub fn attach_with_hover_motion(
@@ -70,6 +84,7 @@ pub fn attach_with_hover_motion(
     text: impl Into<SharedString>,
 ) -> Stateful<Div> {
     let text = text.into();
+    let hovered_source = source.clone();
     let pressed_source = source.clone();
     element
         .on_hover(move |hovered, window, cx| {
@@ -79,11 +94,19 @@ pub fn attach_with_hover_motion(
                 window,
                 cx,
             );
-            set_hovered(source.clone(), text.clone(), *hovered, window, cx);
+            set_hovered(hovered_source.clone(), text.clone(), *hovered, window, cx);
         })
         .on_mouse_down(MouseButton::Left, move |_, window, cx| {
             hide_source(&pressed_source, window, cx);
         })
+        .on_prepaint(move |_, _, cx| mark_source_painted(&source, cx))
+}
+
+fn mark_source_painted(source: &ElementId, cx: &mut App) {
+    let state = cx.global_mut::<CursorTooltipState>();
+    if state.source.as_ref() == Some(source) {
+        state.source_painted = true;
+    }
 }
 
 pub fn set_hovered(
@@ -105,6 +128,7 @@ pub fn set_hovered(
         state.text = Some(text);
         state.position = window.mouse_position();
         state.visible = false;
+        state.source_painted = true;
         state.show_task = None;
         state.revision
     };
@@ -151,8 +175,11 @@ pub fn hide(window: &mut Window, cx: &mut App) {
 
 pub fn overlay(cx: &App) -> AnyElement {
     let state = cx.global::<CursorTooltipState>();
-    let Some(text) = state.text.clone().filter(|_| state.visible) else {
+    if state.source.is_none() {
         return div().into_any_element();
+    }
+    let Some(text) = state.text.clone().filter(|_| state.visible) else {
+        return liveness_guard().into_any_element();
     };
 
     let revision = state.revision;
@@ -179,6 +206,27 @@ pub fn overlay(cx: &App) -> AnyElement {
     ))
     .with_priority(4)
     .into_any_element()
+}
+
+fn liveness_guard() -> impl IntoElement {
+    canvas(
+        |_, _, _| (),
+        |_, _, window, cx| {
+            consume_source_heartbeat(window, cx);
+        },
+    )
+    .absolute()
+    .size_full()
+}
+
+fn consume_source_heartbeat(window: &mut Window, cx: &mut App) -> bool {
+    let alive = cx
+        .global_mut::<CursorTooltipState>()
+        .consume_source_heartbeat();
+    if !alive {
+        window.refresh();
+    }
+    alive
 }
 
 struct CursorTooltip {
@@ -257,7 +305,9 @@ impl Element for CursorTooltip {
         window: &mut Window,
         cx: &mut App,
     ) {
-        self.child.paint(window, cx);
+        if consume_source_heartbeat(window, cx) {
+            self.child.paint(window, cx);
+        }
     }
 }
 
@@ -306,6 +356,23 @@ mod tests {
         assert_eq!(state.revision, 8);
         assert!(state.source.is_none());
         assert!(state.text.is_none());
+        assert!(!state.visible);
+    }
+
+    #[test]
+    fn missing_source_heartbeat_clears_the_tooltip() {
+        let mut state = CursorTooltipState {
+            source: Some(ElementId::Name("remove-plugin".into())),
+            text: Some(SharedString::from("Remove")),
+            visible: true,
+            source_painted: true,
+            ..CursorTooltipState::default()
+        };
+
+        assert!(state.consume_source_heartbeat());
+        assert!(state.source.is_some());
+        assert!(!state.consume_source_heartbeat());
+        assert!(state.source.is_none());
         assert!(!state.visible);
     }
 
