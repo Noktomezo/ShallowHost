@@ -4,6 +4,7 @@ use gpui::prelude::*;
 use gpui::*;
 
 use crate::ui::foundation::colors;
+use crate::ui::foundation::motion::mix_color;
 
 const THIN_WIDTH: Pixels = px(6.0);
 const THICK_WIDTH: Pixels = px(8.0);
@@ -179,7 +180,7 @@ impl<H: PageScrollHandle> RenderOnce for PageScrollbar<H> {
                 .w(width)
                 .h(height)
                 .rounded(width / 2.0)
-                .bg(colors::base_500())
+                .bg(mix_color(colors::base_900(), colors::base_850(), expansion))
                 .on_mouse_down(MouseButton::Left, move |event, window, cx| {
                     drag_state.update(cx, |state, cx| {
                         state.dragging = true;
