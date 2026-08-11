@@ -23,11 +23,13 @@ use crate::ui::state::chain_operations::ChainOperationState;
 use gpui_updater::Updater;
 
 mod navigation_item;
+mod page_transition;
 mod render_support;
 mod scan_paths_motion;
 mod sidebar_motion;
 mod state_actions;
 
+use page_transition::PageTransition;
 use sidebar_motion::SidebarMotion;
 
 pub struct MainView {
@@ -68,6 +70,7 @@ pub struct MainView {
     unhovered_at: Option<Instant>,
 
     sidebar_motion: SidebarMotion,
+    page_transition: PageTransition,
     _subscriptions: Vec<Subscription>,
     _meter_task: Task<()>,
     _system_task: Task<()>,
@@ -164,6 +167,7 @@ impl MainView {
             unhovered_at: None,
 
             sidebar_motion: SidebarMotion::expanded(),
+            page_transition: PageTransition::new(),
             _subscriptions: Vec::new(),
             _meter_task: Task::ready(()),
             _system_task: Task::ready(()),
@@ -330,6 +334,7 @@ impl Render for MainView {
         let page_content =
             self.current_route
                 .render(render_ctx, &callbacks, Arc::clone(&self.engine), window, cx);
+        let page_content = self.page_transition.wrap(page_content);
         let close_listener = cx.listener(|this: &mut Self, _: &(), window, cx| {
             this.close_or_hide(window, cx);
         });

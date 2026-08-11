@@ -274,6 +274,7 @@ impl MainView {
                 }
             }
             let now = Instant::now();
+            self.page_transition.start();
             self.deselected_route = Some(self.current_route);
             self.deselected_at = Some(now);
             self.current_route = route;
