@@ -47,6 +47,7 @@ fn main() {
             "cpp/cargo-build",
             "--config",
             native_configuration,
+            "--parallel",
         ],
         "build JUCE",
     );

@@ -42,6 +42,7 @@ std::string ShallowHost::getPluginParametersJsonOnMessageThread(const std::strin
 
     juce::Array<juce::var> arr;
     auto& pList = proc->getParameters();
+    arr.ensureStorageAllocated(pList.size());
 
     for (int i = 0; i < pList.size(); ++i)
     {

@@ -30,14 +30,10 @@ public:
     void processBlock(juce::AudioBuffer<float>& buffer, juce::MidiBuffer&) override
     {
         if (buffer.getNumChannels() < 2) return;
-        auto* L = buffer.getWritePointer(0);
-        auto* R = buffer.getWritePointer(1);
-        for (int i = 0; i < buffer.getNumSamples(); ++i)
-        {
-            const float m = 0.5f * (L[i] + R[i]);
-            L[i] = m;
-            R[i] = m;
-        }
+        const auto sampleCount = buffer.getNumSamples();
+        buffer.addFrom(0, 0, buffer, 1, 0, sampleCount);
+        buffer.applyGain(0, 0, sampleCount, 0.5f);
+        buffer.copyFrom(1, 0, buffer, 0, 0, sampleCount);
     }
 
     void getStateInformation(juce::MemoryBlock&) override {}
@@ -89,20 +85,7 @@ void ShallowHost::setupGraph()
     monoNode = graph.addNode(std::make_unique<MonoSumProcessor>(),
                              juce::AudioProcessorGraph::NodeID{ 1000002 });
 
-    rebuildConnections();
-}
-
-void ShallowHost::rebuildConnections()
-{
-    struct Params {
-        ShallowHost* host;
-    } params { this };
-
-    juce::MessageManager::getInstance()->callFunctionOnMessageThread([](void* p) -> void* {
-        auto* ps = static_cast<Params*>(p);
-        ps->host->rebuildConnectionsOnMessageThread();
-        return nullptr;
-    }, &params);
+    rebuildConnectionsOnMessageThread();
 }
 
 void ShallowHost::setMonoMode(bool mono)

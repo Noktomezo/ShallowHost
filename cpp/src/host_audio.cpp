@@ -57,13 +57,17 @@ int ShallowHost::audioStartOnMessageThread(const char* driver, const char* input
     // the requested graph instead of briefly passing through stereo audio.
     isMono = mono;
 
-    juce::String typeName = getAudioTypeName(driver);
+    const juce::String typeName = getAudioTypeName(driver);
+    const juce::String requestedInput = inputDevice != nullptr ? inputDevice : "";
+    const juce::String requestedOutput = outputDevice != nullptr ? outputDevice : "";
+    const bool defaultInput = requestedInput.isEmpty() || requestedInput == "__default";
+    const bool defaultOutput = requestedOutput.isEmpty() || requestedOutput == "__default";
 
     deviceManager.closeAudioDevice();
     deviceManager.setCurrentAudioDeviceType(typeName, true);
 
-    juce::String inputName = (inputDevice != nullptr && juce::String(inputDevice) != "__default" && juce::String(inputDevice) != "__none") ? juce::String(inputDevice) : juce::String();
-    juce::String outputName = (outputDevice != nullptr && juce::String(outputDevice) != "__default" && juce::String(outputDevice) != "__none") ? juce::String(outputDevice) : juce::String();
+    juce::String inputName = ! defaultInput && requestedInput != "__none" ? requestedInput : juce::String();
+    juce::String outputName = ! defaultOutput && requestedOutput != "__none" ? requestedOutput : juce::String();
 
     juce::AudioIODeviceType* typeObject = nullptr;
     for (auto* type : deviceManager.getAvailableDeviceTypes())
@@ -84,7 +88,7 @@ int ShallowHost::audioStartOnMessageThread(const char* driver, const char* input
             scannedDeviceTypes.insert(tName);
         }
 
-        if (inputDevice == nullptr || juce::String(inputDevice) == "__default" || juce::String(inputDevice).isEmpty())
+        if (defaultInput)
         {
             int defaultIdx = typeObject->getDefaultDeviceIndex(true);
             auto names = typeObject->getDeviceNames(true);
@@ -92,7 +96,7 @@ int ShallowHost::audioStartOnMessageThread(const char* driver, const char* input
                 inputName = names[defaultIdx];
         }
 
-        if (outputDevice == nullptr || juce::String(outputDevice) == "__default" || juce::String(outputDevice).isEmpty())
+        if (defaultOutput)
         {
             int defaultIdx = typeObject->getDefaultDeviceIndex(false);
             auto names = typeObject->getDeviceNames(false);
@@ -101,8 +105,8 @@ int ShallowHost::audioStartOnMessageThread(const char* driver, const char* input
         }
     }
 
-    bool isNoneInput = (inputMask == 0 || (inputDevice != nullptr && juce::String(inputDevice) == "__none"));
-    bool isNoneOutput = (outputMask == 0 || (outputDevice != nullptr && juce::String(outputDevice) == "__none"));
+    const bool isNoneInput = inputMask == 0 || requestedInput == "__none";
+    const bool isNoneOutput = outputMask == 0 || requestedOutput == "__none";
 
     if (isNoneInput && isNoneOutput)
     {
@@ -249,12 +253,14 @@ std::string ShallowHost::getAudioDevicesJson(const char* driver, const char* dev
 
             int defInIdx = typeObject->getDefaultDeviceIndex(true);
             auto inDevNames = typeObject->getDeviceNames(true);
+            inputsArray.ensureStorageAllocated(inDevNames.size());
             if (defInIdx >= 0 && defInIdx < inDevNames.size()) {
                 defaultInputName = inDevNames[defInIdx];
             }
 
             int defOutIdx = typeObject->getDefaultDeviceIndex(false);
             auto outDevNames = typeObject->getDeviceNames(false);
+            outputsArray.ensureStorageAllocated(outDevNames.size());
             if (defOutIdx >= 0 && defOutIdx < outDevNames.size()) {
                 defaultOutputName = outDevNames[defOutIdx];
             }
@@ -275,10 +281,13 @@ std::string ShallowHost::getAudioDevicesJson(const char* driver, const char* dev
                 outputsArray.add(juce::var(devObj.get()));
             }
 
+            const juce::String requestedDevice = ps->deviceName != nullptr ? ps->deviceName : "";
             juce::String activeDeviceName;
-            if (ps->deviceName != nullptr && juce::String(ps->deviceName).isNotEmpty() && juce::String(ps->deviceName) != "__none" && juce::String(ps->deviceName) != "__default")
+            if (requestedDevice.isNotEmpty()
+                && requestedDevice != "__none"
+                && requestedDevice != "__default")
             {
-                activeDeviceName = ps->deviceName;
+                activeDeviceName = requestedDevice;
             }
             else if (auto* currentDevice = ps->host->deviceManager.getCurrentAudioDevice())
             {
@@ -294,10 +303,12 @@ std::string ShallowHost::getAudioDevicesJson(const char* driver, const char* dev
                     if (currentDevice->getName() == activeDeviceName && ps->host->deviceManager.getCurrentAudioDeviceType() == targetType)
                     {
                         auto inNames = currentDevice->getInputChannelNames();
+                        inputChannelNamesArray.ensureStorageAllocated(inNames.size());
                         for (int i = 0; i < inNames.size(); ++i)
                             inputChannelNamesArray.add(inNames[i]);
 
                         auto outNames = currentDevice->getOutputChannelNames();
+                        outputChannelNamesArray.ensureStorageAllocated(outNames.size());
                         for (int i = 0; i < outNames.size(); ++i)
                             outputChannelNamesArray.add(outNames[i]);
 
@@ -311,10 +322,12 @@ std::string ShallowHost::getAudioDevicesJson(const char* driver, const char* dev
                     if (tempDevice != nullptr)
                     {
                         auto inNames = tempDevice->getInputChannelNames();
+                        inputChannelNamesArray.ensureStorageAllocated(inNames.size());
                         for (int i = 0; i < inNames.size(); ++i)
                             inputChannelNamesArray.add(inNames[i]);
 
                         auto outNames = tempDevice->getOutputChannelNames();
+                        outputChannelNamesArray.ensureStorageAllocated(outNames.size());
                         for (int i = 0; i < outNames.size(); ++i)
                             outputChannelNamesArray.add(outNames[i]);
                     }

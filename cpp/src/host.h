@@ -26,8 +26,10 @@
 #include <vector>
 #include <memory>
 #include <unordered_map>
+#include <unordered_set>
 #include <atomic>
 #include <algorithm>
+#include <cmath>
 
 // ponytail: subclass AudioProcessorPlayer to add ScopedNoDenormals before the
 // entire plugin chain processes. JUCE doesn't auto-handle denormals — without
@@ -50,9 +52,6 @@ public:
                                           int numSamples, const juce::AudioIODeviceCallbackContext& context) override
     {
         juce::ScopedNoDenormals denormals;
-        juce::AudioProcessorPlayer::audioDeviceIOCallbackWithContext(
-            inputChannelData, numInputChannels, outputChannelData, numOutputChannels, numSamples, context);
-
         float inMax = 0.0f;
         if (inputChannelData != nullptr)
         {
@@ -60,14 +59,15 @@ public:
             {
                 if (const float* buf = inputChannelData[c])
                 {
-                    for (int s = 0; s < numSamples; ++s)
-                    {
-                        float mag = std::abs(buf[s]);
-                        if (mag > inMax) inMax = mag;
-                    }
+                    const auto range = juce::FloatVectorOperations::findMinAndMax(buf, numSamples);
+                    inMax = std::max(inMax, std::max(std::abs(range.getStart()),
+                                                     std::abs(range.getEnd())));
                 }
             }
         }
+
+        juce::AudioProcessorPlayer::audioDeviceIOCallbackWithContext(
+            inputChannelData, numInputChannels, outputChannelData, numOutputChannels, numSamples, context);
 
         float outMax = 0.0f;
         if (outputChannelData != nullptr)
@@ -76,28 +76,33 @@ public:
             {
                 if (const float* buf = outputChannelData[c])
                 {
-                    for (int s = 0; s < numSamples; ++s)
-                    {
-                        float mag = std::abs(buf[s]);
-                        if (mag > outMax) outMax = mag;
-                    }
+                    const auto range = juce::FloatVectorOperations::findMinAndMax(buf, numSamples);
+                    outMax = std::max(outMax, std::max(std::abs(range.getStart()),
+                                                       std::abs(range.getEnd())));
                 }
             }
         }
 
-        float curIn = inputPeak.load(std::memory_order_relaxed);
-        if (inMax > curIn)
-            inputPeak.store(inMax, std::memory_order_relaxed);
-
-        float curOut = outputPeak.load(std::memory_order_relaxed);
-        if (outMax > curOut)
-            outputPeak.store(outMax, std::memory_order_relaxed);
+        updatePeak(inputPeak, inMax);
+        updatePeak(outputPeak, outMax);
     }
 
     void getAudioLevels(float& inPeak, float& outPeak)
     {
         inPeak = inputPeak.exchange(0.0f, std::memory_order_relaxed);
         outPeak = outputPeak.exchange(0.0f, std::memory_order_relaxed);
+    }
+
+private:
+    static void updatePeak(std::atomic<float>& peak, float candidate) noexcept
+    {
+        auto current = peak.load(std::memory_order_relaxed);
+        while (candidate > current
+               && ! peak.compare_exchange_weak(current, candidate,
+                                                std::memory_order_relaxed,
+                                                std::memory_order_relaxed))
+        {
+        }
     }
 };
 class SHALLOW_HOST_API ShallowHost : public juce::ChangeListener {
@@ -166,6 +171,7 @@ private:
     juce::KnownPluginList pluginScanList;
     std::vector<std::unique_ptr<juce::PluginDirectoryScanner>> pluginScanners;
     std::size_t pluginScannerIndex = 0;
+    int pluginScanPublishedCount = 0;
     bool pluginScanActive = false;
     bool isMono = false;
 
@@ -199,7 +205,6 @@ private:
     void saveKnownPlugins();
 
     void setupGraph();
-    void rebuildConnections();
     void rebuildConnectionsOnMessageThread();
 
     bool openPluginGuiOnMessageThread(const std::string& nodeId, const std::string& titlePrefix = "");

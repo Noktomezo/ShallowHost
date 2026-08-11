@@ -23,7 +23,9 @@ juce::FileSearchPath configuredPath(const juce::var& config, const juce::Identif
 juce::var pluginsJson(const juce::KnownPluginList& plugins)
 {
     juce::Array<juce::var> values;
-    for (const auto& description : plugins.getTypes())
+    const auto& types = plugins.getTypes();
+    values.ensureStorageAllocated(types.size());
+    for (const auto& description : types)
     {
         juce::DynamicObject::Ptr plugin = new juce::DynamicObject();
         plugin->setProperty("name", description.name);
@@ -41,13 +43,14 @@ juce::var pluginsJson(const juce::KnownPluginList& plugins)
 }
 
 std::string scanStepJson(bool done, float progress, const juce::KnownPluginList& plugins,
-                         const juce::String& current = {})
+                         const juce::String& current = {}, bool includePlugins = true)
 {
     juce::DynamicObject::Ptr step = new juce::DynamicObject();
     step->setProperty("done", done);
     step->setProperty("progress", juce::jlimit(0.0f, 1.0f, progress));
     step->setProperty("current", current);
-    step->setProperty("plugins", pluginsJson(plugins));
+    if (includePlugins)
+        step->setProperty("plugins", pluginsJson(plugins));
     return juce::JSON::toString(juce::var(step.get())).toStdString();
 }
 }
@@ -57,6 +60,7 @@ std::string ShallowHost::startPluginScanJson(const std::string& pluginPathsJson)
     pluginScanners.clear();
     pluginScanList.clear();
     pluginScannerIndex = 0;
+    pluginScanPublishedCount = 0;
     pluginScanActive = false;
 
     struct CacheSnapshot {
@@ -74,6 +78,7 @@ std::string ShallowHost::startPluginScanJson(const std::string& pluginPathsJson)
 
     for (const auto& description : snapshot.descriptions) pluginScanList.addType(description);
     for (const auto& path : snapshot.blacklist) pluginScanList.addToBlacklist(path);
+    pluginScanPublishedCount = pluginScanList.getNumTypes();
 
     const auto config = juce::JSON::parse(juce::String(pluginPathsJson));
     auto vst2Path = configuredPath(config, "vst2");
@@ -137,7 +142,10 @@ std::string ShallowHost::scanNextPluginJson()
                 if (std::isfinite(scannerProgress))
                     progress = (static_cast<float>(pluginScannerIndex) + scannerProgress) / formatCount;
             }
-            return scanStepJson(false, progress, pluginScanList, current);
+            const auto pluginCount = pluginScanList.getNumTypes();
+            const auto includePlugins = pluginCount != pluginScanPublishedCount;
+            pluginScanPublishedCount = pluginCount;
+            return scanStepJson(false, progress, pluginScanList, current, includePlugins);
         }
     }
 
@@ -170,6 +178,7 @@ std::string ShallowHost::scanNextPluginJson()
     pluginScanners.clear();
     pluginScanList.clear();
     pluginScannerIndex = 0;
+    pluginScanPublishedCount = 0;
     pluginScanActive = false;
     return result.json;
 }

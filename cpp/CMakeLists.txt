@@ -106,6 +106,10 @@ if(MSVC)
     # CMake defines `_DEBUG` for its Debug configuration, so pin the iterator
     # ABI explicitly instead of letting the STL select the incompatible level 2.
     target_compile_definitions(engine PRIVATE _ITERATOR_DEBUG_LEVEL=0)
+    # Preserve per-function/data COMDATs so lld-link can discard unreachable
+    # JUCE code from the static archive. /GL is deliberately unavailable here:
+    # lld-link cannot consume MSVC LTCG objects.
+    target_compile_options(engine PRIVATE /Gy /Gw /Zc:inline)
 endif()
 
 # Rust links this static library with lld-link, which cannot consume MSVC LTCG

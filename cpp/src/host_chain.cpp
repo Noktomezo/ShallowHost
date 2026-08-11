@@ -61,7 +61,7 @@ std::string ShallowHost::addToChainOnMessageThread(const std::string& uniqueId, 
 
     node->setBypassed(bypassed);
     chainNodes.push_back(node);
-    rebuildConnections();
+    rebuildConnectionsOnMessageThread();
 
     return std::to_string(node->nodeID.uid);
 }
@@ -95,7 +95,7 @@ void ShallowHost::clearChain()
             host->graph.removeNode(node, juce::AudioProcessorGraph::UpdateKind::none);
         }
         host->chainNodes.clear();
-        host->rebuildConnections();
+        host->rebuildConnectionsOnMessageThread();
         return nullptr;
     }, this);
 }
@@ -129,7 +129,7 @@ bool ShallowHost::removeFromChainOnMessageThread(const std::string& nodeId)
     {
         graph.removeNode(*it, juce::AudioProcessorGraph::UpdateKind::none);
         chainNodes.erase(it);
-        rebuildConnections();
+        rebuildConnectionsOnMessageThread();
         return true;
     }
 
@@ -167,13 +167,13 @@ bool ShallowHost::movePluginOnMessageThread(const std::string& nodeId, bool up)
     if (up && index > 0)
     {
         std::swap(chainNodes[index], chainNodes[index - 1]);
-        rebuildConnections();
+        rebuildConnectionsOnMessageThread();
         return true;
     }
     else if (!up && index < chainNodes.size() - 1)
     {
         std::swap(chainNodes[index], chainNodes[index + 1]);
-        rebuildConnections();
+        rebuildConnectionsOnMessageThread();
         return true;
     }
 
@@ -214,7 +214,7 @@ bool ShallowHost::reorderChainOnMessageThread(const std::string& nodeId, int toI
     chainNodes.erase(it);
     chainNodes.insert(chainNodes.begin() + toIndex, elem);
 
-    rebuildConnections();
+    rebuildConnectionsOnMessageThread();
     return true;
 }
 
@@ -261,6 +261,7 @@ std::string ShallowHost::getChainJson()
     juce::MessageManager::getInstance()->callFunctionOnMessageThread([](void* p) -> void* {
         auto* ps = static_cast<Params*>(p);
         juce::Array<juce::var> arr;
+        arr.ensureStorageAllocated(static_cast<int>(ps->host->chainNodes.size()));
         for (auto& node : ps->host->chainNodes)
         {
             auto* proc = node->getProcessor();
@@ -269,13 +270,14 @@ std::string ShallowHost::getChainJson()
             auto* instance = dynamic_cast<juce::AudioPluginInstance*>(proc);
             if (instance == nullptr) continue;
 
+            const auto description = instance->getPluginDescription();
             juce::DynamicObject::Ptr obj = new juce::DynamicObject();
             obj->setProperty("id", juce::String(std::to_string(node->nodeID.uid)));
-            obj->setProperty("name", instance->getPluginDescription().name);
-            obj->setProperty("vendor", instance->getPluginDescription().manufacturerName);
-            obj->setProperty("format", instance->getPluginDescription().pluginFormatName);
+            obj->setProperty("name", description.name);
+            obj->setProperty("vendor", description.manufacturerName);
+            obj->setProperty("format", description.pluginFormatName);
             obj->setProperty("bypassed", node->isBypassed());
-            obj->setProperty("unique_id", instance->getPluginDescription().createIdentifierString());
+            obj->setProperty("unique_id", description.createIdentifierString());
             arr.add(juce::var(obj.get()));
         }
         ps->result = juce::JSON::toString(juce::var(arr)).toStdString();
@@ -295,6 +297,7 @@ std::string ShallowHost::saveStateJson()
     juce::MessageManager::getInstance()->callFunctionOnMessageThread([](void* p) -> void* {
         auto* ps = static_cast<Params*>(p);
         juce::Array<juce::var> arr;
+        arr.ensureStorageAllocated(static_cast<int>(ps->host->chainNodes.size()));
         for (auto& node : ps->host->chainNodes)
         {
             auto* proc = node->getProcessor();
@@ -303,11 +306,12 @@ std::string ShallowHost::saveStateJson()
             auto* instance = dynamic_cast<juce::AudioPluginInstance*>(proc);
             if (instance == nullptr) continue;
 
+            const auto description = instance->getPluginDescription();
             juce::DynamicObject::Ptr obj = new juce::DynamicObject();
-            obj->setProperty("unique_id", instance->getPluginDescription().createIdentifierString());
-            obj->setProperty("name", instance->getPluginDescription().name);
-            obj->setProperty("vendor", instance->getPluginDescription().manufacturerName);
-            obj->setProperty("format", instance->getPluginDescription().pluginFormatName);
+            obj->setProperty("unique_id", description.createIdentifierString());
+            obj->setProperty("name", description.name);
+            obj->setProperty("vendor", description.manufacturerName);
+            obj->setProperty("format", description.pluginFormatName);
             obj->setProperty("bypassed", node->isBypassed());
 
             juce::MemoryBlock block;
@@ -416,13 +420,13 @@ bool ShallowHost::loadStateJsonOnMessageThread(const std::string& stateJson)
         if (node == nullptr)
         {
             std::cerr << "[sh] failed to add restored plugin to graph" << std::endl;
-            rebuildConnections();
+            rebuildConnectionsOnMessageThread();
             return false;
         }
         node->setBypassed(plugin.bypassed);
         chainNodes.push_back(node);
     }
 
-    rebuildConnections();
+    rebuildConnectionsOnMessageThread();
     return true;
 }

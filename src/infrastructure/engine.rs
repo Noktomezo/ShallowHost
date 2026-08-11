@@ -184,7 +184,6 @@ impl Engine {
     }
 
     pub fn audio_levels(&self) -> Result<(f32, f32), EngineError> {
-        let _guard = self.lock()?;
         ffi::audio_levels()
     }
 

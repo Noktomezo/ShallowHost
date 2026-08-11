@@ -9,7 +9,7 @@ pub(crate) struct PluginScanStep {
     pub progress: f32,
     #[serde(default)]
     pub current: String,
-    pub plugins: Vec<ScannedPlugin>,
+    pub plugins: Option<Vec<ScannedPlugin>>,
 }
 
 impl Engine {
@@ -45,8 +45,10 @@ impl Engine {
     }
 
     fn cache_plugin_scan_step(&self, step: PluginScanStep) -> Result<PluginScanStep, EngineError> {
-        let mut cache = self.plugins.lock().map_err(|_| EngineError::LockPoisoned)?;
-        cache.clone_from(&step.plugins);
+        if let Some(plugins) = &step.plugins {
+            let mut cache = self.plugins.lock().map_err(|_| EngineError::LockPoisoned)?;
+            cache.clone_from(plugins);
+        }
         Ok(step)
     }
 }
@@ -79,6 +81,15 @@ mod tests {
         assert!(!step.done);
         assert_eq!(step.progress, 0.25);
         assert_eq!(step.current, "Plugin.vst3");
-        assert!(step.plugins.is_empty());
+        assert_eq!(step.plugins, Some(Vec::new()));
+    }
+
+    #[test]
+    fn parses_unchanged_scan_step_without_plugin_snapshot() {
+        let step: PluginScanStep =
+            parse_json(r#"{"done":false,"progress":0.5,"current":"Plugin.vst3"}"#)
+                .expect("fixture is valid incremental scan JSON");
+
+        assert_eq!(step.plugins, None);
     }
 }
