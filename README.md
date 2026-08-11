@@ -69,6 +69,8 @@ The main source directories are:
 - `src/infrastructure/` — persistence, updates, Windows integration, and the audio-engine facade
 - `src/ui/` — shared controls, application shell, state, and pages
 - `cpp/` — JUCE audio engine and plug-in hosting
+- `assets/` — icons, fonts, localizations, and other application resources
+- `tooling/` — build tasks, installer definitions, and patched external dependencies
 
 Legacy VST2 hosting uses the BSD-licensed clean-room interface from
 [Xaymar/vst2sdk](https://github.com/Xaymar/vst2sdk); the discontinued Steinberg
@@ -100,7 +102,7 @@ Useful commands:
 | `just strict` | Run checks, tests, Clippy, and formatting |
 | `just clean` | Remove Cargo build artifacts |
 
-JUCE is loaded from `vendor/juce` when available. Otherwise CMake downloads the pinned version during configuration.
+JUCE is loaded from `tooling/vendor/juce` when available. Otherwise CMake downloads the pinned version during configuration.
 
 ## 🙏 Acknowledgments
 

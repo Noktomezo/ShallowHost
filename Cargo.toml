@@ -15,7 +15,7 @@ path = "src/main.rs"
 resolver = "3"
 members = [
     ".",
-    "xtask",
+    "tooling/xtask",
 ]
 
 [profile.release]
@@ -29,8 +29,8 @@ strip = true
 cxx = "1.0.198"
 gpui = { git = "https://github.com/zed-industries/zed" }
 gpui_platform = { git = "https://github.com/zed-industries/zed", features = ["font-kit"] }
-# Vendored from v0.0.6 with a Windows MSI handoff fix; see vendor/gpui-updater/README.shallowhost.md.
-gpui-updater = { path = "vendor/gpui-updater", features = ["gpui"] }
+# Vendored from v0.0.6 with a Windows MSI handoff fix; see tooling/vendor/gpui-updater/README.shallowhost.md.
+gpui-updater = { path = "tooling/vendor/gpui-updater", features = ["gpui"] }
 rust-i18n = "3.1"
 image = "0.25"
 serde = { version = "1", features = ["derive"] }

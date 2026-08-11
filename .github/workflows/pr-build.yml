@@ -62,7 +62,7 @@ jobs:
           Copy-Item assets package/ShallowHost/assets -Recurse
           Copy-Item THIRD_PARTY_NOTICES.md package/ShallowHost/THIRD_PARTY_NOTICES.md
           Compress-Archive -Path package/ShallowHost -DestinationPath "dist/$baseName.zip"
-          wix build packaging/windows/ShallowHost.wxs `
+          wix build tooling/packaging/windows/ShallowHost.wxs `
             -arch x64 `
             -ext WixToolset.Util.wixext `
             -ext WixToolset.UI.wixext `

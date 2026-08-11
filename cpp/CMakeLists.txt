@@ -26,7 +26,7 @@ FetchContent_Declare(
 )
 FetchContent_MakeAvailable(xaymar_vst2sdk)
 
-set(JUCE_LOCAL_DIR "${CMAKE_CURRENT_SOURCE_DIR}/../vendor/juce")
+set(JUCE_LOCAL_DIR "${CMAKE_CURRENT_SOURCE_DIR}/../tooling/vendor/juce")
 
 if(EXISTS "${JUCE_LOCAL_DIR}/CMakeLists.txt")
     add_subdirectory(${JUCE_LOCAL_DIR} juce)
