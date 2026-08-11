@@ -3,6 +3,7 @@ pub(crate) mod badge;
 pub(crate) mod card_header;
 pub(crate) mod cursor_tooltip;
 pub(crate) mod dropdown_overlay;
+pub(crate) mod marquee_text;
 pub(crate) mod smooth_scroll;
 pub(crate) mod text_input;
 pub(crate) mod toggle_switch;

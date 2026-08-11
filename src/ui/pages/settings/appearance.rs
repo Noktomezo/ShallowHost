@@ -7,17 +7,20 @@ use std::time::Instant;
 use super::{Language, ThemeMode, card, resolve_path, row, separator, setting_copy};
 use crate::ui::components::card_header::{card_header_layout, card_heading};
 use crate::ui::components::dropdown_overlay::adaptive_dropdown;
+use crate::ui::components::marquee_text::MarqueeText;
 use crate::ui::components::toggle_switch::toggle_switch;
 use crate::ui::foundation::colors;
-use crate::ui::foundation::control_style::ControlTypography;
+use crate::ui::foundation::control_style::{
+    ControlTypography, DROPDOWN_CONTROL_HEIGHT, DROPDOWN_CONTROL_WIDTH,
+};
 use crate::ui::foundation::motion::{
     CONTROL_MOTION, DropdownMotion, MENU_MOTION, mix_color, set_dropdown_item_hovered,
     set_dropdown_open,
 };
 use crate::ui::shell::routes::{LanguageCallback, ThemeCallback, TransparencyCallback};
 
-const CONTROL_HEIGHT: Pixels = px(34.0);
-const CONTROL_WIDTH: Pixels = px(220.0);
+const CONTROL_HEIGHT: Pixels = DROPDOWN_CONTROL_HEIGHT;
+const CONTROL_WIDTH: Pixels = DROPDOWN_CONTROL_WIDTH;
 
 #[derive(Clone, Copy)]
 enum AppearanceValue {
@@ -276,10 +279,19 @@ fn render_menu(
                 .child(
                     div()
                         .flex()
+                        .flex_1()
+                        .min_w_0()
+                        .h_full()
                         .items_center()
                         .gap_2()
                         .child(local_icon(option.icon_path, option.uses_flag))
-                        .child(option.label),
+                        .child(
+                            MarqueeText::new(
+                                SharedString::from(format!("{id}-option-{index}-marquee")),
+                                option.label,
+                            )
+                            .active(item_hovered),
+                        ),
                 )
                 .when(index == selected_index, |element| {
                     element.child(

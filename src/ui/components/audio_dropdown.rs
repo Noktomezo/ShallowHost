@@ -3,17 +3,20 @@ use gpui::*;
 use std::time::Duration;
 
 use super::dropdown_overlay::adaptive_dropdown;
+use super::marquee_text::MarqueeText;
 use super::smooth_scroll::ScrollableColumn;
 use crate::ui::foundation::colors;
-use crate::ui::foundation::control_style::ControlTypography;
+use crate::ui::foundation::control_style::{
+    ControlTypography, DROPDOWN_CONTROL_HEIGHT, DROPDOWN_CONTROL_WIDTH,
+};
 use crate::ui::foundation::motion::{
     CONTROL_MOTION, DropdownMotion, MENU_MOTION, mix_color, set_dropdown_hovered,
     set_dropdown_item_hovered, set_dropdown_open,
 };
 use crate::ui::resolve_asset_path;
 
-pub const CONTROL_HEIGHT: Pixels = px(34.0);
-pub const CONTROL_WIDTH: Pixels = px(220.0);
+pub const CONTROL_HEIGHT: Pixels = DROPDOWN_CONTROL_HEIGHT;
+pub const CONTROL_WIDTH: Pixels = DROPDOWN_CONTROL_WIDTH;
 
 #[derive(Clone, Debug)]
 pub struct DropdownChoice {
@@ -216,7 +219,11 @@ fn render_menu(
                                 set_dropdown_open(&close_motion, false, window, cx);
                             })
                             .child(item_background)
-                            .child(choice_label(choice))
+                            .child(choice_label(
+                                format!("{id}-option-{index}-marquee"),
+                                choice,
+                                item_hovered,
+                            ))
                             .when(index == selected, |element| {
                                 element.child(
                                     svg()
@@ -359,25 +366,24 @@ impl RenderOnce for DropdownTrigger {
             })
             .child(surface)
             .child(border)
-            .child(
-                div()
-                    .relative()
-                    .min_w_0()
-                    .flex_1()
-                    .child(choice_label(self.choice)),
-            )
+            .child(div().relative().min_w_0().flex_1().child(choice_label(
+                format!("{}-trigger-marquee", self.id),
+                self.choice,
+                hovered,
+            )))
             .child(chevron)
     }
 }
 
-fn choice_label(choice: DropdownChoice) -> AnyElement {
+fn choice_label(id: String, choice: DropdownChoice, marquee_active: bool) -> AnyElement {
     div()
         .min_w_0()
         .flex_1()
+        .h_full()
         .flex()
         .items_center()
         .gap_1()
-        .child(div().min_w_0().truncate().child(choice.label))
+        .child(MarqueeText::new(SharedString::from(id), choice.label).active(marquee_active))
         .when_some(choice.muted_suffix, |element, suffix| {
             element.child(
                 div()

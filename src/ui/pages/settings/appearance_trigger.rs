@@ -4,14 +4,17 @@ use std::time::Duration;
 
 use super::appearance::{AppearanceOption, local_icon};
 use super::resolve_path;
+use crate::ui::components::marquee_text::MarqueeText;
 use crate::ui::foundation::colors;
-use crate::ui::foundation::control_style::ControlTypography;
+use crate::ui::foundation::control_style::{
+    ControlTypography, DROPDOWN_CONTROL_HEIGHT, DROPDOWN_CONTROL_WIDTH,
+};
 use crate::ui::foundation::motion::{
     CONTROL_MOTION, DropdownMotion, mix_color, set_dropdown_hovered,
 };
 
-const CONTROL_HEIGHT: Pixels = px(34.0);
-const CONTROL_WIDTH: Pixels = px(220.0);
+const CONTROL_HEIGHT: Pixels = DROPDOWN_CONTROL_HEIGHT;
+const CONTROL_WIDTH: Pixels = DROPDOWN_CONTROL_WIDTH;
 
 #[derive(IntoElement)]
 pub(super) struct DropdownTrigger {
@@ -142,11 +145,19 @@ impl RenderOnce for DropdownTrigger {
                 div()
                     .relative()
                     .min_w_0()
+                    .h_full()
+                    .flex_1()
                     .flex()
                     .items_center()
                     .gap_2()
                     .child(local_icon(selected.icon_path, selected.uses_flag))
-                    .child(div().truncate().child(selected.label))
+                    .child(
+                        MarqueeText::new(
+                            SharedString::from(format!("{}-trigger-marquee", self.id)),
+                            selected.label,
+                        )
+                        .active(hovered),
+                    )
                     .into_any_element()
             } else {
                 div().relative().child("—").into_any_element()
