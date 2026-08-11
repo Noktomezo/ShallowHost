@@ -2,21 +2,26 @@ use std::time::Duration;
 
 use gpui::*;
 
+use crate::ui::foundation::control_style::CONTROL_FONT_FAMILY;
+
 const MARQUEE_DURATION: Duration = Duration::from_millis(1_800);
 const END_GUTTER: Pixels = px(8.0);
+const CONTROL_FONT_SIZE: Pixels = px(12.0);
 
 #[derive(IntoElement)]
 pub struct MarqueeText {
     id: ElementId,
     text: SharedString,
+    max_width: Pixels,
     active: bool,
 }
 
 impl MarqueeText {
-    pub fn new(id: impl Into<ElementId>, text: impl Into<SharedString>) -> Self {
+    pub fn new(id: impl Into<ElementId>, text: impl Into<SharedString>, max_width: Pixels) -> Self {
         Self {
             id: id.into(),
             text: text.into(),
+            max_width,
             active: false,
         }
     }
@@ -28,10 +33,19 @@ impl MarqueeText {
 }
 
 impl RenderOnce for MarqueeText {
-    fn render(self, _window: &mut Window, _cx: &mut App) -> impl IntoElement {
-        let viewport = div().min_w_0().flex_1().h_full().overflow_hidden();
+    fn render(self, window: &mut Window, _cx: &mut App) -> impl IntoElement {
+        let text_width = control_text_width(&self.text, window);
+        let viewport_width = text_width.min(self.max_width);
+        let shift = marquee_shift(text_width, viewport_width);
+        let viewport = div()
+            .w(viewport_width)
+            .h_full()
+            .flex_none()
+            .flex()
+            .items_center()
+            .overflow_hidden();
 
-        if self.active {
+        if self.active && shift > Pixels::ZERO {
             let text = self.text;
             viewport
                 .with_animation(
@@ -40,118 +54,40 @@ impl RenderOnce for MarqueeText {
                         .repeat()
                         .with_easing(bounce(ease_in_out)),
                     move |element, progress| {
-                        element.child(MarqueeTextElement::new(text.clone(), progress))
+                        element.child(
+                            div()
+                                .relative()
+                                .left(-shift * progress)
+                                .flex_none()
+                                .whitespace_nowrap()
+                                .child(text.clone()),
+                        )
                     },
                 )
                 .into_any_element()
         } else {
             viewport
-                .child(MarqueeTextElement::new(self.text, 0.0))
+                .child(div().flex_none().whitespace_nowrap().child(self.text))
                 .into_any_element()
         }
     }
 }
 
-struct MarqueeTextElement {
-    text: SharedString,
-    progress: f32,
-}
-
-impl MarqueeTextElement {
-    fn new(text: SharedString, progress: f32) -> Self {
-        Self { text, progress }
-    }
-}
-
-struct PrepaintState {
-    line: ShapedLine,
-    origin: Point<Pixels>,
-}
-
-impl IntoElement for MarqueeTextElement {
-    type Element = Self;
-
-    fn into_element(self) -> Self::Element {
-        self
-    }
-}
-
-impl Element for MarqueeTextElement {
-    type RequestLayoutState = ();
-    type PrepaintState = PrepaintState;
-
-    fn id(&self) -> Option<ElementId> {
-        None
-    }
-
-    fn source_location(&self) -> Option<&'static core::panic::Location<'static>> {
-        None
-    }
-
-    fn request_layout(
-        &mut self,
-        _: Option<&GlobalElementId>,
-        _: Option<&InspectorElementId>,
-        window: &mut Window,
-        cx: &mut App,
-    ) -> (LayoutId, Self::RequestLayoutState) {
-        let mut style = Style::default();
-        style.size.width = relative(1.0).into();
-        style.size.height = relative(1.0).into();
-        (window.request_layout(style, [], cx), ())
-    }
-
-    fn prepaint(
-        &mut self,
-        _: Option<&GlobalElementId>,
-        _: Option<&InspectorElementId>,
-        bounds: Bounds<Pixels>,
-        _: &mut Self::RequestLayoutState,
-        window: &mut Window,
-        _: &mut App,
-    ) -> Self::PrepaintState {
-        let text_style = window.text_style();
-        let run = TextRun {
-            len: self.text.len(),
-            font: text_style.font(),
-            color: text_style.color,
-            background_color: None,
-            underline: None,
-            strikethrough: None,
-        };
-        let font_size = text_style.font_size.to_pixels(window.rem_size());
-        let line = window
-            .text_system()
-            .shape_line(self.text.clone(), font_size, &[run], None);
-        let overflow = marquee_shift(line.width(), bounds.size.width);
-        let origin = point(bounds.left() - overflow * self.progress, bounds.top());
-
-        PrepaintState { line, origin }
-    }
-
-    fn paint(
-        &mut self,
-        _: Option<&GlobalElementId>,
-        _: Option<&InspectorElementId>,
-        bounds: Bounds<Pixels>,
-        _: &mut Self::RequestLayoutState,
-        prepaint: &mut Self::PrepaintState,
-        window: &mut Window,
-        cx: &mut App,
-    ) {
-        window.with_content_mask(Some(ContentMask { bounds }), |window| {
-            if let Err(error) = prepaint.line.paint(
-                prepaint.origin,
-                bounds.size.height,
-                TextAlign::Left,
-                None,
-                window,
-                cx,
-            ) {
-                eprintln!("failed to paint dropdown marquee text: {error}");
-            }
-        });
-    }
+pub fn control_text_width(text: &SharedString, window: &mut Window) -> Pixels {
+    let mut control_font = font(CONTROL_FONT_FAMILY);
+    control_font.weight = FontWeight::MEDIUM;
+    let run = TextRun {
+        len: text.len(),
+        font: control_font,
+        color: window.text_style().color,
+        background_color: None,
+        underline: None,
+        strikethrough: None,
+    };
+    window
+        .text_system()
+        .shape_line(text.clone(), CONTROL_FONT_SIZE, &[run], None)
+        .width()
 }
 
 fn marquee_shift(text_width: Pixels, viewport_width: Pixels) -> Pixels {

@@ -155,6 +155,7 @@ impl RenderOnce for DropdownTrigger {
                         MarqueeText::new(
                             SharedString::from(format!("{}-trigger-marquee", self.id)),
                             selected.label,
+                            px(96.0),
                         )
                         .active(hovered),
                     )

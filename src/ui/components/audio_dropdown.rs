@@ -3,7 +3,7 @@ use gpui::*;
 use std::time::Duration;
 
 use super::dropdown_overlay::adaptive_dropdown;
-use super::marquee_text::MarqueeText;
+use super::marquee_text::{MarqueeText, control_text_width};
 use super::smooth_scroll::ScrollableColumn;
 use crate::ui::foundation::colors;
 use crate::ui::foundation::control_style::{
@@ -223,6 +223,7 @@ fn render_menu(
                                 format!("{id}-option-{index}-marquee"),
                                 choice,
                                 item_hovered,
+                                px(112.0),
                             ))
                             .when(index == selected, |element| {
                                 element.child(
@@ -370,29 +371,68 @@ impl RenderOnce for DropdownTrigger {
                 format!("{}-trigger-marquee", self.id),
                 self.choice,
                 hovered,
+                px(120.0),
             )))
             .child(chevron)
     }
 }
 
-fn choice_label(id: String, choice: DropdownChoice, marquee_active: bool) -> AnyElement {
-    div()
-        .min_w_0()
-        .flex_1()
-        .h_full()
-        .flex()
-        .items_center()
-        .gap_1()
-        .child(MarqueeText::new(SharedString::from(id), choice.label).active(marquee_active))
-        .when_some(choice.muted_suffix, |element, suffix| {
-            element.child(
-                div()
-                    .flex_none()
-                    .text_color(colors::base_500())
-                    .child(suffix),
+fn choice_label(
+    id: String,
+    choice: DropdownChoice,
+    marquee_active: bool,
+    max_width: Pixels,
+) -> AudioChoiceLabel {
+    AudioChoiceLabel {
+        id: SharedString::from(id),
+        choice,
+        marquee_active,
+        max_width,
+    }
+}
+
+#[derive(IntoElement)]
+struct AudioChoiceLabel {
+    id: SharedString,
+    choice: DropdownChoice,
+    marquee_active: bool,
+    max_width: Pixels,
+}
+
+impl RenderOnce for AudioChoiceLabel {
+    fn render(self, window: &mut Window, _cx: &mut App) -> impl IntoElement {
+        let suffix_width = self
+            .choice
+            .muted_suffix
+            .as_ref()
+            .map_or(Pixels::ZERO, |suffix| control_text_width(suffix, window));
+        let suffix_gap = if self.choice.muted_suffix.is_some() {
+            px(4.0)
+        } else {
+            Pixels::ZERO
+        };
+        let label_width = (self.max_width - suffix_width - suffix_gap).max(px(24.0));
+
+        div()
+            .min_w_0()
+            .flex_1()
+            .h_full()
+            .flex()
+            .items_center()
+            .gap_1()
+            .child(
+                MarqueeText::new(self.id, self.choice.label, label_width)
+                    .active(self.marquee_active),
             )
-        })
-        .into_any_element()
+            .when_some(self.choice.muted_suffix, |element, suffix| {
+                element.child(
+                    div()
+                        .flex_none()
+                        .text_color(colors::base_500())
+                        .child(suffix),
+                )
+            })
+    }
 }
 
 fn chevron_svg(progress: f32) -> Svg {

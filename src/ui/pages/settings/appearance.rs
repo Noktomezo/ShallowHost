@@ -289,6 +289,7 @@ fn render_menu(
                             MarqueeText::new(
                                 SharedString::from(format!("{id}-option-{index}-marquee")),
                                 option.label,
+                                px(96.0),
                             )
                             .active(item_hovered),
                         ),
