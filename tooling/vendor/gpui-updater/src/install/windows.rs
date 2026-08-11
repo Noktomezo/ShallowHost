@@ -80,9 +80,8 @@ fn install_bare_exe(new_exe: &Path, install_root: &Path) -> Result<Installed> {
 /// Stage a verified `.msi`: write the apply script next to it and hand that
 /// back as the restart path. Nothing is installed until the app exits.
 fn stage_msi(msi: &Path, install_root: &Path) -> Result<Installed> {
-    // The relaunch target is the current exe path: an upgrade MSI installs to
-    // the same per-user folder, so the path stays valid and holds the new
-    // binary once msiexec finishes.
+    // The apply script passes the current executable's parent as INSTALLFOLDER,
+    // preserving custom locations across MSI major upgrades.
     let script_path = msi.with_extension("apply.vbs");
     fs::write(&script_path, apply_script(msi, install_root)?)
         .map_err(|e| Error::Install(format!("could not stage MSI apply script: {e}")))?;
@@ -99,13 +98,22 @@ fn apply_script(msi: &Path, relaunch: &Path) -> Result<Vec<u8>> {
     let relaunch = vbs_string(relaunch)?;
     let script = format!(
         "Option Explicit\r\n\
-         Dim shell, exitCode, installerPath, relaunchPath\r\n\
+         Dim shell, files, exitCode, installerPath, relaunchPath, installFolder\r\n\
          installerPath = {msi}\r\n\
          relaunchPath = {relaunch}\r\n\
          Set shell = CreateObject(\"WScript.Shell\")\r\n\
-         exitCode = shell.Run(\"msiexec.exe /i \"\"\" & installerPath & \"\"\" /passive /norestart\", 1, True)\r\n\
+         Set files = CreateObject(\"Scripting.FileSystemObject\")\r\n\
+         installFolder = files.GetParentFolderName(relaunchPath)\r\n\
+         exitCode = shell.Run(\"msiexec.exe /i \"\"\" & installerPath & \"\"\" INSTALLFOLDER=\"\"\" & installFolder & \"\"\" /passive /norestart\", 1, True)\r\n\
          If exitCode = 0 Then\r\n\
-           shell.Run \"\"\"\" & relaunchPath & \"\"\"\", 1, False\r\n\
+           If Not files.FileExists(relaunchPath) Then\r\n\
+             relaunchPath = shell.ExpandEnvironmentStrings(\"%LOCALAPPDATA%\\Programs\\ShallowHost\\ShallowHost.exe\")\r\n\
+           End If\r\n\
+           If files.FileExists(relaunchPath) Then\r\n\
+             shell.Run \"\"\"\" & relaunchPath & \"\"\"\", 1, False\r\n\
+           Else\r\n\
+             exitCode = 2\r\n\
+           End If\r\n\
          End If\r\n\
          WScript.Quit exitCode\r\n"
     );
@@ -179,8 +187,11 @@ mod tests {
         assert_eq!(script_path, msi.with_extension("apply.vbs"));
         let script = decode_utf16_script(&fs::read(script_path).unwrap());
         assert!(script.contains("msiexec.exe /i"));
+        assert!(script.contains("INSTALLFOLDER=\"\"\" & installFolder"));
         assert!(script.contains(&format!("installerPath = \"{}\"", msi.display())));
         assert!(script.contains(&format!("relaunchPath = \"{}\"", root.display())));
+        assert!(script.contains("If Not files.FileExists(relaunchPath) Then"));
+        assert!(script.contains("%LOCALAPPDATA%\\Programs\\ShallowHost\\ShallowHost.exe"));
         // Relaunch is gated on msiexec succeeding.
         assert!(script.contains("If exitCode = 0 Then"));
         // The MSI itself must not have been touched, let alone executed.
