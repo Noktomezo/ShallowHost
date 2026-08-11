@@ -67,9 +67,10 @@ The main source directories are:
 
 - `src/domain/` — application data and preferences
 - `src/infrastructure/` — persistence, updates, Windows integration, and the audio-engine facade
+- `src/locales/` — compile-time application translations
 - `src/ui/` — shared controls, application shell, state, and pages
 - `cpp/` — JUCE audio engine and plug-in hosting
-- `assets/` — icons, fonts, localizations, and other application resources
+- `assets/` — icons, fonts, and other application resources
 - `tooling/` — build tasks, installer definitions, and patched external dependencies
 
 Legacy VST2 hosting uses the BSD-licensed clean-room interface from
