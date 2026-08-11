@@ -264,7 +264,7 @@ fn render_menu(
                 .px_2()
                 .flex()
                 .items_center()
-                .justify_between()
+                .gap_2()
                 .cursor_pointer()
                 .control_text()
                 .text_color(colors::base_200())
@@ -291,7 +291,12 @@ fn render_menu(
                                 option.label,
                                 px(96.0),
                             )
-                            .active(item_hovered),
+                            .active(item_hovered)
+                            .fade_to(if item_hovered {
+                                colors::base_800()
+                            } else {
+                                resting_background
+                            }),
                         ),
                 )
                 .when(index == selected_index, |element| {

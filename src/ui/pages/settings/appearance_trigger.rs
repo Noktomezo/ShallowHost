@@ -157,7 +157,12 @@ impl RenderOnce for DropdownTrigger {
                             selected.label,
                             px(96.0),
                         )
-                        .active(hovered),
+                        .active(hovered)
+                        .fade_to(if surface_active {
+                            colors::base_850()
+                        } else {
+                            colors::base_900()
+                        }),
                     )
                     .into_any_element()
             } else {

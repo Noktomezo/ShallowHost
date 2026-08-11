@@ -197,7 +197,7 @@ fn render_menu(
                             .px_2()
                             .flex()
                             .items_center()
-                            .justify_between()
+                            .gap_2()
                             .cursor_pointer()
                             .control_text()
                             .text_color(colors::base_200())
@@ -223,7 +223,12 @@ fn render_menu(
                                 format!("{id}-option-{index}-marquee"),
                                 choice,
                                 item_hovered,
-                                px(112.0),
+                                px(120.0),
+                                if item_hovered {
+                                    colors::base_800()
+                                } else {
+                                    resting_background
+                                },
                             ))
                             .when(index == selected, |element| {
                                 element.child(
@@ -372,6 +377,11 @@ impl RenderOnce for DropdownTrigger {
                 self.choice,
                 hovered,
                 px(120.0),
+                if surface_active {
+                    colors::base_850()
+                } else {
+                    colors::base_900()
+                },
             )))
             .child(chevron)
     }
@@ -382,12 +392,14 @@ fn choice_label(
     choice: DropdownChoice,
     marquee_active: bool,
     max_width: Pixels,
+    fade_color: Rgba,
 ) -> AudioChoiceLabel {
     AudioChoiceLabel {
         id: SharedString::from(id),
         choice,
         marquee_active,
         max_width,
+        fade_color,
     }
 }
 
@@ -397,6 +409,7 @@ struct AudioChoiceLabel {
     choice: DropdownChoice,
     marquee_active: bool,
     max_width: Pixels,
+    fade_color: Rgba,
 }
 
 impl RenderOnce for AudioChoiceLabel {
@@ -422,7 +435,8 @@ impl RenderOnce for AudioChoiceLabel {
             .gap_1()
             .child(
                 MarqueeText::new(self.id, self.choice.label, label_width)
-                    .active(self.marquee_active),
+                    .active(self.marquee_active)
+                    .fade_to(self.fade_color),
             )
             .when_some(self.choice.muted_suffix, |element, suffix| {
                 element.child(
