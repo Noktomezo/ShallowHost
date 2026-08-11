@@ -181,6 +181,8 @@ impl<H: PageScrollHandle> RenderOnce for PageScrollbar<H> {
                 .h(height)
                 .rounded(width / 2.0)
                 .bg(mix_color(colors::base_900(), colors::base_850(), expansion))
+                .border_1()
+                .border_color(colors::base_800())
                 .on_mouse_down(MouseButton::Left, move |event, window, cx| {
                     drag_state.update(cx, |state, cx| {
                         state.dragging = true;
