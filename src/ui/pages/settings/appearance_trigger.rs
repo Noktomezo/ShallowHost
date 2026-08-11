@@ -7,7 +7,8 @@ use super::resolve_path;
 use crate::ui::components::marquee_text::{MarqueeFade, MarqueeText};
 use crate::ui::foundation::colors;
 use crate::ui::foundation::control_style::{
-    ControlTypography, DROPDOWN_CONTROL_HEIGHT, DROPDOWN_CONTROL_WIDTH,
+    ControlTypography, DROPDOWN_CONTROL_HEIGHT, DROPDOWN_CONTROL_WIDTH, DROPDOWN_ICON_LABEL_WIDTH,
+    DROPDOWN_TRAILING_GUTTER,
 };
 use crate::ui::foundation::motion::{
     CONTROL_MOTION, DropdownMotion, mix_color, set_dropdown_hovered,
@@ -131,7 +132,7 @@ impl RenderOnce for DropdownTrigger {
             .flex()
             .items_center()
             .justify_between()
-            .gap(px(0.0))
+            .gap(DROPDOWN_TRAILING_GUTTER)
             .flex_none()
             .cursor_pointer()
             .control_text()
@@ -155,7 +156,7 @@ impl RenderOnce for DropdownTrigger {
                         MarqueeText::new(
                             SharedString::from(format!("{}-trigger-marquee", self.id)),
                             selected.label,
-                            px(104.0),
+                            DROPDOWN_ICON_LABEL_WIDTH,
                         )
                         .active(hovered)
                         .fade_with_motion(

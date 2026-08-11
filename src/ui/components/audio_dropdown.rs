@@ -7,7 +7,8 @@ use super::marquee_text::{MarqueeFade, MarqueeText, control_text_width};
 use super::smooth_scroll::ScrollableColumn;
 use crate::ui::foundation::colors;
 use crate::ui::foundation::control_style::{
-    ControlTypography, DROPDOWN_CONTROL_HEIGHT, DROPDOWN_CONTROL_WIDTH,
+    ControlTypography, DROPDOWN_CONTROL_HEIGHT, DROPDOWN_CONTROL_WIDTH, DROPDOWN_LABEL_WIDTH,
+    DROPDOWN_TRAILING_GUTTER,
 };
 use crate::ui::foundation::motion::{
     CONTROL_MOTION, DropdownMotion, MENU_MOTION, mix_color, set_dropdown_hovered,
@@ -197,7 +198,7 @@ fn render_menu(
                             .px_2()
                             .flex()
                             .items_center()
-                            .gap(px(0.0))
+                            .gap(DROPDOWN_TRAILING_GUTTER)
                             .cursor_pointer()
                             .control_text()
                             .text_color(colors::base_200())
@@ -223,7 +224,7 @@ fn render_menu(
                                 format!("{id}-option-{index}-marquee"),
                                 choice,
                                 item_hovered,
-                                px(128.0),
+                                DROPDOWN_LABEL_WIDTH,
                                 MarqueeFade::new(
                                     resting_background,
                                     colors::base_800(),
@@ -363,7 +364,7 @@ impl RenderOnce for DropdownTrigger {
             .flex()
             .items_center()
             .justify_between()
-            .gap(px(0.0))
+            .gap(DROPDOWN_TRAILING_GUTTER)
             .flex_none()
             .cursor_pointer()
             .control_text()
@@ -377,7 +378,7 @@ impl RenderOnce for DropdownTrigger {
                 format!("{}-trigger-marquee", self.id),
                 self.choice,
                 hovered,
-                px(128.0),
+                DROPDOWN_LABEL_WIDTH,
                 MarqueeFade::new(
                     colors::base_900(),
                     colors::base_850(),
