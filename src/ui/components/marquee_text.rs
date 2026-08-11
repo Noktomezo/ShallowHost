@@ -6,7 +6,6 @@ use gpui::*;
 use crate::ui::foundation::control_style::CONTROL_FONT_FAMILY;
 
 const MARQUEE_DURATION: Duration = Duration::from_millis(1_800);
-const END_GUTTER: Pixels = px(8.0);
 const FADE_WIDTH: Pixels = px(8.0);
 const CONTROL_FONT_SIZE: Pixels = px(12.0);
 
@@ -46,43 +45,56 @@ impl RenderOnce for MarqueeText {
         let text_width = control_text_width(&self.text, window);
         let viewport_width = text_width.min(self.max_width);
         let shift = marquee_shift(text_width, viewport_width);
-        let viewport = div()
-            .relative()
-            .w(viewport_width)
-            .h_full()
-            .flex_none()
-            .flex()
-            .items_center()
-            .overflow_hidden();
+        let anchor = div().relative().w(viewport_width).h_full().flex_none();
 
         if self.active && shift > Pixels::ZERO {
             let text = self.text;
             let fade_color = self.fade_color;
-            viewport
-                .with_animation(
-                    self.id,
-                    Animation::new(MARQUEE_DURATION)
-                        .repeat()
-                        .with_easing(bounce(ease_in_out)),
-                    move |element, progress| {
-                        element
-                            .child(marquee_line(text.clone(), -shift * progress))
-                            .child(edge_fade(FadeEdge::Left, fade_color))
-                            .child(edge_fade(FadeEdge::Right, fade_color))
-                    },
+            anchor
+                .child(
+                    expanded_viewport(viewport_width).with_animation(
+                        self.id,
+                        Animation::new(MARQUEE_DURATION)
+                            .repeat()
+                            .with_easing(bounce(ease_in_out)),
+                        move |element, progress| {
+                            element
+                                .child(marquee_line(text.clone(), FADE_WIDTH - shift * progress))
+                                .child(edge_fade(FadeEdge::Left, fade_color))
+                                .child(edge_fade(FadeEdge::Right, fade_color))
+                        },
+                    ),
+                )
+                .into_any_element()
+        } else if shift > Pixels::ZERO {
+            anchor
+                .child(
+                    expanded_viewport(viewport_width)
+                        .child(marquee_line(self.text, FADE_WIDTH))
+                        .child(edge_fade(FadeEdge::Left, self.fade_color))
+                        .child(edge_fade(FadeEdge::Right, self.fade_color)),
                 )
                 .into_any_element()
         } else {
-            viewport
+            anchor
+                .flex()
+                .items_center()
                 .child(marquee_line(self.text, Pixels::ZERO))
-                .when(shift > Pixels::ZERO, |element| {
-                    element
-                        .child(edge_fade(FadeEdge::Left, self.fade_color))
-                        .child(edge_fade(FadeEdge::Right, self.fade_color))
-                })
                 .into_any_element()
         }
     }
+}
+
+fn expanded_viewport(text_width: Pixels) -> Div {
+    div()
+        .absolute()
+        .left(-FADE_WIDTH)
+        .top_0()
+        .bottom_0()
+        .w(text_width + FADE_WIDTH * 2.0)
+        .flex()
+        .items_center()
+        .overflow_hidden()
 }
 
 fn marquee_line(text: SharedString, offset: Pixels) -> Div {
@@ -146,7 +158,7 @@ pub fn control_text_width(text: &SharedString, window: &mut Window) -> Pixels {
 
 fn marquee_shift(text_width: Pixels, viewport_width: Pixels) -> Pixels {
     if text_width > viewport_width {
-        text_width - viewport_width + END_GUTTER
+        text_width - viewport_width
     } else {
         Pixels::ZERO
     }
@@ -164,7 +176,7 @@ mod tests {
     }
 
     #[test]
-    fn overflowing_text_reveals_the_end_with_a_gutter() {
-        assert_eq!(marquee_shift(px(140.0), px(100.0)), px(48.0));
+    fn overflowing_text_uses_only_the_hidden_width_as_travel() {
+        assert_eq!(marquee_shift(px(140.0), px(100.0)), px(40.0));
     }
 }
