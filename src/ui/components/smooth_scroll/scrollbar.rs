@@ -160,9 +160,6 @@ impl<H: PageScrollHandle> RenderOnce for PageScrollbar<H> {
         }
 
         let hover_state = state.clone();
-        let move_state = state.clone();
-        let move_handle = self.handle.clone();
-        let release_state = state.clone();
         let click_handle = self.handle.clone();
         let click_state = state.clone();
         let thumb = target.zip(thumb_height).map(|(target, height)| {
@@ -195,8 +192,55 @@ impl<H: PageScrollHandle> RenderOnce for PageScrollbar<H> {
                     window.refresh();
                 })
         });
+        let capture_state = state.clone();
+        let capture_handle = self.handle.clone();
+        let capture = canvas(
+            |_, _, _| (),
+            move |_, _, window, _| {
+                window.on_mouse_event({
+                    let state = capture_state.clone();
+                    let handle = capture_handle.clone();
+                    move |event: &MouseMoveEvent, phase, window, cx| {
+                        if phase != DispatchPhase::Capture || !event.dragging() {
+                            return;
+                        }
+                        let (dragging, origin_y, start_offset) = state.read_with(cx, |state, _| {
+                            (
+                                state.dragging,
+                                state.drag_origin_y,
+                                state.drag_start_offset_y,
+                            )
+                        });
+                        let Some(target) = target.filter(|_| dragging) else {
+                            return;
+                        };
+                        handle.set_offset_y(dragged_offset(
+                            target,
+                            handle.max_scroll_y(),
+                            start_offset,
+                            origin_y,
+                            event.position.y,
+                        ));
+                        cx.stop_propagation();
+                        window.refresh();
+                    }
+                });
+                window.on_mouse_event(move |event: &MouseUpEvent, phase, window, cx| {
+                    if phase != DispatchPhase::Capture || event.button != MouseButton::Left {
+                        return;
+                    }
+                    let dragging = capture_state.read_with(cx, |state, _| state.dragging);
+                    if dragging {
+                        release_drag(&capture_state, window, cx);
+                        cx.stop_propagation();
+                    }
+                });
+            },
+        )
+        .absolute()
+        .size_full();
 
-        div().absolute().inset_0().child(
+        div().absolute().inset_0().child(capture).child(
             div()
                 .id((self.id.clone(), "scrollbar-zone"))
                 .absolute()
@@ -232,32 +276,6 @@ impl<H: PageScrollHandle> RenderOnce for PageScrollbar<H> {
                     });
                     window.refresh();
                 })
-                .on_mouse_move(move |event, window, cx| {
-                    let (dragging, origin_y, start_offset) =
-                        move_state.read_with(cx, |state, _| {
-                            (
-                                state.dragging,
-                                state.drag_origin_y,
-                                state.drag_start_offset_y,
-                            )
-                        });
-                    let Some(target) = target.filter(|_| dragging) else {
-                        return;
-                    };
-                    let track = (target.container_height - target.height).max(px(1.0));
-                    let start_progress =
-                        (-start_offset / move_handle.max_scroll_y()).clamp(0.0, 1.0);
-                    let progress =
-                        (start_progress + (event.position.y - origin_y) / track).clamp(0.0, 1.0);
-                    move_handle.set_offset_y(-move_handle.max_scroll_y() * progress);
-                    window.refresh();
-                })
-                .on_mouse_up(MouseButton::Left, move |_, window, cx| {
-                    release_drag(&release_state, window, cx);
-                })
-                .on_mouse_up_out(MouseButton::Left, move |_, window, cx| {
-                    release_drag(&state, window, cx);
-                })
                 .when_some(thumb, |zone, thumb| zone.child(thumb)),
         )
     }
@@ -270,6 +288,19 @@ fn release_drag(state: &Entity<PageScrollbarState>, window: &mut Window, cx: &mu
         cx.notify();
     });
     window.refresh();
+}
+
+fn dragged_offset(
+    target: ThumbTarget,
+    max_scroll: Pixels,
+    start_offset: Pixels,
+    origin_y: Pixels,
+    current_y: Pixels,
+) -> Pixels {
+    let track = (target.container_height - target.height).max(px(1.0));
+    let start_progress = (-start_offset / max_scroll).clamp(0.0, 1.0);
+    let progress = (start_progress + (current_y - origin_y) / track).clamp(0.0, 1.0);
+    -max_scroll * progress
 }
 
 fn thumb_target(
@@ -312,7 +343,7 @@ fn approach_pixels(current: Pixels, target: Pixels, progress: f32) -> Pixels {
 
 #[cfg(test)]
 mod tests {
-    use super::{PageScrollbarState, thumb_target};
+    use super::{PageScrollbarState, ThumbTarget, dragged_offset, thumb_target};
     use gpui::px;
 
     #[test]
@@ -331,5 +362,18 @@ mod tests {
         state.last_frame -= std::time::Duration::from_millis(16);
         let (_, expansion, _) = state.advance(Some(px(80.0)), false);
         assert!((0.0..=1.0).contains(&expansion));
+    }
+
+    #[test]
+    fn thumb_drag_uses_window_position_outside_the_scrollbar_zone() {
+        let target = ThumbTarget {
+            container_height: px(100.0),
+            height: px(50.0),
+            progress: 0.0,
+        };
+        assert_eq!(
+            dragged_offset(target, px(300.0), px(0.0), px(20.0), px(70.0)),
+            px(-300.0)
+        );
     }
 }
