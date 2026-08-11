@@ -30,6 +30,7 @@
 #include <atomic>
 #include <algorithm>
 #include <cmath>
+#include <cstdint>
 
 // ponytail: subclass AudioProcessorPlayer to add ScopedNoDenormals before the
 // entire plugin chain processes. JUCE doesn't auto-handle denormals — without
@@ -105,7 +106,8 @@ private:
         }
     }
 };
-class SHALLOW_HOST_API ShallowHost : public juce::ChangeListener {
+class SHALLOW_HOST_API ShallowHost : public juce::ChangeListener,
+                                    private juce::AudioProcessorListener {
 public:
     static void initialize();
     static void shutdown();
@@ -145,6 +147,10 @@ public:
 
     std::string saveStateJson();
     bool loadStateJson(const std::string& stateJson);
+    std::uint64_t getStateRevision() const noexcept
+    {
+        return stateRevision.load(std::memory_order_relaxed);
+    }
 
     void setMonoMode(bool mono);
     bool getMonoMode() const { return isMono; }
@@ -198,6 +204,7 @@ private:
 
     std::unordered_map<std::string, std::unique_ptr<PluginWindow>> activeWindows;
     std::unordered_set<std::string> scannedDeviceTypes;
+    std::atomic<std::uint64_t> stateRevision{ 0 };
 
     juce::File appDataDir;
     void setAppDataDirectoryOnMessageThread(const std::string& path);
@@ -219,6 +226,10 @@ private:
 
     std::string getPluginParametersJsonOnMessageThread(const std::string& nodeId);
     bool setPluginParameterOnMessageThread(const std::string& nodeId, int paramIndex, float value);
+
+    void audioProcessorParameterChanged(juce::AudioProcessor*, int, float) override;
+    void audioProcessorChanged(juce::AudioProcessor*,
+                               const juce::AudioProcessorListener::ChangeDetails&) override;
 
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(ShallowHost)
 };

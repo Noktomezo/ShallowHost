@@ -60,6 +60,7 @@ std::string ShallowHost::addToChainOnMessageThread(const std::string& uniqueId, 
     }
 
     node->setBypassed(bypassed);
+    node->getProcessor()->addListener(this);
     chainNodes.push_back(node);
     rebuildConnectionsOnMessageThread();
 
@@ -92,6 +93,7 @@ void ShallowHost::clearChain()
         host->activeWindows.clear();
         for (auto& node : host->chainNodes)
         {
+            node->getProcessor()->removeListener(host);
             host->graph.removeNode(node, juce::AudioProcessorGraph::UpdateKind::none);
         }
         host->chainNodes.clear();
@@ -127,6 +129,7 @@ bool ShallowHost::removeFromChainOnMessageThread(const std::string& nodeId)
 
     if (it != chainNodes.end())
     {
+        (*it)->getProcessor()->removeListener(this);
         graph.removeNode(*it, juce::AudioProcessorGraph::UpdateKind::none);
         chainNodes.erase(it);
         rebuildConnectionsOnMessageThread();
@@ -407,6 +410,7 @@ bool ShallowHost::loadStateJsonOnMessageThread(const std::string& stateJson)
     activeWindows.clear();
     for (auto& node : chainNodes)
     {
+        node->getProcessor()->removeListener(this);
         graph.removeNode(node, juce::AudioProcessorGraph::UpdateKind::none);
     }
     chainNodes.clear();
@@ -424,9 +428,21 @@ bool ShallowHost::loadStateJsonOnMessageThread(const std::string& stateJson)
             return false;
         }
         node->setBypassed(plugin.bypassed);
+        node->getProcessor()->addListener(this);
         chainNodes.push_back(node);
     }
 
     rebuildConnectionsOnMessageThread();
     return true;
+}
+
+void ShallowHost::audioProcessorParameterChanged(juce::AudioProcessor*, int, float)
+{
+    stateRevision.fetch_add(1, std::memory_order_relaxed);
+}
+
+void ShallowHost::audioProcessorChanged(
+    juce::AudioProcessor*, const juce::AudioProcessorListener::ChangeDetails&)
+{
+    stateRevision.fetch_add(1, std::memory_order_relaxed);
 }

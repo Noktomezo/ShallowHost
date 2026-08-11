@@ -109,6 +109,11 @@ bool loadState(const std::string& state)
     return ShallowHost::getInstance().loadStateJson(state);
 }
 
+std::uint64_t stateRevision()
+{
+    return ShallowHost::getInstance().getStateRevision();
+}
+
 void setMonoMode(bool mono)
 {
     ShallowHost::getInstance().setMonoMode(mono);

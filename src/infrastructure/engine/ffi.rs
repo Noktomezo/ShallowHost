@@ -43,6 +43,7 @@ mod bridge {
         fn open_plugin_gui(node_id: &str, title_prefix: &str) -> Result<bool>;
         fn save_state() -> Result<String>;
         fn load_state(state: &str) -> Result<bool>;
+        fn state_revision() -> Result<u64>;
         fn set_mono_mode(mono: bool) -> Result<()>;
     }
 }
@@ -132,6 +133,10 @@ pub fn save_state() -> Result<String, EngineError> {
 
 pub fn load_state(state: &str) -> Result<bool, EngineError> {
     bridge::load_state(state).map_err(|error| bridge_error("restore plugin chain state", error))
+}
+
+pub fn state_revision() -> Result<u64, EngineError> {
+    bridge::state_revision().map_err(|error| bridge_error("read plugin state revision", error))
 }
 
 pub fn parameters(node_id: &str) -> Result<String, EngineError> {

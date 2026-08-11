@@ -32,6 +32,7 @@ std::string parameters(const std::string& nodeId);
 bool openPluginGui(const std::string& nodeId, const std::string& titlePrefix);
 std::string saveState();
 bool loadState(const std::string& state);
+std::uint64_t stateRevision();
 void setMonoMode(bool mono);
 
 } // namespace shallow_host::native

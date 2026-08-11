@@ -51,6 +51,7 @@ rust::String parameters(rust::Str id) { return native::parameters(toStdString(id
 bool open_plugin_gui(rust::Str id, rust::Str title) { return native::openPluginGui(toStdString(id), toStdString(title)); }
 rust::String save_state() { return native::saveState(); }
 bool load_state(rust::Str state) { return native::loadState(toStdString(state)); }
+std::uint64_t state_revision() { return native::stateRevision(); }
 void set_mono_mode(bool mono) { native::setMonoMode(mono); }
 
 } // namespace shallow_host

@@ -30,6 +30,7 @@ rust::String parameters(rust::Str node_id);
 bool open_plugin_gui(rust::Str node_id, rust::Str title_prefix);
 rust::String save_state();
 bool load_state(rust::Str state);
+std::uint64_t state_revision();
 void set_mono_mode(bool mono);
 
 } // namespace shallow_host

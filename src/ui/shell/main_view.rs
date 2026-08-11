@@ -22,6 +22,7 @@ use crate::ui::state::audio_controls::AudioControls;
 use crate::ui::state::chain_operations::ChainOperationState;
 use gpui_updater::Updater;
 
+mod chain_state_task;
 mod navigation_item;
 mod page_transition;
 mod render_support;
@@ -75,6 +76,7 @@ pub struct MainView {
     _meter_task: Task<()>,
     _system_task: Task<()>,
     _chain_restore_task: Task<()>,
+    _chain_state_task: Task<()>,
     _audio_routing_task: Task<()>,
     _scan_paths_motion_task: Task<()>,
     audio_routing_revision: u64,
@@ -172,6 +174,7 @@ impl MainView {
             _meter_task: Task::ready(()),
             _system_task: Task::ready(()),
             _chain_restore_task: Task::ready(()),
+            _chain_state_task: Task::ready(()),
             _audio_routing_task: Task::ready(()),
             _scan_paths_motion_task: Task::ready(()),
             audio_routing_revision: 0,
@@ -272,6 +275,7 @@ impl MainView {
         this.audio_controls.remember_device_selection(cx);
         this.audio_controls.apply(&this.engine, cx, this.is_mono);
         this.start_chain_restore_task(cx);
+        this.start_chain_state_task(cx);
         this.start_meter_task(cx);
         this.start_system_task(cx);
         this.install_close_handler(window, cx);

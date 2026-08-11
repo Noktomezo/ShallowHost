@@ -336,6 +336,10 @@ impl Engine {
         })
     }
 
+    pub fn state_revision(&self) -> Result<u64, EngineError> {
+        ffi::state_revision()
+    }
+
     fn lock(&self) -> Result<std::sync::MutexGuard<'_, ()>, EngineError> {
         self.call_lock.lock().map_err(|_| EngineError::LockPoisoned)
     }
