@@ -67,7 +67,8 @@ impl RenderOnce for MarqueeText {
                     move |element, progress| {
                         element
                             .child(marquee_line(text.clone(), -shift * progress))
-                            .child(edge_fade(fade_color))
+                            .child(edge_fade(FadeEdge::Left, fade_color))
+                            .child(edge_fade(FadeEdge::Right, fade_color))
                     },
                 )
                 .into_any_element()
@@ -75,7 +76,9 @@ impl RenderOnce for MarqueeText {
             viewport
                 .child(marquee_line(self.text, Pixels::ZERO))
                 .when(shift > Pixels::ZERO, |element| {
-                    element.child(edge_fade(self.fade_color))
+                    element
+                        .child(edge_fade(FadeEdge::Left, self.fade_color))
+                        .child(edge_fade(FadeEdge::Right, self.fade_color))
                 })
                 .into_any_element()
         }
@@ -91,19 +94,37 @@ fn marquee_line(text: SharedString, offset: Pixels) -> Div {
         .child(text)
 }
 
-fn edge_fade(color: Rgba) -> Div {
+#[derive(Clone, Copy)]
+enum FadeEdge {
+    Left,
+    Right,
+}
+
+fn edge_fade(edge: FadeEdge, color: Rgba) -> Div {
     let transparent = color.opacity(0.0);
-    div()
-        .absolute()
-        .top_0()
-        .bottom_0()
-        .right_0()
-        .w(FADE_WIDTH)
-        .bg(linear_gradient(
+    let background = match edge {
+        FadeEdge::Left => linear_gradient(
+            90.0,
+            linear_color_stop(color, 0.0),
+            linear_color_stop(transparent, 1.0),
+        ),
+        FadeEdge::Right => linear_gradient(
             90.0,
             linear_color_stop(transparent, 0.0),
             linear_color_stop(color, 1.0),
-        ))
+        ),
+    };
+    let overlay = div()
+        .absolute()
+        .top_0()
+        .bottom_0()
+        .w(FADE_WIDTH)
+        .bg(background);
+
+    match edge {
+        FadeEdge::Left => overlay.left_0(),
+        FadeEdge::Right => overlay.right_0(),
+    }
 }
 
 pub fn control_text_width(text: &SharedString, window: &mut Window) -> Pixels {
