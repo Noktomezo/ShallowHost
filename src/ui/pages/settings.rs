@@ -50,8 +50,8 @@ impl Language {
     pub const fn icon_path(self) -> &'static str {
         match self {
             Self::System => "assets/icons/globe.svg",
-            Self::Russian => "assets/icons/flags/ru.svg",
-            Self::English => "assets/icons/flags/gb.svg",
+            Self::Russian => "assets/icons/flags/ru.png",
+            Self::English => "assets/icons/flags/gb.png",
         }
     }
 

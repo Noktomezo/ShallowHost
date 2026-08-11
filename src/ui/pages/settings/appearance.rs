@@ -1,5 +1,6 @@
 use gpui::prelude::*;
 use gpui::*;
+use std::path::PathBuf;
 use std::rc::Rc;
 use std::time::Instant;
 
@@ -327,11 +328,10 @@ fn transparency_row(
 
 pub(super) fn local_icon(path: &'static str, uses_flag: bool) -> AnyElement {
     if uses_flag {
-        svg()
-            .external_path(resolve_path(path))
+        img(PathBuf::from(resolve_path(path)))
             .w(px(18.0))
             .h(px(12.0))
-            .text_color(colors::base_500())
+            .rounded(px(2.0))
             .into_any_element()
     } else {
         svg()
