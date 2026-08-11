@@ -3,10 +3,12 @@ use std::time::Duration;
 use gpui::prelude::*;
 use gpui::*;
 
-use crate::ui::foundation::control_style::CONTROL_FONT_FAMILY;
+use crate::ui::foundation::control_style::{CONTROL_FONT_FAMILY, DROPDOWN_CONTROL_HEIGHT};
 
 const MARQUEE_DURATION: Duration = Duration::from_millis(1_800);
-const FADE_WIDTH: Pixels = px(8.0);
+// The control has an 8 px gutter; keep its outer 1 px border unobscured.
+const FADE_WIDTH: Pixels = px(7.0);
+const BORDER_INSET: Pixels = px(1.0);
 const CONTROL_FONT_SIZE: Pixels = px(12.0);
 
 #[derive(IntoElement)]
@@ -45,7 +47,11 @@ impl RenderOnce for MarqueeText {
         let text_width = control_text_width(&self.text, window);
         let viewport_width = text_width.min(self.max_width);
         let shift = marquee_shift(text_width, viewport_width);
-        let anchor = div().relative().w(viewport_width).h_full().flex_none();
+        let anchor = div()
+            .relative()
+            .w(viewport_width)
+            .h(DROPDOWN_CONTROL_HEIGHT)
+            .flex_none();
 
         if self.active && shift > Pixels::ZERO {
             let text = self.text;
@@ -89,8 +95,8 @@ fn expanded_viewport(text_width: Pixels) -> Div {
     div()
         .absolute()
         .left(-FADE_WIDTH)
-        .top_0()
-        .bottom_0()
+        .top(BORDER_INSET)
+        .bottom(BORDER_INSET)
         .w(text_width + FADE_WIDTH * 2.0)
         .flex()
         .items_center()
@@ -117,13 +123,13 @@ fn edge_fade(edge: FadeEdge, color: Rgba) -> Div {
     let background = match edge {
         FadeEdge::Left => linear_gradient(
             90.0,
-            linear_color_stop(color, 0.0),
+            linear_color_stop(color, 0.35),
             linear_color_stop(transparent, 1.0),
         ),
         FadeEdge::Right => linear_gradient(
             90.0,
             linear_color_stop(transparent, 0.0),
-            linear_color_stop(color, 1.0),
+            linear_color_stop(color, 0.65),
         ),
     };
     let overlay = div()
