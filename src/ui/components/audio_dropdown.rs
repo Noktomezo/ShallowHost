@@ -197,7 +197,7 @@ fn render_menu(
                             .px_2()
                             .flex()
                             .items_center()
-                            .gap_2()
+                            .gap(px(0.0))
                             .cursor_pointer()
                             .control_text()
                             .text_color(colors::base_200())
@@ -223,7 +223,7 @@ fn render_menu(
                                 format!("{id}-option-{index}-marquee"),
                                 choice,
                                 item_hovered,
-                                px(120.0),
+                                px(128.0),
                                 if item_hovered {
                                     colors::base_800()
                                 } else {
@@ -362,7 +362,7 @@ impl RenderOnce for DropdownTrigger {
             .flex()
             .items_center()
             .justify_between()
-            .gap_2()
+            .gap(px(0.0))
             .flex_none()
             .cursor_pointer()
             .control_text()
@@ -376,7 +376,7 @@ impl RenderOnce for DropdownTrigger {
                 format!("{}-trigger-marquee", self.id),
                 self.choice,
                 hovered,
-                px(120.0),
+                px(128.0),
                 if surface_active {
                     colors::base_850()
                 } else {

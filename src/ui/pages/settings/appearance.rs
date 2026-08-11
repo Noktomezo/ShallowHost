@@ -264,7 +264,7 @@ fn render_menu(
                 .px_2()
                 .flex()
                 .items_center()
-                .gap_2()
+                .gap(px(0.0))
                 .cursor_pointer()
                 .control_text()
                 .text_color(colors::base_200())
@@ -289,7 +289,7 @@ fn render_menu(
                             MarqueeText::new(
                                 SharedString::from(format!("{id}-option-{index}-marquee")),
                                 option.label,
-                                px(96.0),
+                                px(104.0),
                             )
                             .active(item_hovered)
                             .fade_to(if item_hovered {

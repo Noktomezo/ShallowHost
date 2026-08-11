@@ -131,7 +131,7 @@ impl RenderOnce for DropdownTrigger {
             .flex()
             .items_center()
             .justify_between()
-            .gap_2()
+            .gap(px(0.0))
             .flex_none()
             .cursor_pointer()
             .control_text()
@@ -155,7 +155,7 @@ impl RenderOnce for DropdownTrigger {
                         MarqueeText::new(
                             SharedString::from(format!("{}-trigger-marquee", self.id)),
                             selected.label,
-                            px(96.0),
+                            px(104.0),
                         )
                         .active(hovered)
                         .fade_to(if surface_active {
