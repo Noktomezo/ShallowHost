@@ -7,7 +7,7 @@ use std::time::Instant;
 use super::{Language, ThemeMode, card, resolve_path, row, separator, setting_copy};
 use crate::ui::components::card_header::{card_header_layout, card_heading};
 use crate::ui::components::dropdown_overlay::adaptive_dropdown;
-use crate::ui::components::marquee_text::MarqueeText;
+use crate::ui::components::marquee_text::{MarqueeFade, MarqueeText};
 use crate::ui::components::toggle_switch::toggle_switch;
 use crate::ui::foundation::colors;
 use crate::ui::foundation::control_style::{
@@ -292,11 +292,15 @@ fn render_menu(
                                 px(104.0),
                             )
                             .active(item_hovered)
-                            .fade_to(if item_hovered {
-                                colors::base_800()
-                            } else {
-                                resting_background
-                            }),
+                            .fade_with_motion(
+                                SharedString::from(format!("{id}-option-{index}-fade")),
+                                MarqueeFade::new(
+                                    resting_background,
+                                    colors::base_800(),
+                                    item_hovered,
+                                    item_animating,
+                                ),
+                            ),
                         ),
                 )
                 .when(index == selected_index, |element| {

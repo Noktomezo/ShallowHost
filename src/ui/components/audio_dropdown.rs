@@ -3,7 +3,7 @@ use gpui::*;
 use std::time::Duration;
 
 use super::dropdown_overlay::adaptive_dropdown;
-use super::marquee_text::{MarqueeText, control_text_width};
+use super::marquee_text::{MarqueeFade, MarqueeText, control_text_width};
 use super::smooth_scroll::ScrollableColumn;
 use crate::ui::foundation::colors;
 use crate::ui::foundation::control_style::{
@@ -224,11 +224,12 @@ fn render_menu(
                                 choice,
                                 item_hovered,
                                 px(128.0),
-                                if item_hovered {
-                                    colors::base_800()
-                                } else {
-                                    resting_background
-                                },
+                                MarqueeFade::new(
+                                    resting_background,
+                                    colors::base_800(),
+                                    item_hovered,
+                                    item_animating,
+                                ),
                             ))
                             .when(index == selected, |element| {
                                 element.child(
@@ -377,11 +378,12 @@ impl RenderOnce for DropdownTrigger {
                 self.choice,
                 hovered,
                 px(128.0),
-                if surface_active {
-                    colors::base_850()
-                } else {
-                    colors::base_900()
-                },
+                MarqueeFade::new(
+                    colors::base_900(),
+                    colors::base_850(),
+                    surface_active,
+                    surface_animating,
+                ),
             )))
             .child(chevron)
     }
@@ -392,14 +394,14 @@ fn choice_label(
     choice: DropdownChoice,
     marquee_active: bool,
     max_width: Pixels,
-    fade_color: Rgba,
+    fade: MarqueeFade,
 ) -> AudioChoiceLabel {
     AudioChoiceLabel {
         id: SharedString::from(id),
         choice,
         marquee_active,
         max_width,
-        fade_color,
+        fade,
     }
 }
 
@@ -409,7 +411,7 @@ struct AudioChoiceLabel {
     choice: DropdownChoice,
     marquee_active: bool,
     max_width: Pixels,
-    fade_color: Rgba,
+    fade: MarqueeFade,
 }
 
 impl RenderOnce for AudioChoiceLabel {
@@ -425,6 +427,7 @@ impl RenderOnce for AudioChoiceLabel {
             Pixels::ZERO
         };
         let label_width = (self.max_width - suffix_width - suffix_gap).max(px(24.0));
+        let fade_id = SharedString::from(format!("{}-fade", self.id));
 
         div()
             .min_w_0()
@@ -436,7 +439,7 @@ impl RenderOnce for AudioChoiceLabel {
             .child(
                 MarqueeText::new(self.id, self.choice.label, label_width)
                     .active(self.marquee_active)
-                    .fade_to(self.fade_color),
+                    .fade_with_motion(fade_id, self.fade),
             )
             .when_some(self.choice.muted_suffix, |element, suffix| {
                 element.child(

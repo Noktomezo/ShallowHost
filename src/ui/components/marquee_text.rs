@@ -4,6 +4,7 @@ use gpui::prelude::*;
 use gpui::*;
 
 use crate::ui::foundation::control_style::{CONTROL_FONT_FAMILY, DROPDOWN_CONTROL_HEIGHT};
+use crate::ui::foundation::motion::{CONTROL_MOTION, mix_color};
 
 const MARQUEE_DURATION: Duration = Duration::from_millis(1_800);
 // The control has an 8 px gutter; keep its outer 1 px border unobscured.
@@ -18,6 +19,31 @@ pub struct MarqueeText {
     max_width: Pixels,
     active: bool,
     fade_color: Rgba,
+    fade_motion: Option<FadeMotion>,
+}
+
+#[derive(Clone, Copy)]
+pub struct MarqueeFade {
+    resting: Rgba,
+    active: Rgba,
+    is_active: bool,
+    animating: bool,
+}
+
+impl MarqueeFade {
+    pub fn new(resting: Rgba, active: Rgba, is_active: bool, animating: bool) -> Self {
+        Self {
+            resting,
+            active,
+            is_active,
+            animating,
+        }
+    }
+}
+
+struct FadeMotion {
+    id: ElementId,
+    fade: MarqueeFade,
 }
 
 impl MarqueeText {
@@ -28,6 +54,7 @@ impl MarqueeText {
             max_width,
             active: false,
             fade_color: transparent_black().into(),
+            fade_motion: None,
         }
     }
 
@@ -36,8 +63,16 @@ impl MarqueeText {
         self
     }
 
-    pub fn fade_to(mut self, color: Rgba) -> Self {
-        self.fade_color = color;
+    pub fn fade_with_motion(mut self, id: impl Into<ElementId>, fade: MarqueeFade) -> Self {
+        self.fade_color = if fade.is_active {
+            fade.active
+        } else {
+            fade.resting
+        };
+        self.fade_motion = Some(FadeMotion {
+            id: id.into(),
+            fade,
+        });
         self
     }
 }
@@ -52,24 +87,33 @@ impl RenderOnce for MarqueeText {
             .w(viewport_width)
             .h(DROPDOWN_CONTROL_HEIGHT)
             .flex_none();
+        let fade_layer = animated_edge_fades(self.fade_color, self.fade_motion);
 
         if self.active && shift > Pixels::ZERO {
             let text = self.text;
-            let fade_color = self.fade_color;
             anchor
                 .child(
-                    expanded_viewport(viewport_width).with_animation(
-                        self.id,
-                        Animation::new(MARQUEE_DURATION)
-                            .repeat()
-                            .with_easing(bounce(ease_in_out)),
-                        move |element, progress| {
-                            element
-                                .child(marquee_line(text.clone(), FADE_WIDTH - shift * progress))
-                                .child(edge_fade(FadeEdge::Left, fade_color))
-                                .child(edge_fade(FadeEdge::Right, fade_color))
-                        },
-                    ),
+                    expanded_viewport(viewport_width)
+                        .child(
+                            div()
+                                .absolute()
+                                .inset_0()
+                                .flex()
+                                .items_center()
+                                .with_animation(
+                                    self.id,
+                                    Animation::new(MARQUEE_DURATION)
+                                        .repeat()
+                                        .with_easing(bounce(ease_in_out)),
+                                    move |element, progress| {
+                                        element.child(marquee_line(
+                                            text.clone(),
+                                            FADE_WIDTH - shift * progress,
+                                        ))
+                                    },
+                                ),
+                        )
+                        .child(fade_layer),
                 )
                 .into_any_element()
         } else if shift > Pixels::ZERO {
@@ -77,8 +121,7 @@ impl RenderOnce for MarqueeText {
                 .child(
                     expanded_viewport(viewport_width)
                         .child(marquee_line(self.text, FADE_WIDTH))
-                        .child(edge_fade(FadeEdge::Left, self.fade_color))
-                        .child(edge_fade(FadeEdge::Right, self.fade_color)),
+                        .child(fade_layer),
                 )
                 .into_any_element()
         } else {
@@ -88,6 +131,29 @@ impl RenderOnce for MarqueeText {
                 .child(marquee_line(self.text, Pixels::ZERO))
                 .into_any_element()
         }
+    }
+}
+
+fn animated_edge_fades(color: Rgba, motion: Option<FadeMotion>) -> AnyElement {
+    let layer = div().absolute().inset_0();
+    match motion {
+        Some(FadeMotion { id, fade }) if fade.animating => layer
+            .with_animation(
+                id,
+                Animation::new(CONTROL_MOTION).with_easing(ease_in_out),
+                move |element, delta| {
+                    let progress = if fade.is_active { delta } else { 1.0 - delta };
+                    let color = mix_color(fade.resting, fade.active, progress);
+                    element
+                        .child(edge_fade(FadeEdge::Left, color))
+                        .child(edge_fade(FadeEdge::Right, color))
+                },
+            )
+            .into_any_element(),
+        _ => layer
+            .child(edge_fade(FadeEdge::Left, color))
+            .child(edge_fade(FadeEdge::Right, color))
+            .into_any_element(),
     }
 }
 

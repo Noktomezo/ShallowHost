@@ -4,7 +4,7 @@ use std::time::Duration;
 
 use super::appearance::{AppearanceOption, local_icon};
 use super::resolve_path;
-use crate::ui::components::marquee_text::MarqueeText;
+use crate::ui::components::marquee_text::{MarqueeFade, MarqueeText};
 use crate::ui::foundation::colors;
 use crate::ui::foundation::control_style::{
     ControlTypography, DROPDOWN_CONTROL_HEIGHT, DROPDOWN_CONTROL_WIDTH,
@@ -158,11 +158,15 @@ impl RenderOnce for DropdownTrigger {
                             px(104.0),
                         )
                         .active(hovered)
-                        .fade_to(if surface_active {
-                            colors::base_850()
-                        } else {
-                            colors::base_900()
-                        }),
+                        .fade_with_motion(
+                            SharedString::from(format!("{}-trigger-fade", self.id)),
+                            MarqueeFade::new(
+                                colors::base_900(),
+                                colors::base_850(),
+                                surface_active,
+                                surface_animating,
+                            ),
+                        ),
                     )
                     .into_any_element()
             } else {
