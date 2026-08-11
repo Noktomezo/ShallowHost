@@ -233,20 +233,27 @@ fn selection_and_cursor(
         return (None, None);
     }
     let cursor_x = bounds.left() + line.x_for_index(selected_range.start) - scroll_x;
-    let cursor = Bounds::new(
-        point(cursor_x, bounds.top()),
-        size(CARET_WIDTH, bounds.size.height),
-    );
+    let cursor = caret_bounds(cursor_x, bounds, line.ascent + line.descent);
     (
         None,
         Some(fill(cursor, colors::orange().opacity(caret_opacity))),
     )
 }
 
+fn caret_bounds(
+    cursor_x: Pixels,
+    container: Bounds<Pixels>,
+    text_height: Pixels,
+) -> Bounds<Pixels> {
+    let height = text_height.min(container.size.height);
+    let top = container.top() + (container.size.height - height) / 2.0;
+    Bounds::new(point(cursor_x, top), size(CARET_WIDTH, height))
+}
+
 #[cfg(test)]
 mod tests {
-    use super::adjusted_scroll;
-    use gpui::px;
+    use super::{adjusted_scroll, caret_bounds};
+    use gpui::{Bounds, point, px, size};
 
     #[test]
     fn horizontal_scroll_keeps_the_caret_inside_the_viewport() {
@@ -258,5 +265,14 @@ mod tests {
             adjusted_scroll(px(30.0), px(10.0), px(160.0), px(100.0)),
             px(10.0)
         );
+    }
+
+    #[test]
+    fn caret_is_centered_on_the_text_instead_of_filling_the_control() {
+        let container = Bounds::new(point(px(5.0), px(10.0)), size(px(100.0), px(32.0)));
+        let caret = caret_bounds(px(20.0), container, px(14.0));
+
+        assert_eq!(caret.origin, point(px(20.0), px(19.0)));
+        assert_eq!(caret.size, size(px(2.0), px(14.0)));
     }
 }
