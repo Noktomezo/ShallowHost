@@ -14,7 +14,7 @@ pub fn update_pulse_opacity(progress: f32) -> f32 {
 }
 
 pub fn refresh_rotation(progress: f32) -> Radians {
-    Radians(-std::f32::consts::TAU * progress)
+    Radians(std::f32::consts::TAU * progress)
 }
 
 #[derive(Default)]
@@ -230,8 +230,8 @@ mod tests {
     }
 
     #[test]
-    fn refresh_icon_rotates_counter_clockwise() {
-        assert!(refresh_rotation(0.25).0 < 0.0);
+    fn refresh_icon_rotates_clockwise() {
+        assert!(refresh_rotation(0.25).0 > 0.0);
     }
 
     #[test]
