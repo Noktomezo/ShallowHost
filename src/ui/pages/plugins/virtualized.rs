@@ -3,7 +3,9 @@ use std::sync::Arc;
 use gpui::prelude::*;
 use gpui::*;
 
-use super::controls::{IconButtonStyle, chain_navigation_button, icon_button};
+use super::card::render_plugin_card;
+use super::controls::{IconButtonStyle, icon_button, library_mode_button};
+use super::grouped::{self, LibraryRow, PluginLibraryState};
 use super::search;
 use super::{PluginItem, PluginScanState};
 use crate::infrastructure::config::PluginSettings;
@@ -15,14 +17,14 @@ use crate::ui::components::text_input::TextInputState;
 use crate::ui::foundation::colors;
 use crate::ui::foundation::i18n;
 use crate::ui::foundation::plugin_format;
-use crate::ui::shell::routes::{DropdownCallbacks, NavigateCallback, Route};
-use crate::ui::state::chain_operations::{self, ChainOperationState, PendingPlugin};
+use crate::ui::shell::routes::{DropdownCallbacks, NavigateCallback};
+use crate::ui::state::chain_operations::ChainOperationState;
 
 // 40 px content + 32 px card padding + 2 px border + 12 px inter-row spacing.
 // Keep every virtual row at this exact height: uniform_list measures one row
 // and computes the complete scrollbar extent before off-screen rows are rendered.
-const CARD_HEIGHT: Pixels = px(74.0);
-const ROW_HEIGHT: Pixels = px(86.0);
+pub(super) const CARD_HEIGHT: Pixels = px(74.0);
+pub(super) const ROW_HEIGHT: Pixels = px(86.0);
 
 #[derive(Clone)]
 pub(super) struct HeaderContext {
@@ -31,6 +33,7 @@ pub(super) struct HeaderContext {
     callbacks: DropdownCallbacks,
     scan_state: Entity<PluginScanState>,
     search: Entity<TextInputState>,
+    library_state: Entity<PluginLibraryState>,
     wheel_enabled: bool,
 }
 
@@ -41,6 +44,7 @@ impl HeaderContext {
         callbacks: DropdownCallbacks,
         scan_state: Entity<PluginScanState>,
         search: Entity<TextInputState>,
+        library_state: Entity<PluginLibraryState>,
         wheel_enabled: bool,
     ) -> Self {
         Self {
@@ -49,6 +53,7 @@ impl HeaderContext {
             callbacks,
             scan_state,
             search,
+            library_state,
             wheel_enabled,
         }
     }
@@ -68,6 +73,10 @@ impl HeaderContext {
         let scan_progress = scan_status.progress;
         let scan_state = self.scan_state.clone();
         let search_control = search::render(&self.search, window, cx);
+        let grouped_by_author = self.library_state.read(cx).grouped_by_author();
+        let (mode_revision, mode_animating) = self.library_state.read(cx).mode_motion();
+        let mode_state = self.library_state.clone();
+        let mode_search = self.search.clone();
 
         div()
             .w_full()
@@ -128,6 +137,25 @@ impl HeaderContext {
                     .items_center()
                     .gap_2()
                     .child(search_control)
+                    .child(
+                        library_mode_button(grouped_by_author, mode_revision, mode_animating, cx)
+                            .on_click(move |_, window, cx| {
+                                let grouped_by_author =
+                                    mode_state.update(cx, |state, cx| state.toggle_mode(cx));
+                                mode_search.update(cx, |search, cx| {
+                                    search.set_value("", cx);
+                                    search.set_placeholder(
+                                        i18n::t(if grouped_by_author {
+                                            "plugins.searchAuthors"
+                                        } else {
+                                            "plugins.search"
+                                        }),
+                                        cx,
+                                    );
+                                });
+                                window.refresh();
+                            }),
+                    )
                     .child(
                         icon_button(
                             "btn-scan-paths",
@@ -229,14 +257,16 @@ pub(super) fn render(
 ) -> AnyElement {
     // The header is row zero, so it participates in the same viewport and scroll
     // position as the cards instead of introducing a nested scrolling region.
-    let item_count = plugins.len() + 1;
+    let library_state = header.library_state.clone();
+    let rows = grouped::build_rows(&plugins, library_state.read(cx));
+    let item_count = rows.len() + 1;
     let state = window
         .use_keyed_state("plugins-virtual-list", cx, |_, _| VirtualListState {
             scroll: UniformListScrollHandle::new(),
         })
         .clone();
     let scroll_handle = state.read(cx).scroll.clone();
-    let render_plugins = Arc::clone(&plugins);
+    let render_rows = Arc::clone(&rows);
     let format_counts = plugin_format::counts(plugins.iter().map(|plugin| plugin.format.as_str()));
     let card_scan_state = header.scan_state.clone();
     let wheel_enabled = header.wheel_enabled;
@@ -258,23 +288,55 @@ pub(super) fn render(
                     }
 
                     let index = row - 1;
-                    let Some(plugin) = render_plugins.get(index).cloned() else {
+                    let Some(library_row) = render_rows.get(index).cloned() else {
                         return div().h(ROW_HEIGHT).into_any_element();
                     };
-                    div()
-                        .w_full()
-                        .h(ROW_HEIGHT)
-                        .px_4()
-                        .pb_3()
-                        .child(render_plugin_card(
+                    match library_row {
+                        LibraryRow::Plugin(plugin) => div()
+                            .w_full()
+                            .h(ROW_HEIGHT)
+                            .px_4()
+                            .pb_3()
+                            .child(render_plugin_card(
+                                plugin,
+                                Arc::clone(&engine),
+                                on_navigate.clone(),
+                                chain_operations.clone(),
+                                card_scan_state.clone(),
+                                cx,
+                            ))
+                            .into_any_element(),
+                        LibraryRow::AuthorHeader(header) => {
+                            grouped::render_author_header(header, library_state.clone(), cx)
+                        }
+                        LibraryRow::AuthorPlugin {
+                            author,
                             plugin,
-                            Arc::clone(&engine),
-                            on_navigate.clone(),
-                            chain_operations.clone(),
-                            card_scan_state.clone(),
-                            cx,
-                        ))
-                        .into_any_element()
+                            closing,
+                            last,
+                            revision,
+                            animating,
+                        } => {
+                            let plugin_id = plugin.id.clone();
+                            let plugin_card = render_plugin_card(
+                                plugin,
+                                Arc::clone(&engine),
+                                on_navigate.clone(),
+                                chain_operations.clone(),
+                                card_scan_state.clone(),
+                                cx,
+                            );
+                            grouped::render_author_plugin_shell(
+                                &author,
+                                &plugin_id,
+                                closing,
+                                last,
+                                revision,
+                                animating,
+                                plugin_card,
+                            )
+                        }
+                    }
                 })
                 .collect::<Vec<_>>()
         },
@@ -297,167 +359,4 @@ pub(super) fn render(
             scroll_handle,
         ))
         .into_any_element()
-}
-
-fn render_plugin_card(
-    plugin: PluginItem,
-    engine: Arc<Engine>,
-    on_navigate: NavigateCallback,
-    chain_operations: Entity<ChainOperationState>,
-    scan_state: Entity<PluginScanState>,
-    cx: &App,
-) -> AnyElement {
-    let stable_id = plugin.id.clone();
-    let card_id = SharedString::from(format!("plugin-card-{stable_id}"));
-    let in_chain_button_id = SharedString::from(format!("btn-in-chain-{stable_id}"));
-    let add_button_id = SharedString::from(format!("btn-add-chain-{stable_id}"));
-    let reveal_button_id = SharedString::from(format!("btn-reveal-{stable_id}"));
-    let add_engine = engine;
-    let add_operations = chain_operations.clone();
-    let plugin_path = plugin.path.clone();
-    let pending_plugin = PendingPlugin {
-        unique_id: plugin.id.clone(),
-        name: plugin.name.clone(),
-        vendor: plugin.vendor.clone(),
-        format: plugin.format.clone(),
-    };
-    let chain_busy = chain_operations.read(cx).is_busy();
-    let scanning = scan_state.read(cx).scanning;
-
-    div()
-        .id(card_id)
-        .w_full()
-        .h(CARD_HEIGHT)
-        .p_4()
-        .bg(colors::base_950())
-        .border_1()
-        .border_color(colors::base_800())
-        .rounded_lg()
-        .flex()
-        .flex_row()
-        .items_center()
-        .justify_between()
-        .child(
-            div()
-                .flex_1()
-                .overflow_hidden()
-                .flex()
-                .flex_row()
-                .items_center()
-                .gap_4()
-                .child(
-                    div()
-                        .flex_none()
-                        .size(px(40.0))
-                        .bg(colors::base_900())
-                        .border_1()
-                        .border_color(colors::base_800())
-                        .rounded_md()
-                        .flex()
-                        .items_center()
-                        .justify_center()
-                        .child(
-                            svg()
-                                .path(crate::ui::resolve_asset_path("assets/icons/box.svg"))
-                                .size_5()
-                                .text_color(colors::orange()),
-                        ),
-                )
-                .child(
-                    div()
-                        .flex_1()
-                        .overflow_hidden()
-                        .flex()
-                        .flex_col()
-                        .gap(px(2.0))
-                        .child(
-                            div()
-                                .flex()
-                                .flex_row()
-                                .items_center()
-                                .gap_2()
-                                .child(
-                                    div()
-                                        .truncate()
-                                        .text_sm()
-                                        .font_weight(FontWeight::BOLD)
-                                        .text_color(colors::base_200())
-                                        .child(plugin.name),
-                                )
-                                .child(badge(
-                                    plugin_format::display_name(&plugin.format),
-                                    plugin_format::badge_style(&plugin.format),
-                                ))
-                                .when(plugin.initializing, |row| {
-                                    row.child(loading_badge(i18n::t("plugins.initializing")))
-                                })
-                                .when(plugin.in_chain && !plugin.initializing, |row| {
-                                    row.child(badge(i18n::t("plugins.inChain"), BadgeStyle::Green))
-                                }),
-                        )
-                        .child(
-                            div()
-                                .text_xs()
-                                .text_color(colors::base_500())
-                                .truncate()
-                                .child(plugin.vendor),
-                        ),
-                ),
-        )
-        .child(
-            div()
-                .flex()
-                .flex_row()
-                .items_center()
-                .gap_1()
-                .child(if plugin.in_chain || plugin.initializing {
-                    chain_navigation_button(in_chain_button_id, cx)
-                        .on_click(move |_, window, cx| on_navigate(Route::Home, window, cx))
-                        .into_any_element()
-                } else {
-                    icon_button(
-                        add_button_id,
-                        "assets/icons/plus.svg",
-                        i18n::t("plugins.addToChain"),
-                        IconButtonStyle::Outline,
-                        false,
-                        chain_busy || scanning,
-                        cx,
-                    )
-                    .on_click(move |_, _, cx| {
-                        if add_operations.read(cx).is_busy() || scan_state.read(cx).scanning {
-                            return;
-                        }
-                        chain_operations::add_plugin(
-                            add_operations.clone(),
-                            Arc::clone(&add_engine),
-                            pending_plugin.clone(),
-                            cx,
-                        );
-                    })
-                    .into_any_element()
-                })
-                .child(
-                    icon_button(
-                        reveal_button_id,
-                        "assets/icons/folder.svg",
-                        i18n::t("plugins.reveal"),
-                        IconButtonStyle::Outline,
-                        false,
-                        false,
-                        cx,
-                    )
-                    .on_click(move |_, _, _| reveal_plugin(&plugin_path)),
-                ),
-        )
-        .into_any_element()
-}
-
-fn reveal_plugin(path: &str) {
-    if let Err(error) = std::process::Command::new("explorer.exe")
-        .arg(format!("/select,{path}"))
-        .spawn()
-    {
-        eprintln!("failed to reveal plugin in Explorer: {error}");
-    }
 }

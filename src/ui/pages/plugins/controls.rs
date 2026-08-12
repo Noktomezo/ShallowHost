@@ -5,7 +5,7 @@ use gpui::*;
 
 use crate::ui::components::cursor_tooltip;
 use crate::ui::foundation::control_style::ControlTypography;
-use crate::ui::foundation::motion::{mix_color, refresh_rotation};
+use crate::ui::foundation::motion::{CONTROL_MOTION, mix_color, refresh_rotation};
 use crate::ui::foundation::{colors, i18n};
 use crate::ui::resolve_asset_path;
 
@@ -78,6 +78,86 @@ pub(super) fn icon_button(
         .when(disabled, |button| button.cursor_default().opacity(0.5))
         .when(!disabled, |button| button.cursor_pointer());
     cursor_tooltip::attach_with_hover_motion(button, id, hover_key, tooltip)
+}
+
+pub(super) fn library_mode_button(
+    grouped_by_author: bool,
+    revision: u64,
+    animating: bool,
+    cx: &App,
+) -> Stateful<Div> {
+    let id = ElementId::Name("btn-plugin-library-mode".into());
+    let hover_key = SharedString::from("plugins-button-library-mode");
+    let hover = crate::ui::foundation::hover_motion::progress(&hover_key, cx);
+    let icon = mode_icon(grouped_by_author, revision, animating);
+    let tooltip = if grouped_by_author {
+        i18n::t("plugins.showPlugins")
+    } else {
+        i18n::t("plugins.groupByAuthors")
+    };
+    let button = div()
+        .id(id.clone())
+        .size(px(34.0))
+        .flex_none()
+        .flex()
+        .items_center()
+        .justify_center()
+        .cursor_pointer()
+        .bg(mix_color(colors::base_900(), colors::base_850(), hover))
+        .border_1()
+        .border_color(mix_color(colors::base_800(), colors::base_700(), hover))
+        .rounded_md()
+        .child(icon);
+    cursor_tooltip::attach_with_hover_motion(button, id, hover_key, tooltip)
+}
+
+fn mode_icon(grouped_by_author: bool, revision: u64, animating: bool) -> AnyElement {
+    let container = div().relative().size(px(17.0));
+    if animating {
+        container
+            .with_animation(
+                ElementId::NamedInteger("plugin-library-mode-icon".into(), revision),
+                Animation::new(CONTROL_MOTION).with_easing(ease_in_out),
+                move |element, delta| {
+                    let progress = if grouped_by_author {
+                        delta
+                    } else {
+                        1.0 - delta
+                    };
+                    element
+                        .child(mode_icon_svg(
+                            "assets/icons/user-search.svg",
+                            1.0 - progress,
+                        ))
+                        .child(mode_icon_svg("assets/icons/package-search.svg", progress))
+                },
+            )
+            .into_any_element()
+    } else {
+        container
+            .child(mode_icon_svg(
+                "assets/icons/user-search.svg",
+                if grouped_by_author { 0.0 } else { 1.0 },
+            ))
+            .child(mode_icon_svg(
+                "assets/icons/package-search.svg",
+                if grouped_by_author { 1.0 } else { 0.0 },
+            ))
+            .into_any_element()
+    }
+}
+
+fn mode_icon_svg(path: &'static str, progress: f32) -> Svg {
+    svg()
+        .absolute()
+        .inset_0()
+        .path(resolve_asset_path(path))
+        .size(px(17.0))
+        .text_color(colors::base_200())
+        .opacity(progress)
+        .with_transformation(Transformation::rotate(Radians(
+            std::f32::consts::FRAC_PI_2 * (1.0 - progress),
+        )))
 }
 
 pub(super) fn chain_navigation_button(id: impl Into<ElementId>, cx: &App) -> Stateful<Div> {

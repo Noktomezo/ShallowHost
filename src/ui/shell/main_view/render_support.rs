@@ -41,6 +41,7 @@ impl MainView {
             language_dropdown_motion: self.language_dropdown_motion.clone(),
             plugin_scan_state: self.plugin_scan_state.clone(),
             plugin_search: self.plugin_search.clone(),
+            plugin_library_state: self.plugin_library_state.clone(),
             chain_operation_state: self.chain_operation_state.clone(),
             updater: self.updater.clone(),
         }

@@ -17,7 +17,7 @@ use crate::ui::components::text_input::{TextInputEvent, TextInputState};
 use crate::ui::foundation::motion::DropdownMotion;
 use crate::ui::foundation::{colors, i18n};
 use crate::ui::pages::home::update_chain_drag_mouse;
-use crate::ui::pages::plugins::{PluginScanState, SEARCH_FOCUS_KEY};
+use crate::ui::pages::plugins::{PluginLibraryState, PluginScanState, SEARCH_FOCUS_KEY};
 use crate::ui::state::audio_controls::AudioControls;
 use crate::ui::state::chain_operations::ChainOperationState;
 use gpui_updater::Updater;
@@ -56,6 +56,7 @@ pub struct MainView {
     language_dropdown_motion: Entity<DropdownMotion>,
     plugin_scan_state: Entity<PluginScanState>,
     plugin_search: Entity<TextInputState>,
+    plugin_library_state: Entity<PluginLibraryState>,
     chain_operation_state: Entity<ChainOperationState>,
     updater: Entity<Updater>,
     single_instance: SingleInstance,
@@ -154,6 +155,7 @@ impl MainView {
             language_dropdown_motion: cx.new(|_| DropdownMotion::default()),
             plugin_scan_state: cx.new(|_| PluginScanState::default()),
             plugin_search: plugin_search.clone(),
+            plugin_library_state: cx.new(|_| PluginLibraryState::default()),
             chain_operation_state: cx.new(|_| ChainOperationState::default()),
             updater: updater.clone(),
             single_instance,

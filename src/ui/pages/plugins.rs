@@ -9,11 +9,14 @@ use crate::ui::components::text_input::TextInputState;
 use crate::ui::shell::routes::{DropdownCallbacks, NavigateCallback, ScanPathsDialogState};
 use crate::ui::state::chain_operations::ChainOperationState;
 
+mod card;
 mod controls;
+mod grouped;
 mod scan_paths_dialog;
 mod search;
 mod virtualized;
 
+pub(crate) use grouped::PluginLibraryState;
 pub(crate) use search::{SEARCH_FOCUS_KEY, reset_interaction as reset_search_interaction};
 
 #[derive(Clone, Debug, PartialEq, Eq)]
@@ -41,6 +44,7 @@ pub struct PluginsPage {
     callbacks: DropdownCallbacks,
     scan_state: Entity<PluginScanState>,
     search: Entity<TextInputState>,
+    library_state: Entity<PluginLibraryState>,
     chain_operations: Entity<ChainOperationState>,
 }
 
@@ -50,10 +54,11 @@ impl PluginsPage {
         engine: Arc<Engine>,
         settings: PluginSettings,
         scan_paths: ScanPathsDialogState,
-        scan_state: Entity<PluginScanState>,
+        page_states: (Entity<PluginScanState>, Entity<PluginLibraryState>),
         search: Entity<TextInputState>,
         chain_operations: Entity<ChainOperationState>,
     ) -> Self {
+        let (scan_state, library_state) = page_states;
         Self {
             on_navigate: cb.on_navigate.clone(),
             engine,
@@ -62,6 +67,7 @@ impl PluginsPage {
             callbacks: cb.clone(),
             scan_state,
             search,
+            library_state,
             chain_operations,
         }
     }
@@ -94,8 +100,14 @@ impl PluginsPage {
                 path: plugin.path,
             })
             .collect::<Vec<_>>();
-        plugins.retain(|plugin| search::matches_plugin(plugin, &search_query));
-        sort_plugins(&mut plugins);
+        let grouped_by_author = self.library_state.read(cx).grouped_by_author();
+        if grouped_by_author {
+            plugins.retain(|plugin| search::matches_author(&plugin.vendor, &search_query));
+            sort_plugins_by_author(&mut plugins);
+        } else {
+            plugins.retain(|plugin| search::matches_plugin(plugin, &search_query));
+            sort_plugins(&mut plugins);
+        }
         let plugins = Arc::new(plugins);
         let scan_paths_visible = self.scan_paths.visible();
         let header = virtualized::HeaderContext::new(
@@ -104,6 +116,7 @@ impl PluginsPage {
             self.callbacks.clone(),
             self.scan_state.clone(),
             self.search.clone(),
+            self.library_state.clone(),
             !scan_paths_visible,
         );
         let content = virtualized::render(
@@ -142,6 +155,18 @@ fn sort_plugins(plugins: &mut [PluginItem]) {
     });
 }
 
+fn sort_plugins_by_author(plugins: &mut [PluginItem]) {
+    plugins.sort_by_cached_key(|plugin| {
+        (
+            plugin_name_group(&plugin.vendor),
+            plugin.vendor.to_lowercase(),
+            plugin_name_group(&plugin.name),
+            plugin.name.to_lowercase(),
+            plugin.id.clone(),
+        )
+    });
+}
+
 fn plugin_name_group(name: &str) -> u8 {
     match name.trim_start().chars().next() {
         Some(character) if character.is_ascii_digit() => 0,
@@ -152,7 +177,7 @@ fn plugin_name_group(name: &str) -> u8 {
 
 #[cfg(test)]
 mod tests {
-    use super::{PluginItem, search, sort_plugins};
+    use super::{PluginItem, search, sort_plugins, sort_plugins_by_author};
 
     fn plugin(id: &str, name: &str, vendor: &str) -> PluginItem {
         PluginItem {
@@ -197,5 +222,27 @@ mod tests {
         assert!(search::matches_plugin(&clarity, "claritu waves"));
         assert!(!search::matches_plugin(&clarity, "cx"));
         assert!(!search::matches_plugin(&clarity, "completely unrelated"));
+        assert!(search::matches_author("Tokyo Dawn Labs", "tokyo"));
+        assert!(search::matches_author("Tokyo Dawn Labs", "tokio"));
+        assert!(!search::matches_author("Tokyo Dawn Labs", "waves"));
+    }
+
+    #[test]
+    fn author_mode_sorts_authors_then_plugins() {
+        let mut plugins = vec![
+            plugin("3", "Zulu", "Waves"),
+            plugin("2", "Beta", "Acme"),
+            plugin("1", "Alpha", "Acme"),
+        ];
+
+        sort_plugins_by_author(&mut plugins);
+
+        assert_eq!(
+            plugins
+                .iter()
+                .map(|plugin| plugin.id.as_str())
+                .collect::<Vec<_>>(),
+            ["1", "2", "3"]
+        );
     }
 }

@@ -331,8 +331,13 @@ impl MainView {
         self.selected_language = language;
         self.storage.config_mut().language = language;
         i18n::set_language(language);
+        let search_key = if self.plugin_library_state.read(cx).grouped_by_author() {
+            "plugins.searchAuthors"
+        } else {
+            "plugins.search"
+        };
         self.plugin_search.update(cx, |search, cx| {
-            search.set_placeholder(i18n::t("plugins.search"), cx);
+            search.set_placeholder(i18n::t(search_key), cx);
         });
         self.save_config();
         cx.notify();

@@ -124,6 +124,25 @@ pub(super) fn matches_plugin(plugin: &PluginItem, query: &str) -> bool {
     })
 }
 
+pub(super) fn matches_author(author: &str, query: &str) -> bool {
+    let query = query.trim().to_lowercase();
+    if query.is_empty() {
+        return true;
+    }
+
+    let author = author.to_lowercase();
+    query.split_whitespace().all(|query_word| {
+        author.contains(query_word)
+            || author
+                .split(|character: char| !character.is_alphanumeric())
+                .filter(|word| !word.is_empty())
+                .any(|word| {
+                    strsim::levenshtein(query_word, word)
+                        <= fuzzy_distance_limit(query_word.chars().count())
+                })
+    })
+}
+
 const fn fuzzy_distance_limit(query_length: usize) -> usize {
     match query_length {
         0..=2 => 0,
