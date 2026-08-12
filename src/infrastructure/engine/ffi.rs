@@ -41,6 +41,7 @@ mod bridge {
         fn chain() -> Result<String>;
         fn parameters(node_id: &str) -> Result<String>;
         fn open_plugin_gui(node_id: &str, title_prefix: &str) -> Result<bool>;
+        fn plugin_gui_open(node_id: &str) -> Result<bool>;
         fn save_state() -> Result<String>;
         fn load_state(state: &str) -> Result<bool>;
         fn state_revision() -> Result<u64>;
@@ -146,6 +147,11 @@ pub fn parameters(node_id: &str) -> Result<String, EngineError> {
 pub fn open_plugin_gui(node_id: &str, title: &str) -> Result<bool, EngineError> {
     bridge::open_plugin_gui(node_id, title)
         .map_err(|error| bridge_error("open plugin editor", error))
+}
+
+pub fn plugin_gui_open(node_id: &str) -> Result<bool, EngineError> {
+    bridge::plugin_gui_open(node_id)
+        .map_err(|error| bridge_error("read plugin editor status", error))
 }
 
 pub fn set_mono_mode(mono: bool) -> Result<(), EngineError> {

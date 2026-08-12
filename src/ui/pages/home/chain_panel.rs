@@ -155,6 +155,13 @@ fn chain_item(
     chain_operations: Entity<ChainOperationState>,
     cx: &App,
 ) -> AnyElement {
+    let gui_open = match engine.plugin_gui_open(&item.id) {
+        Ok(open) => open,
+        Err(error) => {
+            eprintln!("failed to read plugin editor status: {error}");
+            false
+        }
+    };
     let gui_engine = Arc::clone(&engine);
     let bypass_engine = Arc::clone(&engine);
     let gui_id = item.id.clone();
@@ -202,7 +209,10 @@ fn chain_item(
                         "external-link.svg",
                         "home.openGui",
                         false,
-                        None,
+                        Some(super::IconButtonState::Highlight {
+                            active: gui_open,
+                            color: colors::blue(),
+                        }),
                         item_disabled,
                         cx,
                     )
@@ -239,7 +249,7 @@ fn chain_item(
                             "home.bypass"
                         },
                         false,
-                        Some(item.bypassed),
+                        Some(super::IconButtonState::Bypass(item.bypassed)),
                         item_disabled,
                         cx,
                     )

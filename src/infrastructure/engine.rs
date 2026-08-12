@@ -336,6 +336,10 @@ impl Engine {
         })
     }
 
+    pub fn plugin_gui_open(&self, node_id: &str) -> Result<bool, EngineError> {
+        ffi::plugin_gui_open(node_id)
+    }
+
     pub fn state_revision(&self) -> Result<u64, EngineError> {
         ffi::state_revision()
     }

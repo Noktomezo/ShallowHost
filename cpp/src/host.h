@@ -25,6 +25,7 @@
 #include <string>
 #include <vector>
 #include <memory>
+#include <mutex>
 #include <unordered_map>
 #include <unordered_set>
 #include <atomic>
@@ -141,6 +142,7 @@ public:
 
     bool openPluginGui(const std::string& nodeId, const std::string& titlePrefix = "");
     bool closePluginGui(const std::string& nodeId);
+    bool isPluginGuiOpen(const std::string& nodeId) const;
 
     std::string addToChainWithState(const std::string& uniqueId, const std::string& base64State, bool bypassed);
     void clearChain();
@@ -203,6 +205,8 @@ private:
     };
 
     std::unordered_map<std::string, std::unique_ptr<PluginWindow>> activeWindows;
+    mutable std::mutex pluginGuiStatusMutex;
+    std::unordered_set<std::string> openPluginGuiIds;
     std::unordered_set<std::string> scannedDeviceTypes;
     std::atomic<std::uint64_t> stateRevision{ 0 };
 
@@ -216,6 +220,9 @@ private:
 
     bool openPluginGuiOnMessageThread(const std::string& nodeId, const std::string& titlePrefix = "");
     bool closePluginGuiOnMessageThread(const std::string& nodeId);
+    void markPluginGuiOpen(const std::string& nodeId);
+    void markPluginGuiClosed(const std::string& nodeId);
+    void clearPluginGuiStatus();
 
     std::string addToChainOnMessageThread(const std::string& uniqueId, const std::string& base64State = "", bool bypassed = false);
     bool removeFromChainOnMessageThread(const std::string& nodeId);

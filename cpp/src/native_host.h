@@ -30,6 +30,7 @@ bool bypassPlugin(const std::string& nodeId, bool bypassed);
 std::string chain();
 std::string parameters(const std::string& nodeId);
 bool openPluginGui(const std::string& nodeId, const std::string& titlePrefix);
+bool pluginGuiOpen(const std::string& nodeId);
 std::string saveState();
 bool loadState(const std::string& state);
 std::uint64_t stateRevision();

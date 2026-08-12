@@ -318,7 +318,7 @@ fn icon_button(
     icon_name: &'static str,
     tooltip: &'static str,
     destructive: bool,
-    active: Option<bool>,
+    state: Option<IconButtonState>,
     disabled: bool,
     cx: &App,
 ) -> Stateful<Div> {
@@ -329,29 +329,33 @@ fn icon_button(
     } else {
         crate::ui::foundation::hover_motion::progress(&hover_key, cx)
     };
-    let state = active.map_or(0.0, |active| {
-        crate::ui::foundation::hover_motion::state_progress(&hover_key, active, cx)
+    let state_progress = state.map_or(0.0, |state| match state {
+        IconButtonState::Bypass(active) => {
+            crate::ui::foundation::hover_motion::state_progress(&hover_key, active, cx)
+        }
+        IconButtonState::Highlight { active, .. } => f32::from(active),
     });
-    let resting_foreground = mix_color(colors::base_200(), colors::orange(), state);
+    let state_color = state.map_or(colors::base_200(), IconButtonState::color);
+    let resting_foreground = mix_color(colors::base_200(), state_color, state_progress);
     let hover_foreground = if destructive {
         colors::red()
-    } else if active.is_some() {
-        colors::orange()
+    } else if state.is_some() {
+        state_color
     } else {
         colors::base_100()
     };
     let foreground = mix_color(resting_foreground, hover_foreground, hover);
     let hover_background = if destructive {
         colors::red().opacity(0.15)
-    } else if active.is_some() {
-        colors::orange().opacity(0.16)
+    } else if state.is_some() {
+        state_color.opacity(0.16)
     } else {
         colors::base_850()
     };
     let hover_border = if destructive {
         colors::red().opacity(0.4)
-    } else if active.is_some() {
-        colors::orange().opacity(0.7)
+    } else if state.is_some() {
+        state_color.opacity(0.7)
     } else {
         colors::base_700()
     };
@@ -366,10 +370,9 @@ fn icon_button(
         .border_1()
         .border_color(mix_color(colors::base_800(), hover_border, hover))
         .text_color(foreground)
-        .child(if active.is_some() {
-            stateful_bypass_icon(state, foreground)
-        } else {
-            icon(icon_name, foreground)
+        .child(match state {
+            Some(IconButtonState::Bypass(_)) => stateful_bypass_icon(state_progress, foreground),
+            _ => icon(icon_name, foreground),
         })
         .when(disabled, |button| button.cursor_default().opacity(0.5))
         .when(!disabled, |button| button.cursor_pointer());
@@ -379,6 +382,21 @@ fn icon_button(
         hover_key,
         i18n::t(tooltip),
     )
+}
+
+#[derive(Clone, Copy)]
+enum IconButtonState {
+    Bypass(bool),
+    Highlight { active: bool, color: Rgba },
+}
+
+impl IconButtonState {
+    fn color(self) -> Rgba {
+        match self {
+            Self::Bypass(_) => colors::orange(),
+            Self::Highlight { color, .. } => color,
+        }
+    }
 }
 
 fn button_motion_key(id: &ElementId) -> SharedString {

@@ -63,6 +63,7 @@ ShallowHost::~ShallowHost()
 {
     jassert(juce::MessageManager::getInstance()->isThisTheMessageThread());
     activeWindows.clear();
+    clearPluginGuiStatus();
     deviceManager.removeAudioCallback(&player);
     deviceManager.removeChangeListener(this);
     audioStopOnMessageThread();

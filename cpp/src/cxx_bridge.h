@@ -28,6 +28,7 @@ bool bypass_plugin(rust::Str node_id, bool bypassed);
 rust::String chain();
 rust::String parameters(rust::Str node_id);
 bool open_plugin_gui(rust::Str node_id, rust::Str title_prefix);
+bool plugin_gui_open(rust::Str node_id);
 rust::String save_state();
 bool load_state(rust::Str state);
 std::uint64_t state_revision();

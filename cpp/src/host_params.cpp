@@ -191,7 +191,32 @@ bool ShallowHost::openPluginGuiOnMessageThread(const std::string& nodeId, const 
 #endif
 
     activeWindows[nodeId] = std::move(win);
+    markPluginGuiOpen(nodeId);
     return true;
+}
+
+bool ShallowHost::isPluginGuiOpen(const std::string& nodeId) const
+{
+    std::lock_guard lock(pluginGuiStatusMutex);
+    return openPluginGuiIds.contains(nodeId);
+}
+
+void ShallowHost::markPluginGuiOpen(const std::string& nodeId)
+{
+    std::lock_guard lock(pluginGuiStatusMutex);
+    openPluginGuiIds.insert(nodeId);
+}
+
+void ShallowHost::markPluginGuiClosed(const std::string& nodeId)
+{
+    std::lock_guard lock(pluginGuiStatusMutex);
+    openPluginGuiIds.erase(nodeId);
+}
+
+void ShallowHost::clearPluginGuiStatus()
+{
+    std::lock_guard lock(pluginGuiStatusMutex);
+    openPluginGuiIds.clear();
 }
 
 bool ShallowHost::closePluginGui(const std::string& nodeId)
@@ -218,6 +243,7 @@ bool ShallowHost::closePluginGuiOnMessageThread(const std::string& nodeId)
     {
         auto win = std::move(it->second);
         activeWindows.erase(it);
+        markPluginGuiClosed(nodeId);
         juce::MessageManager::callAsync([w = std::move(win)]() mutable {
             w.reset();
         });

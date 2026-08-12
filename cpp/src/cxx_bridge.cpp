@@ -49,6 +49,7 @@ bool bypass_plugin(rust::Str id, bool bypassed) { return native::bypassPlugin(to
 rust::String chain() { return native::chain(); }
 rust::String parameters(rust::Str id) { return native::parameters(toStdString(id)); }
 bool open_plugin_gui(rust::Str id, rust::Str title) { return native::openPluginGui(toStdString(id), toStdString(title)); }
+bool plugin_gui_open(rust::Str id) { return native::pluginGuiOpen(toStdString(id)); }
 rust::String save_state() { return native::saveState(); }
 bool load_state(rust::Str state) { return native::loadState(toStdString(state)); }
 std::uint64_t state_revision() { return native::stateRevision(); }

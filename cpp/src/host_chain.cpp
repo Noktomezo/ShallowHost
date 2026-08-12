@@ -91,6 +91,7 @@ void ShallowHost::clearChain()
     juce::MessageManager::getInstance()->callFunctionOnMessageThread([](void* p) -> void* {
         auto* host = static_cast<ShallowHost*>(p);
         host->activeWindows.clear();
+        host->clearPluginGuiStatus();
         for (auto& node : host->chainNodes)
         {
             node->getProcessor()->removeListener(host);
@@ -122,6 +123,7 @@ bool ShallowHost::removeFromChain(const std::string& nodeId)
 bool ShallowHost::removeFromChainOnMessageThread(const std::string& nodeId)
 {
     activeWindows.erase(nodeId);
+    markPluginGuiClosed(nodeId);
 
     auto it = std::find_if(chainNodes.begin(), chainNodes.end(), [&](const auto& node) {
         return std::to_string(node->nodeID.uid) == nodeId;
@@ -408,6 +410,7 @@ bool ShallowHost::loadStateJsonOnMessageThread(const std::string& stateJson)
     }
 
     activeWindows.clear();
+    clearPluginGuiStatus();
     for (auto& node : chainNodes)
     {
         node->getProcessor()->removeListener(this);

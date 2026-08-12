@@ -99,6 +99,11 @@ bool openPluginGui(const std::string& nodeId, const std::string& titlePrefix)
     return ShallowHost::getInstance().openPluginGui(nodeId, titlePrefix);
 }
 
+bool pluginGuiOpen(const std::string& nodeId)
+{
+    return ShallowHost::getInstance().isPluginGuiOpen(nodeId);
+}
+
 std::string saveState()
 {
     return ShallowHost::getInstance().saveStateJson();
