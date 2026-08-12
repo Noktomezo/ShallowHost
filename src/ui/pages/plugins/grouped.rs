@@ -359,12 +359,17 @@ pub(super) fn render_author_plugin_shell(
         .w_full()
         .h(super::virtualized::ROW_HEIGHT)
         .px_4()
-        .bg(colors::base_950())
-        .border_l_1()
-        .border_r_1()
-        .when(last, |row| row.border_b_1().rounded_b_lg())
-        .border_color(colors::base_800())
-        .child(content)
+        .child(
+            div()
+                .w_full()
+                .h_full()
+                .bg(colors::base_950())
+                .border_l_1()
+                .border_r_1()
+                .when(last, |body| body.border_b_1().rounded_b_lg())
+                .border_color(colors::base_800())
+                .child(content),
+        )
         .into_any_element()
 }
 
