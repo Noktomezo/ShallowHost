@@ -336,7 +336,8 @@ pub(super) fn render_author_plugin_shell(
         .w_full()
         .h(super::virtualized::CARD_HEIGHT)
         .px_4()
-        .mt(px(-6.0))
+        .relative()
+        .top(px(-6.0))
         .child(plugin_card);
     let content = if animating {
         content
@@ -350,7 +351,7 @@ pub(super) fn render_author_plugin_shell(
                     let progress = if closing { 1.0 - delta } else { delta };
                     element
                         .opacity(progress)
-                        .mt(px(-6.0 - 6.0 * (1.0 - progress)))
+                        .top(px(-6.0 - 6.0 * (1.0 - progress)))
                 },
             )
             .into_any_element()
