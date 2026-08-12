@@ -56,6 +56,12 @@ jobs:
             throw 'Could not read package version from Cargo.toml'
           }
           $version = $Matches[1]
+          $iconFile = Get-ChildItem target/release/build/shallow-host-gpui-*/out/ShallowHost.ico |
+            Sort-Object LastWriteTime -Descending |
+            Select-Object -First 1
+          if (-not $iconFile) {
+            throw 'Generated release icon was not found'
+          }
           New-Item -ItemType Directory -Path package/ShallowHost | Out-Null
           New-Item -ItemType Directory -Path dist | Out-Null
           Copy-Item target/release/ShallowHost.exe package/ShallowHost/ShallowHost.exe
@@ -67,7 +73,7 @@ jobs:
             -ext WixToolset.UI.wixext `
             -d Version="$version" `
             -d ExeFile="$((Resolve-Path 'target/release/ShallowHost.exe').Path)" `
-            -d IconFile="$((Resolve-Path 'assets/windows/ShallowHost.ico').Path)" `
+            -d IconFile="$($iconFile.FullName)" `
             -d NoticeFile="$((Resolve-Path 'THIRD_PARTY_NOTICES.md').Path)" `
             -o "dist/$baseName.msi"
 

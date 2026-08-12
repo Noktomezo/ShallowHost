@@ -32,7 +32,6 @@ gpui_platform = { git = "https://github.com/zed-industries/zed", features = ["fo
 # Vendored from v0.0.6 with a Windows MSI handoff fix; see tooling/vendor/gpui-updater/README.shallowhost.md.
 gpui-updater = { path = "tooling/vendor/gpui-updater", features = ["gpui"] }
 rust-i18n = "3.1"
-image = "0.25"
 rust-embed = { version = "8.7", features = ["include-exclude"] }
 serde = { version = "1", features = ["derive"] }
 serde_json = "1"
@@ -56,3 +55,5 @@ windows-sys = { version = "0.61.2", features = ["Win32_Foundation", "Win32_Syste
 [target.'cfg(windows)'.build-dependencies]
 # Embeds the original Tauri icon into the Windows executable resource table.
 winresource = "0.1"
+# Generates a multi-resolution Windows icon from the source PNG at build time.
+image = { version = "0.25", default-features = false, features = ["ico"] }

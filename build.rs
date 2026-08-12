@@ -3,8 +3,8 @@ use std::path::PathBuf;
 use std::process::Command;
 
 fn main() {
-    println!("cargo:rerun-if-changed=assets/windows/ShallowHost.ico");
-    println!("cargo:rerun-if-changed=assets/windows/ShallowHostDev.ico");
+    println!("cargo:rerun-if-changed=assets/windows/ShallowHost.png");
+    println!("cargo:rerun-if-changed=assets/windows/ShallowHostDev.png");
 
     let profile = env::var("PROFILE").unwrap_or_else(|_| String::from("debug"));
     embed_windows_resources(&profile);
@@ -74,22 +74,56 @@ fn main() {
 
 #[cfg(windows)]
 fn embed_windows_resources(profile: &str) {
-    let (icon, display_name) = if profile == "release" {
-        ("assets/windows/ShallowHost.ico", "ShallowHost")
+    let (source, display_name) = if profile == "release" {
+        ("assets/windows/ShallowHost.png", "ShallowHost")
     } else {
-        ("assets/windows/ShallowHostDev.ico", "ShallowHost (Dev)")
+        ("assets/windows/ShallowHostDev.png", "ShallowHost (Dev)")
     };
+    let icon = PathBuf::from(env::var_os("OUT_DIR").expect("Cargo always sets OUT_DIR"))
+        .join("ShallowHost.ico");
+    generate_windows_icon(source, &icon);
 
     let mut resource = winresource::WindowsResource::new();
     resource
-        .set_icon(icon)
+        .set_icon(icon.to_string_lossy().as_ref())
         .set("ProductName", display_name)
         .set("FileDescription", display_name)
         .set("InternalName", display_name)
         .set("OriginalFilename", "ShallowHost.exe");
     resource
         .compile()
-        .unwrap_or_else(|error| panic!("failed to embed ShallowHost icon `{icon}`: {error}"));
+        .unwrap_or_else(|error| panic!("failed to embed ShallowHost icon: {error}"));
+}
+
+#[cfg(windows)]
+fn generate_windows_icon(source: &str, destination: &std::path::Path) {
+    use image::ExtendedColorType;
+    use image::codecs::ico::{IcoEncoder, IcoFrame};
+    use image::imageops::FilterType;
+
+    const SIZES: [u32; 10] = [16, 20, 24, 32, 40, 48, 64, 96, 128, 256];
+
+    let source_image = image::open(source)
+        .unwrap_or_else(|error| panic!("failed to read icon source `{source}`: {error}"));
+    let frames = SIZES
+        .into_iter()
+        .map(|size| {
+            let pixels = source_image
+                .resize_exact(size, size, FilterType::Lanczos3)
+                .into_rgba8();
+            IcoFrame::as_png(pixels.as_raw(), size, size, ExtendedColorType::Rgba8)
+        })
+        .collect::<image::ImageResult<Vec<_>>>()
+        .unwrap_or_else(|error| panic!("failed to encode icon frames: {error}"));
+    let output = std::fs::File::create(destination).unwrap_or_else(|error| {
+        panic!(
+            "failed to create generated icon `{}`: {error}",
+            destination.display()
+        )
+    });
+    IcoEncoder::new(output)
+        .encode_images(&frames)
+        .unwrap_or_else(|error| panic!("failed to write generated icon: {error}"));
 }
 
 #[cfg(not(windows))]
