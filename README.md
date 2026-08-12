@@ -4,10 +4,10 @@
   <p>A native Windows host for real-time audio processing with VST2 and VST3 plug-ins.</p>
 
   <p>
-    <picture><source media="(prefers-color-scheme: dark)" srcset="https://www.shieldcn.dev/github/ci/Noktomezo/ShallowHost.svg?variant=secondary&amp;size=xs&amp;mode=dark&amp;theme=neutral"><img alt="CI" src=""></picture>
-    <picture><source media="(prefers-color-scheme: dark)" srcset=""><img alt="Release" src="https://www.shieldcn.dev/github/release/Noktomezo/ShallowHost.svg?size=xs&amp;mode=light&amp;theme=neutral"></picture>
+    <picture><source media="(prefers-color-scheme: dark)" srcset="https://www.shieldcn.dev/github/stars/Noktomezo/ShallowHost.svg?variant=secondary&amp;size=xs&amp;mode=dark&amp;theme=neutral"><img alt="GitHub Stars" src="https://www.shieldcn.dev/github/stars/Noktomezo/ShallowHost.svg?variant=secondary&amp;size=xs&amp;mode=light&amp;theme=neutral"></picture>
+    <picture><source media="(prefers-color-scheme: dark)" srcset="https://www.shieldcn.dev/github/release/Noktomezo/ShallowHost.svg?size=xs&amp;mode=dark&amp;theme=neutral"><img alt="Release" src=""></picture>
     <picture><source media="(prefers-color-scheme: dark)" srcset="https://www.shieldcn.dev/github/license/Noktomezo/ShallowHost.svg?variant=ghost&amp;size=xs&amp;mode=dark&amp;theme=neutral"><img alt="License" src=""></picture>
-    <picture><source media="(prefers-color-scheme: dark)" srcset=""><img alt="Stars" src="https://www.shieldcn.dev/github/stars/Noktomezo/ShallowHost.svg?variant=secondary&amp;size=xs&amp;mode=light&amp;theme=neutral"></picture>
+    <picture><source media="(prefers-color-scheme: dark)" srcset="https://www.shieldcn.dev/github/ci/Noktomezo/ShallowHost.svg?variant=secondary&amp;size=xs&amp;mode=dark&amp;theme=neutral"><img alt="CI" src=""></picture>
   </p>
 </div>
 
