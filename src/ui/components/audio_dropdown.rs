@@ -378,7 +378,6 @@ impl RenderOnce for DropdownTrigger {
                 set_dropdown_hovered(&motion, *hovered, window, cx);
             })
             .child(surface)
-            .child(border)
             .child(div().relative().min_w_0().flex_1().child(choice_label(
                 format!("{}-trigger-marquee", self.id),
                 self.choice,
@@ -392,6 +391,7 @@ impl RenderOnce for DropdownTrigger {
                 ),
             )))
             .child(chevron)
+            .child(border)
     }
 }
 

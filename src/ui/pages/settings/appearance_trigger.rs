@@ -141,7 +141,6 @@ impl RenderOnce for DropdownTrigger {
                 set_dropdown_hovered(&motion, *hovered, window, cx);
             })
             .child(surface)
-            .child(border)
             .child(if let Some(selected) = self.selected {
                 div()
                     .relative()
@@ -174,6 +173,7 @@ impl RenderOnce for DropdownTrigger {
                 div().relative().child("—").into_any_element()
             })
             .child(chevron)
+            .child(border)
     }
 }
 
