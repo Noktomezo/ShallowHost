@@ -83,6 +83,9 @@ impl MainView {
             cx.listener(|this: &mut Self, value: &PluginPathKind, window, cx| {
                 this.pick_plugin_path(*value, window, cx);
             });
+        let plugin_grouping = cx.listener(|this: &mut Self, value: &bool, _window, cx| {
+            this.set_plugin_grouping(*value, cx);
+        });
 
         DropdownCallbacks {
             on_change_theme: Rc::new(move |value, window, cx| theme(&value, window, cx)),
@@ -103,6 +106,9 @@ impl MainView {
             }),
             on_pick_plugin_path: Rc::new(move |kind, window, cx| {
                 plugin_path_picker(&kind, window, cx);
+            }),
+            on_change_plugin_grouping: Rc::new(move |grouped, window, cx| {
+                plugin_grouping(&grouped, window, cx);
             }),
             on_change_audio_routing: Rc::new(move |direction, indices, enabled, window, cx| {
                 audio_routing(&(direction, indices, enabled), window, cx);

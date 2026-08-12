@@ -95,6 +95,7 @@ pub type SystemCallback = Rc<dyn Fn(SystemSetting, bool, &mut Window, &mut App)>
 pub type ScanPathsVisibilityCallback = Rc<dyn Fn(bool, &mut Window, &mut App)>;
 pub type PluginPathCallback = Rc<dyn Fn(PluginPathUpdate, &mut Window, &mut App)>;
 pub type PluginPathPickerCallback = Rc<dyn Fn(PluginPathKind, &mut Window, &mut App)>;
+pub type PluginGroupingCallback = Rc<dyn Fn(bool, &mut Window, &mut App)>;
 pub type AudioRoutingCallback =
     Rc<dyn Fn(ChannelDirection, Vec<usize>, bool, &mut Window, &mut App)>;
 
@@ -109,6 +110,7 @@ pub struct DropdownCallbacks {
     pub on_set_scan_paths_open: ScanPathsVisibilityCallback,
     pub on_update_plugin_path: PluginPathCallback,
     pub on_pick_plugin_path: PluginPathPickerCallback,
+    pub on_change_plugin_grouping: PluginGroupingCallback,
     pub on_change_audio_routing: AudioRoutingCallback,
 }
 

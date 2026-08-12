@@ -155,7 +155,8 @@ impl MainView {
             language_dropdown_motion: cx.new(|_| DropdownMotion::default()),
             plugin_scan_state: cx.new(|_| PluginScanState::default()),
             plugin_search: plugin_search.clone(),
-            plugin_library_state: cx.new(|_| PluginLibraryState::default()),
+            plugin_library_state: cx
+                .new(|_| PluginLibraryState::new(initial_config.plugins.group_by_author)),
             chain_operation_state: cx.new(|_| ChainOperationState::default()),
             updater: updater.clone(),
             single_instance,

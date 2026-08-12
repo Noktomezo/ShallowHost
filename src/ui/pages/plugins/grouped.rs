@@ -1,4 +1,4 @@
-use std::collections::{HashMap, HashSet};
+use std::collections::{BTreeSet, HashMap, HashSet};
 use std::sync::Arc;
 use std::time::Instant;
 
@@ -6,8 +6,9 @@ use gpui::prelude::*;
 use gpui::*;
 
 use super::PluginItem;
+use crate::ui::components::badge::badge;
 use crate::ui::foundation::motion::{CONTROL_MOTION, MENU_MOTION, changed_recently, mix_color};
-use crate::ui::foundation::{colors, i18n};
+use crate::ui::foundation::{colors, i18n, plugin_format};
 
 #[derive(Clone, Copy)]
 struct Transition {
@@ -26,6 +27,13 @@ pub struct PluginLibraryState {
 }
 
 impl PluginLibraryState {
+    pub fn new(grouped_by_author: bool) -> Self {
+        Self {
+            grouped_by_author,
+            ..Self::default()
+        }
+    }
+
     pub fn grouped_by_author(&self) -> bool {
         self.grouped_by_author
     }
@@ -83,6 +91,7 @@ pub(super) enum LibraryRow {
 pub(super) struct AuthorHeader {
     pub author: String,
     pub count: usize,
+    pub formats: Vec<String>,
     pub open: bool,
     pub visible: bool,
     pub revision: u64,
@@ -113,9 +122,16 @@ pub(super) fn build_rows(
         let visible = state.author_visible(&author);
         let open = state.author_open(&author);
         let (revision, animating) = state.author_motion(&author);
+        let formats = plugins[start..end]
+            .iter()
+            .map(|plugin| plugin_format::display_name(&plugin.format).to_string())
+            .collect::<BTreeSet<_>>()
+            .into_iter()
+            .collect();
         rows.push(LibraryRow::AuthorHeader(AuthorHeader {
             author: author.clone(),
             count: end - start,
+            formats,
             open,
             visible,
             revision,
@@ -202,6 +218,7 @@ pub(super) fn render_author_header(
     let AuthorHeader {
         author,
         count,
+        formats,
         open,
         visible,
         revision,
@@ -293,11 +310,24 @@ pub(super) fn render_author_header(
                                 .child(
                                     div()
                                         .min_w_0()
-                                        .truncate()
-                                        .text_sm()
-                                        .font_weight(FontWeight::BOLD)
-                                        .text_color(colors::base_200())
-                                        .child(title),
+                                        .flex()
+                                        .items_center()
+                                        .gap_2()
+                                        .child(
+                                            div()
+                                                .min_w_0()
+                                                .truncate()
+                                                .text_sm()
+                                                .font_weight(FontWeight::BOLD)
+                                                .text_color(colors::base_200())
+                                                .child(title),
+                                        )
+                                        .children(formats.into_iter().map(|format| {
+                                            badge(
+                                                format.clone(),
+                                                plugin_format::badge_style(&format),
+                                            )
+                                        })),
                                 )
                                 .child(
                                     div()
@@ -356,23 +386,41 @@ pub(super) fn render_author_plugin_shell(
     let top_padding = if first { px(16.0) } else { px(12.0) };
     let bottom_padding = if last { px(16.0) } else { Pixels::ZERO };
     let body_height = top_padding + super::virtualized::CARD_HEIGHT + bottom_padding;
+    let body = div()
+        .w_full()
+        .h(body_height)
+        .pt(top_padding)
+        .pb(bottom_padding)
+        .bg(colors::base_950())
+        .border_l_1()
+        .border_r_1()
+        .when(last, |body| body.border_b_1().rounded_b_lg())
+        .border_color(colors::base_800())
+        .child(content);
+    let body = if animating {
+        body.with_animation(
+            ElementId::NamedInteger(
+                SharedString::from(format!("author-{stable_author}-menu-{plugin_id}")),
+                revision,
+            ),
+            Animation::new(MENU_MOTION).with_easing(ease_in_out),
+            move |element, delta| {
+                let progress = if closing { 1.0 - delta } else { delta };
+                element
+                    .bg(colors::base_950().opacity(progress))
+                    .border_color(colors::base_800().opacity(progress))
+            },
+        )
+        .into_any_element()
+    } else {
+        body.into_any_element()
+    };
+
     div()
         .w_full()
         .h(body_height + if last { px(12.0) } else { Pixels::ZERO })
         .px_4()
-        .child(
-            div()
-                .w_full()
-                .h(body_height)
-                .pt(top_padding)
-                .pb(bottom_padding)
-                .bg(colors::base_950())
-                .border_l_1()
-                .border_r_1()
-                .when(last, |body| body.border_b_1().rounded_b_lg())
-                .border_color(colors::base_800())
-                .child(content),
-        )
+        .child(body)
         .into_any_element()
 }
 
@@ -412,38 +460,4 @@ fn chevron_svg(progress: f32) -> Svg {
 }
 
 #[cfg(test)]
-mod tests {
-    use super::{LibraryRow, PluginLibraryState, build_rows};
-    use crate::ui::pages::plugins::PluginItem;
-
-    fn plugin(id: &str, author: &str) -> PluginItem {
-        PluginItem {
-            id: id.into(),
-            name: id.into(),
-            vendor: author.into(),
-            format: String::from("VST3"),
-            path: String::new(),
-            in_chain: false,
-            initializing: false,
-        }
-    }
-
-    #[test]
-    fn collapsed_authors_only_emit_header_rows() {
-        let mut state = PluginLibraryState {
-            grouped_by_author: true,
-            ..PluginLibraryState::default()
-        };
-        let plugins = vec![
-            plugin("a", "Acme"),
-            plugin("b", "Acme"),
-            plugin("c", "Waves"),
-        ];
-        assert_eq!(build_rows(&plugins, &state).len(), 2);
-
-        state.open_authors.insert(String::from("Acme"));
-        let rows = build_rows(&plugins, &state);
-        assert_eq!(rows.len(), 4);
-        assert!(matches!(rows[1], LibraryRow::AuthorPlugin { .. }));
-    }
-}
+mod tests;

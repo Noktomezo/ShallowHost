@@ -417,9 +417,19 @@ impl MainView {
                 paths.retain(|existing| existing != &path);
             }
             PluginPathUpdate::Reset => {
-                *settings = crate::infrastructure::config::PluginSettings::default()
+                let group_by_author = settings.group_by_author;
+                *settings = crate::infrastructure::config::PluginSettings {
+                    group_by_author,
+                    ..Default::default()
+                };
             }
         }
+        self.save_config();
+        cx.notify();
+    }
+
+    pub(super) fn set_plugin_grouping(&mut self, grouped: bool, cx: &mut Context<Self>) {
+        self.storage.config_mut().plugins.group_by_author = grouped;
         self.save_config();
         cx.notify();
     }

@@ -79,6 +79,7 @@ impl HeaderContext {
         let (mode_revision, mode_animating) = self.library_state.read(cx).mode_motion();
         let mode_state = self.library_state.clone();
         let mode_search = self.search.clone();
+        let change_plugin_grouping = self.callbacks.on_change_plugin_grouping.clone();
 
         div()
             .w_full()
@@ -144,6 +145,7 @@ impl HeaderContext {
                             .on_click(move |_, window, cx| {
                                 let grouped_by_author =
                                     mode_state.update(cx, |state, cx| state.toggle_mode(cx));
+                                change_plugin_grouping(grouped_by_author, window, cx);
                                 mode_search.update(cx, |search, cx| {
                                     search.set_value("", cx);
                                     search.set_placeholder(

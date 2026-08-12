@@ -84,6 +84,7 @@ pub struct DriverDeviceSelection {
 pub struct PluginSettings {
     pub vst2_paths: Vec<String>,
     pub vst3_paths: Vec<String>,
+    pub group_by_author: bool,
 }
 
 impl Default for PluginSettings {
@@ -102,6 +103,7 @@ impl Default for PluginSettings {
                 String::from(r"C:\Program Files\Common Files\VST3"),
                 String::from(r"C:\Program Files (x86)\Common Files\VST3"),
             ],
+            group_by_author: false,
         }
     }
 }
@@ -321,6 +323,18 @@ mod tests {
             config.plugins.vst2_paths,
             PluginSettings::default().vst2_paths
         );
+        assert!(!config.plugins.group_by_author);
+    }
+
+    #[test]
+    fn plugin_grouping_round_trips() {
+        let mut config = AppConfig::default();
+        config.plugins.group_by_author = true;
+
+        let encoded = toml::to_string(&config).expect("test config serializes");
+        let decoded: AppConfig = toml::from_str(&encoded).expect("test config deserializes");
+
+        assert!(decoded.plugins.group_by_author);
     }
 
     #[test]
