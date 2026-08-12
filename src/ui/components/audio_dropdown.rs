@@ -8,7 +8,7 @@ use super::smooth_scroll::ScrollableColumn;
 use crate::ui::foundation::colors;
 use crate::ui::foundation::control_style::{
     ControlTypography, DROPDOWN_CONTROL_HEIGHT, DROPDOWN_CONTROL_WIDTH, DROPDOWN_LABEL_WIDTH,
-    DROPDOWN_TRAILING_GUTTER,
+    DROPDOWN_MENU_LABEL_WIDTH, DROPDOWN_TRAILING_GUTTER,
 };
 use crate::ui::foundation::motion::{
     CONTROL_MOTION, DropdownMotion, MENU_MOTION, mix_color, set_dropdown_hovered,
@@ -225,7 +225,11 @@ fn render_menu(
                                 format!("{id}-option-{index}-marquee"),
                                 choice,
                                 item_hovered,
-                                DROPDOWN_LABEL_WIDTH,
+                                if index == selected {
+                                    DROPDOWN_LABEL_WIDTH
+                                } else {
+                                    DROPDOWN_MENU_LABEL_WIDTH
+                                },
                                 MarqueeFade::new(
                                     resting_background,
                                     colors::base_800(),

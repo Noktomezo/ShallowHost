@@ -5,6 +5,8 @@ pub const DROPDOWN_CONTROL_HEIGHT: Pixels = px(34.0);
 pub const DROPDOWN_CONTROL_WIDTH: Pixels = px(160.0);
 pub const DROPDOWN_LABEL_WIDTH: Pixels = px(113.0);
 pub const DROPDOWN_ICON_LABEL_WIDTH: Pixels = px(89.0);
+pub const DROPDOWN_MENU_LABEL_WIDTH: Pixels = px(144.0);
+pub const DROPDOWN_MENU_ICON_LABEL_WIDTH: Pixels = px(120.0);
 pub const DROPDOWN_TRAILING_GUTTER: Pixels = px(15.0);
 
 pub trait ControlTypography: Styled + Sized {
@@ -23,7 +25,7 @@ mod tests {
 
     use super::{
         DROPDOWN_CONTROL_WIDTH, DROPDOWN_ICON_LABEL_WIDTH, DROPDOWN_LABEL_WIDTH,
-        DROPDOWN_TRAILING_GUTTER,
+        DROPDOWN_MENU_ICON_LABEL_WIDTH, DROPDOWN_MENU_LABEL_WIDTH, DROPDOWN_TRAILING_GUTTER,
     };
 
     #[test]
@@ -42,6 +44,14 @@ mod tests {
                 + DROPDOWN_TRAILING_GUTTER
                 + trailing_icon
                 + horizontal_padding,
+            DROPDOWN_CONTROL_WIDTH
+        );
+        assert_eq!(
+            DROPDOWN_MENU_LABEL_WIDTH + horizontal_padding,
+            DROPDOWN_CONTROL_WIDTH
+        );
+        assert_eq!(
+            DROPDOWN_MENU_ICON_LABEL_WIDTH + leading_icon_and_gap + horizontal_padding,
             DROPDOWN_CONTROL_WIDTH
         );
     }

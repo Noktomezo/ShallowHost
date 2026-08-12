@@ -11,7 +11,7 @@ use crate::ui::components::toggle_switch::toggle_switch;
 use crate::ui::foundation::colors;
 use crate::ui::foundation::control_style::{
     ControlTypography, DROPDOWN_CONTROL_HEIGHT, DROPDOWN_CONTROL_WIDTH, DROPDOWN_ICON_LABEL_WIDTH,
-    DROPDOWN_TRAILING_GUTTER,
+    DROPDOWN_MENU_ICON_LABEL_WIDTH, DROPDOWN_TRAILING_GUTTER,
 };
 use crate::ui::foundation::motion::{
     CONTROL_MOTION, DropdownMotion, MENU_MOTION, mix_color, set_dropdown_item_hovered,
@@ -289,7 +289,11 @@ fn render_menu(
                             MarqueeText::new(
                                 SharedString::from(format!("{id}-option-{index}-marquee")),
                                 option.label,
-                                DROPDOWN_ICON_LABEL_WIDTH,
+                                if index == selected_index {
+                                    DROPDOWN_ICON_LABEL_WIDTH
+                                } else {
+                                    DROPDOWN_MENU_ICON_LABEL_WIDTH
+                                },
                             )
                             .active(item_hovered)
                             .fade_with_motion(
