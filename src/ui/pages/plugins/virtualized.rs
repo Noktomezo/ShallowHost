@@ -316,6 +316,7 @@ pub(super) fn render(
                             on_navigate.clone(),
                             chain_operations.clone(),
                             card_scan_state.clone(),
+                            colors::base_950(),
                             cx,
                         ))
                         .into_any_element()
@@ -390,6 +391,7 @@ fn render_grouped(
                     on_navigate.clone(),
                     chain_operations.clone(),
                     scan_state.clone(),
+                    colors::base_900(),
                     cx,
                 );
                 grouped::render_author_plugin_shell(

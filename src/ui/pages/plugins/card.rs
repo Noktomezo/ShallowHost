@@ -18,6 +18,7 @@ pub(super) fn render_plugin_card(
     on_navigate: NavigateCallback,
     chain_operations: Entity<ChainOperationState>,
     scan_state: Entity<PluginScanState>,
+    surface: Rgba,
     cx: &App,
 ) -> AnyElement {
     let stable_id = plugin.id.clone();
@@ -42,7 +43,7 @@ pub(super) fn render_plugin_card(
         .w_full()
         .h(CARD_HEIGHT)
         .p_4()
-        .bg(colors::base_950())
+        .bg(surface)
         .border_1()
         .border_color(colors::base_800())
         .rounded_lg()
