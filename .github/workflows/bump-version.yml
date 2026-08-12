@@ -52,7 +52,17 @@ jobs:
           "NEW_VERSION=$version" | Out-File $env:GITHUB_ENV -Append
 
       - name: Update Cargo.lock
-        run: cargo metadata --format-version 1 --no-deps
+        shell: pwsh
+        run: |
+          cargo update --package shallow-host-gpui
+          $lock = Get-Content Cargo.lock -Raw
+          $package = [regex]::Match(
+            $lock,
+            '(?ms)^\[\[package\]\]\r?\nname = "shallow-host-gpui"\r?\nversion = "([^"]+)"'
+          )
+          if (-not $package.Success -or $package.Groups[1].Value -ne $env:NEW_VERSION) {
+            throw "Cargo.lock does not contain shallow-host-gpui $env:NEW_VERSION"
+          }
 
       - name: Ensure automation labels exist
         env:
