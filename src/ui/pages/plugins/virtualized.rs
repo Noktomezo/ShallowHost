@@ -12,7 +12,9 @@ use crate::infrastructure::config::PluginSettings;
 use crate::infrastructure::engine::Engine;
 use crate::ui::components::badge::{BadgeStyle, badge, loading_badge};
 use crate::ui::components::cursor_tooltip;
-use crate::ui::components::smooth_scroll::{PageScrollbar, SmoothUniformListScroll};
+use crate::ui::components::smooth_scroll::{
+    PageScrollbar, SmoothUniformListScroll, SmoothVerticalScroll,
+};
 use crate::ui::components::text_input::TextInputState;
 use crate::ui::foundation::colors;
 use crate::ui::foundation::i18n;
@@ -257,17 +259,27 @@ pub(super) fn render(
 ) -> AnyElement {
     // The header is row zero, so it participates in the same viewport and scroll
     // position as the cards instead of introducing a nested scrolling region.
-    let library_state = header.library_state.clone();
-    let rows = grouped::build_rows(&plugins, library_state.read(cx));
-    let item_count = rows.len() + 1;
+    let format_counts = plugin_format::counts(plugins.iter().map(|plugin| plugin.format.as_str()));
+    if header.library_state.read(cx).grouped_by_author() {
+        return render_grouped(
+            window,
+            cx,
+            header,
+            plugins,
+            engine,
+            on_navigate,
+            chain_operations,
+        );
+    }
+
+    let item_count = plugins.len() + 1;
     let state = window
         .use_keyed_state("plugins-virtual-list", cx, |_, _| VirtualListState {
             scroll: UniformListScrollHandle::new(),
         })
         .clone();
     let scroll_handle = state.read(cx).scroll.clone();
-    let render_rows = Arc::clone(&rows);
-    let format_counts = plugin_format::counts(plugins.iter().map(|plugin| plugin.format.as_str()));
+    let render_plugins = Arc::clone(&plugins);
     let card_scan_state = header.scan_state.clone();
     let wheel_enabled = header.wheel_enabled;
     let content = uniform_list(
@@ -288,55 +300,23 @@ pub(super) fn render(
                     }
 
                     let index = row - 1;
-                    let Some(library_row) = render_rows.get(index).cloned() else {
+                    let Some(plugin) = render_plugins.get(index).cloned() else {
                         return div().h(ROW_HEIGHT).into_any_element();
                     };
-                    match library_row {
-                        LibraryRow::Plugin(plugin) => div()
-                            .w_full()
-                            .h(ROW_HEIGHT)
-                            .px_4()
-                            .pb_3()
-                            .child(render_plugin_card(
-                                plugin,
-                                Arc::clone(&engine),
-                                on_navigate.clone(),
-                                chain_operations.clone(),
-                                card_scan_state.clone(),
-                                cx,
-                            ))
-                            .into_any_element(),
-                        LibraryRow::AuthorHeader(header) => {
-                            grouped::render_author_header(header, library_state.clone(), cx)
-                        }
-                        LibraryRow::AuthorPlugin {
-                            author,
+                    div()
+                        .w_full()
+                        .h(ROW_HEIGHT)
+                        .px_4()
+                        .pb_3()
+                        .child(render_plugin_card(
                             plugin,
-                            closing,
-                            last,
-                            revision,
-                            animating,
-                        } => {
-                            let plugin_id = plugin.id.clone();
-                            let plugin_card = render_plugin_card(
-                                plugin,
-                                Arc::clone(&engine),
-                                on_navigate.clone(),
-                                chain_operations.clone(),
-                                card_scan_state.clone(),
-                                cx,
-                            );
-                            grouped::render_author_plugin_shell(
-                                &author,
-                                &plugin_id,
-                                closing,
-                                last,
-                                revision,
-                                animating,
-                                plugin_card,
-                            )
-                        }
-                    }
+                            Arc::clone(&engine),
+                            on_navigate.clone(),
+                            chain_operations.clone(),
+                            card_scan_state.clone(),
+                            cx,
+                        ))
+                        .into_any_element()
                 })
                 .collect::<Vec<_>>()
         },
@@ -358,5 +338,76 @@ pub(super) fn render(
             "plugins-virtual-list-scrollbar",
             scroll_handle,
         ))
+        .into_any_element()
+}
+
+fn render_grouped(
+    window: &mut Window,
+    cx: &mut App,
+    header: HeaderContext,
+    plugins: Arc<Vec<PluginItem>>,
+    engine: Arc<Engine>,
+    on_navigate: NavigateCallback,
+    chain_operations: Entity<ChainOperationState>,
+) -> AnyElement {
+    let library_state = header.library_state.clone();
+    let scan_state = header.scan_state.clone();
+    let wheel_enabled = header.wheel_enabled;
+    let rows = grouped::build_rows(&plugins, library_state.read(cx));
+    let format_counts = plugin_format::counts(plugins.iter().map(|plugin| plugin.format.as_str()));
+    let mut content = div().w_full().flex().flex_col().child(
+        div()
+            .w_full()
+            .h(ROW_HEIGHT)
+            .px_4()
+            .pt_4()
+            .pb_3()
+            .child(header.render(format_counts, window, cx)),
+    );
+
+    // ponytail: collapsed author groups keep this tree small; switch this branch to
+    // GPUI ListState only if users routinely expand enough groups to regress rendering.
+    for row in rows.iter().cloned() {
+        let element = match row {
+            LibraryRow::AuthorHeader(header) => {
+                grouped::render_author_header(header, library_state.clone(), cx)
+            }
+            LibraryRow::AuthorPlugin {
+                author,
+                plugin,
+                first,
+                closing,
+                last,
+                revision,
+                animating,
+            } => {
+                let plugin_id = plugin.id.clone();
+                let plugin_card = render_plugin_card(
+                    plugin,
+                    Arc::clone(&engine),
+                    on_navigate.clone(),
+                    chain_operations.clone(),
+                    scan_state.clone(),
+                    cx,
+                );
+                grouped::render_author_plugin_shell(
+                    &author,
+                    &plugin_id,
+                    grouped::AuthorPluginLayout {
+                        first,
+                        closing,
+                        last,
+                        revision,
+                        animating,
+                    },
+                    plugin_card,
+                )
+            }
+        };
+        content = content.child(element);
+    }
+
+    SmoothVerticalScroll::new("plugins-grouped-scroll", content)
+        .wheel_enabled(wheel_enabled)
         .into_any_element()
 }

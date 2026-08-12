@@ -99,6 +99,7 @@ impl SmoothScrollState {
 pub struct SmoothVerticalScroll {
     id: ElementId,
     child: AnyElement,
+    wheel_enabled: bool,
 }
 
 impl SmoothVerticalScroll {
@@ -107,7 +108,13 @@ impl SmoothVerticalScroll {
         Self {
             id: id.into(),
             child: child.into_any_element(),
+            wheel_enabled: true,
         }
+    }
+
+    pub fn wheel_enabled(mut self, enabled: bool) -> Self {
+        self.wheel_enabled = enabled;
+        self
     }
 }
 
@@ -133,17 +140,19 @@ impl RenderOnce for SmoothVerticalScroll {
                     .flex_col()
                     .track_scroll(&handle)
                     .overflow_y_scroll()
-                    .on_scroll_wheel(move |event, window, cx| {
-                        let delta = event.delta.pixel_delta(window.line_height());
-                        let delta_y = if delta.y.is_zero() { delta.x } else { delta.y };
-                        if delta_y.is_zero() {
-                            return;
-                        }
+                    .when(self.wheel_enabled, |area| {
+                        area.on_scroll_wheel(move |event, window, cx| {
+                            let delta = event.delta.pixel_delta(window.line_height());
+                            let delta_y = if delta.y.is_zero() { delta.x } else { delta.y };
+                            if delta_y.is_zero() {
+                                return;
+                            }
 
-                        handle_wheel(&wheel_state, delta_y, window, cx);
-                        // GPUI applies its native offset first. handle_wheel restores that
-                        // immediate jump and replaces it with the animated target.
-                        cx.stop_propagation();
+                            handle_wheel(&wheel_state, delta_y, window, cx);
+                            // GPUI applies its native offset first. handle_wheel restores that
+                            // immediate jump and replaces it with the animated target.
+                            cx.stop_propagation();
+                        })
                     })
                     .child(self.child),
             )
@@ -472,27 +481,4 @@ fn coalesced_target(current: Pixels, target: Pixels, delta: Pixels, max_scroll: 
 }
 
 #[cfg(test)]
-mod tests {
-    use super::coalesced_target;
-    use gpui::px;
-
-    #[test]
-    fn wheel_targets_accumulate_and_clamp() {
-        assert_eq!(
-            coalesced_target(px(-20.0), px(-40.0), px(-30.0), px(100.0)),
-            px(-70.0)
-        );
-        assert_eq!(
-            coalesced_target(px(-80.0), px(-90.0), px(-30.0), px(100.0)),
-            px(-100.0)
-        );
-    }
-
-    #[test]
-    fn reversing_wheel_direction_discards_old_momentum() {
-        assert_eq!(
-            coalesced_target(px(-40.0), px(-80.0), px(15.0), px(100.0)),
-            px(-25.0)
-        );
-    }
-}
+mod tests;

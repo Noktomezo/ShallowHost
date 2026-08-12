@@ -68,11 +68,11 @@ impl PluginLibraryState {
 
 #[derive(Clone)]
 pub(super) enum LibraryRow {
-    Plugin(PluginItem),
     AuthorHeader(AuthorHeader),
     AuthorPlugin {
         author: String,
         plugin: PluginItem,
+        first: bool,
         closing: bool,
         last: bool,
         revision: u64,
@@ -90,14 +90,18 @@ pub(super) struct AuthorHeader {
     pub animating: bool,
 }
 
+pub(super) struct AuthorPluginLayout {
+    pub first: bool,
+    pub closing: bool,
+    pub last: bool,
+    pub revision: u64,
+    pub animating: bool,
+}
+
 pub(super) fn build_rows(
     plugins: &[PluginItem],
     state: &PluginLibraryState,
 ) -> Arc<Vec<LibraryRow>> {
-    if !state.grouped_by_author {
-        return Arc::new(plugins.iter().cloned().map(LibraryRow::Plugin).collect());
-    }
-
     let mut rows = Vec::with_capacity(plugins.len());
     let mut start = 0;
     while start < plugins.len() {
@@ -126,6 +130,7 @@ pub(super) fn build_rows(
                     .map(|(index, plugin)| LibraryRow::AuthorPlugin {
                         author: author.clone(),
                         plugin: plugin.clone(),
+                        first: index == 0,
                         closing: !open,
                         last: index + 1 == end - start,
                         revision,
@@ -218,7 +223,11 @@ pub(super) fn render_author_header(
     div()
         .id(SharedString::from(format!("plugin-author-{stable_author}")))
         .w_full()
-        .h(super::virtualized::ROW_HEIGHT)
+        .h(if visible {
+            super::virtualized::CARD_HEIGHT
+        } else {
+            super::virtualized::ROW_HEIGHT
+        })
         .px_4()
         .flex()
         .flex_col()
@@ -309,35 +318,27 @@ pub(super) fn render_author_header(
                 )
                 .child(chevron),
         )
-        .when(visible, |row| {
-            row.child(
-                div()
-                    .h(px(12.0))
-                    .bg(colors::base_950())
-                    .border_l_1()
-                    .border_r_1()
-                    .border_color(colors::base_800()),
-            )
-        })
         .into_any_element()
 }
 
 pub(super) fn render_author_plugin_shell(
     author: &str,
     plugin_id: &str,
-    closing: bool,
-    last: bool,
-    revision: u64,
-    animating: bool,
+    layout: AuthorPluginLayout,
     plugin_card: AnyElement,
 ) -> AnyElement {
+    let AuthorPluginLayout {
+        first,
+        closing,
+        last,
+        revision,
+        animating,
+    } = layout;
     let stable_author = format!("{}-{author}", author.len());
     let content = div()
         .w_full()
         .h(super::virtualized::CARD_HEIGHT)
         .px_4()
-        .relative()
-        .top(px(-6.0))
         .child(plugin_card);
     let content = if animating {
         content
@@ -351,7 +352,8 @@ pub(super) fn render_author_plugin_shell(
                     let progress = if closing { 1.0 - delta } else { delta };
                     element
                         .opacity(progress)
-                        .top(px(-6.0 - 6.0 * (1.0 - progress)))
+                        .relative()
+                        .top(px(-6.0 * (1.0 - progress)))
                 },
             )
             .into_any_element()
@@ -359,18 +361,19 @@ pub(super) fn render_author_plugin_shell(
         content.into_any_element()
     };
 
+    let top_padding = if first { px(16.0) } else { px(12.0) };
+    let bottom_padding = if last { px(16.0) } else { Pixels::ZERO };
+    let body_height = top_padding + super::virtualized::CARD_HEIGHT + bottom_padding;
     div()
         .w_full()
-        .h(super::virtualized::ROW_HEIGHT)
+        .h(body_height + if last { px(12.0) } else { Pixels::ZERO })
         .px_4()
         .child(
             div()
                 .w_full()
-                .h(if last {
-                    super::virtualized::CARD_HEIGHT
-                } else {
-                    super::virtualized::ROW_HEIGHT
-                })
+                .h(body_height)
+                .pt(top_padding)
+                .pb(bottom_padding)
                 .bg(colors::base_950())
                 .border_l_1()
                 .border_r_1()
