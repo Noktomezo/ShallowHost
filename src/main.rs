@@ -3,7 +3,7 @@
 #[macro_use]
 extern crate rust_i18n;
 
-i18n!("src/locales", fallback = "ru");
+i18n!("src/locales", fallback = "en");
 
 mod app;
 mod domain;

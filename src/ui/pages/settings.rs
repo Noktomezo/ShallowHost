@@ -44,14 +44,36 @@ impl Language {
             Self::System => "settings.langSystem",
             Self::Russian => "settings.langRu",
             Self::English => "settings.langEn",
+            Self::French => "settings.langFr",
+            Self::German => "settings.langDe",
+            Self::Spanish => "settings.langEs",
+            Self::Japanese => "settings.langJa",
+            Self::ChineseSimplified => "settings.langZhCn",
+            Self::Korean => "settings.langKo",
+            Self::Polish => "settings.langPl",
+            Self::PortugueseBrazil => "settings.langPtBr",
+            Self::Italian => "settings.langIt",
+            Self::ChineseTraditional => "settings.langZhTw",
+            Self::Ukrainian => "settings.langUk",
         })
     }
 
     pub const fn icon_path(self) -> &'static str {
         match self {
             Self::System => "assets/icons/globe.svg",
-            Self::Russian => "assets/icons/flags/ru.png",
-            Self::English => "assets/icons/flags/gb.png",
+            Self::Russian => "assets/icons/flags/ru.svg",
+            Self::English => "assets/icons/flags/gb.svg",
+            Self::French => "assets/icons/flags/fr.svg",
+            Self::German => "assets/icons/flags/de.svg",
+            Self::Spanish => "assets/icons/flags/es.svg",
+            Self::Japanese => "assets/icons/flags/jp.svg",
+            Self::ChineseSimplified => "assets/icons/flags/cn.svg",
+            Self::Korean => "assets/icons/flags/kr.svg",
+            Self::Polish => "assets/icons/flags/pl.svg",
+            Self::PortugueseBrazil => "assets/icons/flags/br.svg",
+            Self::Italian => "assets/icons/flags/it.svg",
+            Self::ChineseTraditional => "assets/icons/flags/tw.svg",
+            Self::Ukrainian => "assets/icons/flags/ua.svg",
         }
     }
 

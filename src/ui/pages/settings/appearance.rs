@@ -206,7 +206,10 @@ fn render_menu(
         motion_state.menu_revision(),
     );
     div()
+        .id(SharedString::from(format!("{id}-menu-scroll")))
         .w(CONTROL_WIDTH)
+        .max_h(px(340.0))
+        .overflow_y_scroll()
         .p(px(0.0))
         .flex()
         .flex_col()
@@ -354,7 +357,8 @@ fn transparency_row(
 
 pub(super) fn local_icon(path: &'static str, uses_flag: bool) -> AnyElement {
     if uses_flag {
-        img(resolve_path(path))
+        svg()
+            .path(resolve_path(path))
             .w(px(18.0))
             .h(px(12.0))
             .rounded(px(2.0))
