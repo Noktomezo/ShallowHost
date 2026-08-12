@@ -6,7 +6,6 @@ use gpui::prelude::*;
 use gpui::*;
 
 use super::PluginItem;
-use crate::ui::components::badge::{BadgeStyle, badge};
 use crate::ui::foundation::motion::{CONTROL_MOTION, MENU_MOTION, changed_recently, mix_color};
 use crate::ui::foundation::{colors, i18n};
 
@@ -293,19 +292,12 @@ pub(super) fn render_author_header(
                                 .gap(px(2.0))
                                 .child(
                                     div()
-                                        .flex()
-                                        .items_center()
-                                        .gap_2()
-                                        .child(
-                                            div()
-                                                .min_w_0()
-                                                .truncate()
-                                                .text_sm()
-                                                .font_weight(FontWeight::BOLD)
-                                                .text_color(colors::base_200())
-                                                .child(title),
-                                        )
-                                        .child(badge(count.to_string(), BadgeStyle::Purple)),
+                                        .min_w_0()
+                                        .truncate()
+                                        .text_sm()
+                                        .font_weight(FontWeight::BOLD)
+                                        .text_color(colors::base_200())
+                                        .child(title),
                                 )
                                 .child(
                                     div()
