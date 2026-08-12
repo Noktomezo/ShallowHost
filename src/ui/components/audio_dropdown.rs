@@ -18,6 +18,7 @@ use crate::ui::resolve_asset_path;
 
 pub const CONTROL_HEIGHT: Pixels = DROPDOWN_CONTROL_HEIGHT;
 pub const CONTROL_WIDTH: Pixels = DROPDOWN_CONTROL_WIDTH;
+const MENU_MAX_HEIGHT: Pixels = px(306.0);
 
 #[derive(Clone, Debug)]
 pub struct DropdownChoice {
@@ -144,7 +145,7 @@ fn render_menu(
         .child(
             ScrollableColumn::new(
                 SharedString::from(format!("{id}-menu-scroll")),
-                px(280.0),
+                MENU_MAX_HEIGHT,
                 div().w_full().flex().flex_col().gap(px(0.0)).children(
                     choices.into_iter().enumerate().map(|(index, choice)| {
                         let dropdown = dropdown.clone();
