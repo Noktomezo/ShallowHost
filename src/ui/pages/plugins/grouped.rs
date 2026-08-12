@@ -242,7 +242,8 @@ pub(super) fn render_author_header(
                 .bg(mix_color(colors::base_950(), colors::base_900(), hover))
                 .border_1()
                 .border_color(mix_color(colors::base_800(), colors::base_700(), hover))
-                .rounded_lg()
+                .when(!visible, |card| card.rounded_lg())
+                .when(visible, |card| card.rounded_t(px(8.0)))
                 .flex()
                 .items_center()
                 .justify_between()
@@ -312,7 +313,6 @@ pub(super) fn render_author_header(
             row.child(
                 div()
                     .h(px(12.0))
-                    .mx(px(1.0))
                     .bg(colors::base_950())
                     .border_l_1()
                     .border_r_1()
@@ -362,7 +362,11 @@ pub(super) fn render_author_plugin_shell(
         .child(
             div()
                 .w_full()
-                .h_full()
+                .h(if last {
+                    super::virtualized::CARD_HEIGHT
+                } else {
+                    super::virtualized::ROW_HEIGHT
+                })
                 .bg(colors::base_950())
                 .border_l_1()
                 .border_r_1()
