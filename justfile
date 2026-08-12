@@ -2,11 +2,11 @@ default: check
 
 # Run dev server with auto-reload on file changes
 dev:
-    watchexec -r -e rs -- cargo run
+    CARGO_TARGET_DIR=target/dev watchexec -r -e rs -- cargo run
 
 # Preview an available update without downloading, installing, or restarting
 dev-update:
-    SHALLOWHOST_MOCK_UPDATE=1 watchexec -r -e rs -- cargo run
+    CARGO_TARGET_DIR=target/dev SHALLOWHOST_MOCK_UPDATE=1 watchexec -r -e rs -- cargo run
 
 # Build optimized release binary and compress with UPX (--best --lzma) via xtask
 build:
