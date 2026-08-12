@@ -64,7 +64,7 @@ pub fn badge(text: impl Into<SharedString>, style: BadgeStyle) -> Div {
 
 pub fn loading_badge(text: impl Into<SharedString>) -> Div {
     let icon = svg()
-        .external_path(crate::ui::resolve_asset_path("assets/icons/refresh-cw.svg"))
+        .path(crate::ui::resolve_asset_path("assets/icons/refresh-cw.svg"))
         .size(px(12.0))
         .text_color(colors::orange())
         .with_animation(

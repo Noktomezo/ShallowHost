@@ -1,31 +1,44 @@
-use std::path::PathBuf;
+use gpui::{AssetSource, SharedString};
+use rust_embed::RustEmbed;
+
+#[derive(RustEmbed)]
+#[folder = "assets"]
+#[include = "icons/**/*"]
+pub struct EmbeddedAssets;
+
+impl AssetSource for EmbeddedAssets {
+    fn load(&self, path: &str) -> gpui::Result<Option<std::borrow::Cow<'static, [u8]>>> {
+        Ok(Self::get(path).map(|asset| asset.data))
+    }
+
+    fn list(&self, path: &str) -> gpui::Result<Vec<SharedString>> {
+        Ok(Self::iter()
+            .filter(|asset| asset.starts_with(path))
+            .map(SharedString::from)
+            .collect())
+    }
+}
 
 pub fn resolve_asset_path(rel_path: &str) -> String {
-    // 1. Check relative to executable directory (release binary execution)
-    if let Some(parent) = std::env::current_exe()
-        .ok()
-        .and_then(|e| e.parent().map(|p| p.to_path_buf()))
-    {
-        let p = parent.join(rel_path);
-        if p.exists() {
-            return p.to_string_lossy().to_string();
-        }
-    }
+    rel_path
+        .strip_prefix("assets/")
+        .unwrap_or(rel_path)
+        .to_owned()
+}
 
-    // 2. Check relative to current working directory (dev execution)
-    if let Ok(cwd) = std::env::current_dir() {
-        let p = cwd.join(rel_path);
-        if p.exists() {
-            return p.to_string_lossy().to_string();
-        }
-    }
+#[cfg(test)]
+mod tests {
+    use super::{EmbeddedAssets, resolve_asset_path};
+    use gpui::AssetSource as _;
 
-    // 3. Fallback to manifest directory if building / testing in cargo workspace
-    let manifest_dir = PathBuf::from(env!("CARGO_MANIFEST_DIR"));
-    let manifest_path = manifest_dir.join(rel_path);
-    if manifest_path.exists() {
-        return manifest_path.to_string_lossy().to_string();
+    #[test]
+    fn runtime_assets_are_embedded() {
+        let path = resolve_asset_path("assets/icons/audio-waveform.svg");
+        assert!(
+            EmbeddedAssets
+                .load(&path)
+                .expect("asset lookup works")
+                .is_some()
+        );
     }
-
-    rel_path.to_string()
 }

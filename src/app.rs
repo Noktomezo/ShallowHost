@@ -26,7 +26,8 @@ pub(crate) fn run() {
         }
     };
 
-    let app = Application::with_platform(gpui_platform::current_platform(false));
+    let app = Application::with_platform(gpui_platform::current_platform(false))
+        .with_assets(crate::ui::EmbeddedAssets);
 
     app.run(move |cx: &mut App| {
         cx.set_app_identity(APP_ID, APP_TITLE);

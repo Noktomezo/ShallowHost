@@ -223,7 +223,7 @@ fn path_section(
                         })
                         .child(
                             svg()
-                                .external_path(resolve_asset_path("assets/icons/trash-2.svg"))
+                                .path(resolve_asset_path("assets/icons/trash-2.svg"))
                                 .size(px(15.0))
                                 .text_color(colors::red()),
                         ),
@@ -323,7 +323,7 @@ fn text_button(
         })
         .child(
             svg()
-                .external_path(resolve_asset_path(icon_path))
+                .path(resolve_asset_path(icon_path))
                 .size(px(15.0))
                 .text_color(foreground),
         )

@@ -391,7 +391,7 @@ fn stateful_bypass_icon(progress: f32, color: Rgba) -> AnyElement {
         .size_4()
         .child(
             svg()
-                .external_path(crate::ui::resolve_asset_path("assets/icons/circle-off.svg"))
+                .path(crate::ui::resolve_asset_path("assets/icons/circle-off.svg"))
                 .size_4()
                 .text_color(color)
                 .opacity(1.0 - progress),
@@ -400,7 +400,7 @@ fn stateful_bypass_icon(progress: f32, color: Rgba) -> AnyElement {
             svg()
                 .absolute()
                 .inset_0()
-                .external_path(crate::ui::resolve_asset_path(
+                .path(crate::ui::resolve_asset_path(
                     "assets/icons/circle-check.svg",
                 ))
                 .size_4()
@@ -412,7 +412,7 @@ fn stateful_bypass_icon(progress: f32, color: Rgba) -> AnyElement {
 
 fn icon(name: &'static str, color: Rgba) -> AnyElement {
     svg()
-        .external_path(crate::ui::resolve_asset_path(&format!(
+        .path(crate::ui::resolve_asset_path(&format!(
             "assets/icons/{name}"
         )))
         .size_4()

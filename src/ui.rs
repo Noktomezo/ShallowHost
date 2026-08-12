@@ -4,7 +4,7 @@ pub(crate) mod pages;
 pub(crate) mod shell;
 pub(crate) mod state;
 
-pub(crate) use foundation::assets::resolve_asset_path;
+pub(crate) use foundation::assets::{EmbeddedAssets, resolve_asset_path};
 pub(crate) use shell::main_view::MainView;
 
 pub(crate) fn init(cx: &mut gpui::App) {

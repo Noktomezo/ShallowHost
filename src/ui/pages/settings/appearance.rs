@@ -1,6 +1,5 @@
 use gpui::prelude::*;
 use gpui::*;
-use std::path::PathBuf;
 use std::rc::Rc;
 use std::time::Instant;
 
@@ -307,7 +306,7 @@ fn render_menu(
                 .when(index == selected_index, |element| {
                     element.child(
                         svg()
-                            .external_path(resolve_path("assets/icons/check.svg"))
+                            .path(resolve_path("assets/icons/check.svg"))
                             .size_4()
                             .text_color(colors::orange()),
                     )
@@ -351,14 +350,14 @@ fn transparency_row(
 
 pub(super) fn local_icon(path: &'static str, uses_flag: bool) -> AnyElement {
     if uses_flag {
-        img(PathBuf::from(resolve_path(path)))
+        img(resolve_path(path))
             .w(px(18.0))
             .h(px(12.0))
             .rounded(px(2.0))
             .into_any_element()
     } else {
         svg()
-            .external_path(resolve_path(path))
+            .path(resolve_path(path))
             .size_4()
             .text_color(colors::base_500())
             .into_any_element()

@@ -358,9 +358,7 @@ fn render_plugin_card(
                         .justify_center()
                         .child(
                             svg()
-                                .external_path(crate::ui::resolve_asset_path(
-                                    "assets/icons/box.svg",
-                                ))
+                                .path(crate::ui::resolve_asset_path("assets/icons/box.svg"))
                                 .size_5()
                                 .text_color(colors::orange()),
                         ),

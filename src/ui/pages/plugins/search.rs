@@ -63,7 +63,7 @@ pub(super) fn render(search: &Entity<TextInputState>, window: &mut Window, cx: &
                 .text_color(colors::base_200())
                 .child(
                     svg()
-                        .external_path(crate::ui::resolve_asset_path("assets/icons/search.svg"))
+                        .path(crate::ui::resolve_asset_path("assets/icons/search.svg"))
                         .size_4()
                         .flex_none()
                         .text_color(colors::base_500()),
@@ -86,9 +86,7 @@ pub(super) fn render(search: &Entity<TextInputState>, window: &mut Window, cx: &
                             .cursor_pointer()
                             .child(
                                 svg()
-                                    .external_path(crate::ui::resolve_asset_path(
-                                        "assets/icons/x.svg",
-                                    ))
+                                    .path(crate::ui::resolve_asset_path("assets/icons/x.svg"))
                                     .size_3()
                                     .text_color(colors::base_300()),
                             )

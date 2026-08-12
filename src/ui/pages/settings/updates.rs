@@ -115,7 +115,7 @@ fn primary_action(status: &UpdateStatus, updater: Entity<Updater>, cx: &App) -> 
             })
             .child(
                 svg()
-                    .external_path(resolve_path(icon_path))
+                    .path(resolve_path(icon_path))
                     .size_4()
                     .text_color(colors::accent_foreground()),
             )
@@ -167,7 +167,7 @@ fn check_is_disabled(status: &UpdateStatus) -> bool {
 
 fn update_icon(spinning: bool) -> AnyElement {
     let icon = svg()
-        .external_path(resolve_path("assets/icons/refresh-cw.svg"))
+        .path(resolve_path("assets/icons/refresh-cw.svg"))
         .size_4()
         .text_color(colors::base_200());
     if !spinning {

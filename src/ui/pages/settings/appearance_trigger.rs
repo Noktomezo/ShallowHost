@@ -179,7 +179,7 @@ impl RenderOnce for DropdownTrigger {
 
 fn chevron_svg(progress: f32) -> Svg {
     svg()
-        .external_path(resolve_path("assets/icons/chevron-down.svg"))
+        .path(resolve_path("assets/icons/chevron-down.svg"))
         .size_4()
         .text_color(colors::base_500())
         .with_transformation(Transformation::rotate(Radians(

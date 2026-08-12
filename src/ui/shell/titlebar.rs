@@ -131,7 +131,7 @@ fn titlebar_update_button(
         restarting_icon()
     } else {
         svg()
-            .external_path(resolve_asset_path("assets/icons/cloud-download.svg"))
+            .path(resolve_asset_path("assets/icons/cloud-download.svg"))
             .size_4()
             .text_color(colors::orange())
             .with_animation(
@@ -175,7 +175,7 @@ fn titlebar_update_button(
 
 fn restarting_icon() -> AnyElement {
     svg()
-        .external_path(resolve_asset_path("assets/icons/refresh-cw.svg"))
+        .path(resolve_asset_path("assets/icons/refresh-cw.svg"))
         .size_4()
         .text_color(colors::orange())
         .with_animation(
@@ -249,7 +249,7 @@ fn base_button_visual(
 
 fn titlebar_icon(path: &'static str) -> Svg {
     svg()
-        .external_path(resolve_asset_path(path))
+        .path(resolve_asset_path(path))
         .size_4()
         .text_color(colors::base_200())
 }
@@ -261,7 +261,7 @@ fn sidebar_toggle_icon(sidebar_progress: f32) -> Div {
         .size_4()
         .child(
             svg()
-                .external_path(resolve_asset_path("assets/icons/panel-left-close.svg"))
+                .path(resolve_asset_path("assets/icons/panel-left-close.svg"))
                 .size_4()
                 .text_color(colors::base_200())
                 .opacity(expanded),
@@ -270,7 +270,7 @@ fn sidebar_toggle_icon(sidebar_progress: f32) -> Div {
             svg()
                 .absolute()
                 .inset_0()
-                .external_path(resolve_asset_path("assets/icons/panel-left-open.svg"))
+                .path(resolve_asset_path("assets/icons/panel-left-open.svg"))
                 .size_4()
                 .text_color(colors::base_200())
                 .opacity(1.0 - expanded),
@@ -293,7 +293,7 @@ fn destructive_titlebar_icon(path: &'static str, cx: &App) -> Div {
                 .inset_0()
                 .child(
                     svg()
-                        .external_path(path.clone())
+                        .path(path.clone())
                         .size_4()
                         .text_color(colors::base_200())
                         .opacity(1.0 - hover),
@@ -307,7 +307,7 @@ fn destructive_titlebar_icon(path: &'static str, cx: &App) -> Div {
                 .group_active("titlebar-destructive", |style| style.invisible())
                 .child(
                     svg()
-                        .external_path(path.clone())
+                        .path(path.clone())
                         .size_4()
                         .text_color(colors::red())
                         .opacity(hover),
@@ -322,7 +322,7 @@ fn destructive_titlebar_icon(path: &'static str, cx: &App) -> Div {
                 .group_active("titlebar-destructive", |style| style.visible())
                 .child(
                     svg()
-                        .external_path(path)
+                        .path(path)
                         .size_4()
                         .text_color(colors::accent_foreground()),
                 ),

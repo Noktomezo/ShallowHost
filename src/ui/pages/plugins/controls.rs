@@ -49,7 +49,7 @@ pub(super) fn icon_button(
     };
     let tooltip = tooltip.into();
     let icon = svg()
-        .external_path(resolve_asset_path(icon_path))
+        .path(resolve_asset_path(icon_path))
         .size(px(17.0))
         .text_color(foreground);
     let icon = if spinning {
@@ -119,7 +119,7 @@ pub(super) fn chain_navigation_button(id: impl Into<ElementId>, cx: &App) -> Sta
         .child(i18n::t("plugins.goToChain"))
         .child(
             svg()
-                .external_path(resolve_asset_path("assets/icons/arrow-right.svg"))
+                .path(resolve_asset_path("assets/icons/arrow-right.svg"))
                 .size_4()
                 .text_color(colors::accent_foreground()),
         )

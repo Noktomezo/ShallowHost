@@ -52,7 +52,7 @@ pub fn card_heading_with_suffix(
                 .rounded_md()
                 .child(
                     svg()
-                        .external_path(resolve_asset_path(icon_path))
+                        .path(resolve_asset_path(icon_path))
                         .size_5()
                         .text_color(icon_color),
                 ),

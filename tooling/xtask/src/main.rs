@@ -1,6 +1,5 @@
 use std::env;
-use std::fs;
-use std::path::{Path, PathBuf};
+use std::path::PathBuf;
 use std::process::Command;
 
 fn main() {
@@ -14,20 +13,6 @@ fn main() {
             std::process::exit(1);
         }
     }
-}
-
-fn copy_dir_all(src: impl AsRef<Path>, dst: impl AsRef<Path>) -> std::io::Result<()> {
-    fs::create_dir_all(&dst)?;
-    for entry in fs::read_dir(src)? {
-        let entry = entry?;
-        let ty = entry.file_type()?;
-        if ty.is_dir() {
-            copy_dir_all(entry.path(), dst.as_ref().join(entry.file_name()))?;
-        } else {
-            fs::copy(entry.path(), dst.as_ref().join(entry.file_name()))?;
-        }
-    }
-    Ok(())
 }
 
 fn build_release() {
@@ -58,12 +43,6 @@ fn build_release() {
     } else {
         release_dir.join("ShallowHost")
     };
-
-    // Copy assets/ to target/release/assets so standalone release exe has assets
-    if Path::new("assets").exists() {
-        println!("=== Copying assets/ to target/release/assets ===");
-        let _ = copy_dir_all("assets", release_dir.join("assets"));
-    }
 
     println!("=== Compressing binary with UPX (--best --lzma) ===");
     let upx_status = Command::new("upx")

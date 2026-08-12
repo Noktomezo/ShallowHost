@@ -200,7 +200,7 @@ fn channel_checkbox(id: SharedString, checked: bool, animate: bool, hover: f32) 
     let check_animation_id =
         ElementId::NamedInteger(SharedString::from(format!("{id}-mark")), state);
     let icon = svg()
-        .external_path(crate::ui::resolve_asset_path("assets/icons/check.svg"))
+        .path(crate::ui::resolve_asset_path("assets/icons/check.svg"))
         .size(px(12.0))
         .text_color(colors::accent_foreground());
     let icon = if animate {

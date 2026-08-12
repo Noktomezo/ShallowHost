@@ -235,7 +235,7 @@ fn render_menu(
                             .when(index == selected, |element| {
                                 element.child(
                                     svg()
-                                        .external_path(resolve_asset_path("assets/icons/check.svg"))
+                                        .path(resolve_asset_path("assets/icons/check.svg"))
                                         .size_4()
                                         .text_color(colors::orange()),
                                 )
@@ -455,7 +455,7 @@ impl RenderOnce for AudioChoiceLabel {
 
 fn chevron_svg(progress: f32) -> Svg {
     svg()
-        .external_path(resolve_asset_path("assets/icons/chevron-down.svg"))
+        .path(resolve_asset_path("assets/icons/chevron-down.svg"))
         .size_4()
         .text_color(colors::base_500())
         .with_transformation(Transformation::rotate(Radians(

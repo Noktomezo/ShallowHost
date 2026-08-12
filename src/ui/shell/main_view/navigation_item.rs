@@ -128,7 +128,7 @@ impl MainView {
                     .justify_center()
                     .child(
                         svg()
-                            .external_path(crate::ui::resolve_asset_path(item.icon_path))
+                            .path(crate::ui::resolve_asset_path(item.icon_path))
                             .size_4()
                             .text_color(icon_color),
                     ),
