@@ -359,7 +359,8 @@ pub(super) fn local_icon(path: &'static str, uses_flag: bool) -> AnyElement {
     if uses_flag {
         img(resolve_path(path))
             .w(px(18.0))
-            .h(px(13.5))
+            .h(px(12.0))
+            .rounded(px(2.0))
             .into_any_element()
     } else {
         svg()
