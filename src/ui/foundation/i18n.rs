@@ -90,6 +90,9 @@ pub fn t(key: &str) -> String {
 #[cfg(test)]
 mod tests {
     use super::supported_locale;
+    use std::collections::BTreeSet;
+    use std::fs;
+    use std::path::Path;
 
     #[test]
     fn maps_supported_system_locales() {
@@ -103,5 +106,46 @@ mod tests {
         ] {
             assert_eq!(supported_locale(input), expected);
         }
+    }
+
+    #[test]
+    fn every_locale_has_the_same_keys() {
+        let locales = Path::new(env!("CARGO_MANIFEST_DIR")).join("src/locales");
+        let english = fs::read_to_string(locales.join("en.yml")).expect("English locale exists");
+        let expected = locale_keys(&english);
+
+        for entry in fs::read_dir(locales).expect("locale directory exists") {
+            let path = entry.expect("locale entry is readable").path();
+            if path.extension().is_some_and(|extension| extension == "yml") {
+                let source = fs::read_to_string(&path).expect("locale is readable");
+                assert_eq!(locale_keys(&source), expected, "{}", path.display());
+            }
+        }
+    }
+
+    fn locale_keys(source: &str) -> BTreeSet<String> {
+        let mut section = "";
+        let mut keys = BTreeSet::new();
+        for line in source.lines().filter(|line| !line.trim().is_empty()) {
+            let trimmed = line.trim();
+            if !line.starts_with(' ') {
+                let (name, value) = trimmed.split_once(':').expect("valid top-level locale key");
+                section = name;
+                if let Some(inline) = value
+                    .trim()
+                    .strip_prefix('{')
+                    .and_then(|v| v.strip_suffix('}'))
+                {
+                    keys.extend(inline.split(',').map(|entry| {
+                        let (key, _) = entry.split_once(':').expect("valid inline locale key");
+                        format!("{section}.{}", key.trim())
+                    }));
+                }
+            } else {
+                let (key, _) = trimmed.split_once(':').expect("valid locale key");
+                keys.insert(format!("{section}.{key}"));
+            }
+        }
+        keys
     }
 }

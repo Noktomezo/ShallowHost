@@ -357,8 +357,7 @@ fn transparency_row(
 
 pub(super) fn local_icon(path: &'static str, uses_flag: bool) -> AnyElement {
     if uses_flag {
-        svg()
-            .path(resolve_path(path))
+        img(resolve_path(path))
             .w(px(18.0))
             .h(px(12.0))
             .rounded(px(2.0))
